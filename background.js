@@ -19,6 +19,8 @@ const DEFAULT_SETTINGS = {
   enabled: true,
   intervalMinutes: 15,
   snoozeUntil: 0,
+  showHiragana: true,
+  theme: "blue",
 };
 
 // in-memory only; used to avoid showing the same card twice in a row.

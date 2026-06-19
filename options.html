@@ -47,12 +47,47 @@
           <label for="interval">Show every (minutes)</label>
           <input id="interval" type="number" min="1" max="240" />
         </div>
-        <div class="setting toggle">
+        <div class="setting">
           <label for="enabled">Enable popup</label>
-          <input id="enabled" type="checkbox" />
+          <label class="switch">
+            <input id="enabled" type="checkbox" />
+            <span class="slider"></span>
+          </label>
+        </div>
+        <p class="hint">All data is stored locally in your browser. No server, no data collection.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Card appearance</h2>
+
+        <div class="setting">
+          <label for="showHiragana">Show hiragana reading</label>
+          <label class="switch">
+            <input id="showHiragana" type="checkbox" />
+            <span class="slider"></span>
+          </label>
         </div>
 
-        <p class="hint">All data is stored locally in your browser. No server, no data collection.</p>
+        <div class="setting-group">
+          <div class="setting-label">Color theme</div>
+          <div class="theme-row">
+            <button class="swatch" data-theme="blue"   style="--dot:#2563eb">Blue</button>
+            <button class="swatch" data-theme="red"    style="--dot:#d34533">Red</button>
+            <button class="swatch" data-theme="purple" style="--dot:#7c3aed">Purple</button>
+            <button class="swatch" data-theme="green"  style="--dot:#16a34a">Green</button>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <div class="setting-label">Card position</div>
+          <div class="pos-grid">
+            <button class="pos-btn" data-pos="top-left">↖ Top left</button>
+            <button class="pos-btn" data-pos="top-right">↗ Top right</button>
+            <button class="pos-btn" data-pos="bottom-left">↙ Bottom left</button>
+            <button class="pos-btn" data-pos="bottom-right">↘ Bottom right</button>
+          </div>
+          <p class="hint" style="margin-top:8px">You can also drag the card header to place it anywhere.</p>
+        </div>
       </section>
     </main>
     <p class="credit">made by <a href="https://dev.byairu.com" target="_blank">dev.byairu.com</a></p>

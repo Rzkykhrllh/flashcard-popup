@@ -1,26 +1,16 @@
-/*
- * content.js — draws the flashcard overlay on whatever page is open.
- *
- * It lives in a Shadow DOM so the host page's CSS can't touch it, and styles are
- * fully self-contained (this renders on arbitrary websites). It only acts when the
- * background service worker sends a {type:"showCard"} message.
- */
-
 (() => {
-  if (window.__nihongoPopupLoaded) return; // guard against double-injection
+  if (window.__nihongoPopupLoaded) return;
   window.__nihongoPopupLoaded = true;
 
-  let host = null; // current overlay host element (null when nothing showing)
+  let host = null;
+  let dragState = null; // shared across renders, registered once
 
   function send(message) {
-    try {
-      chrome.runtime.sendMessage(message);
-    } catch (e) {
-      /* extension context might be gone after an update — ignore */
-    }
+    try { chrome.runtime.sendMessage(message); } catch (_) {}
   }
 
   function close() {
+    dragState = null;
     if (!host) return;
     const node = host;
     host = null;
@@ -33,76 +23,142 @@
     }
   }
 
-  function render(card) {
+  function positionWrap(wrap, pos) {
+    const m = 20;
+    wrap.style.left = wrap.style.top = wrap.style.right = wrap.style.bottom = "auto";
+    if (pos && typeof pos.x === "number") {
+      wrap.style.left = Math.max(0, Math.min(pos.x, window.innerWidth  - 340)) + "px";
+      wrap.style.top  = Math.max(0, Math.min(pos.y, window.innerHeight - 240)) + "px";
+    } else {
+      switch ((pos && pos.preset) || "bottom-right") {
+        case "top-left":    wrap.style.left   = m+"px"; wrap.style.top    = m+"px"; break;
+        case "top-right":   wrap.style.right  = m+"px"; wrap.style.top    = m+"px"; break;
+        case "bottom-left": wrap.style.left   = m+"px"; wrap.style.bottom = m+"px"; break;
+        default:            wrap.style.right  = m+"px"; wrap.style.bottom = m+"px"; break;
+      }
+    }
+  }
+
+  // Global drag listeners — registered once for the lifetime of this content script.
+  document.addEventListener("mousemove", (e) => {
+    if (!dragState) return;
+    const dx = e.clientX - dragState.startX;
+    const dy = e.clientY - dragState.startY;
+    const r  = dragState.wrap.getBoundingClientRect();
+    const x  = Math.max(0, Math.min(dragState.wrapX + dx, window.innerWidth  - r.width));
+    const y  = Math.max(0, Math.min(dragState.wrapY + dy, window.innerHeight - r.height));
+    const w  = dragState.wrap;
+    w.style.left = x + "px"; w.style.top = y + "px";
+    w.style.right = "auto";  w.style.bottom = "auto";
+  }, true);
+
+  document.addEventListener("mouseup", (e) => {
+    if (!dragState || e.button !== 0) return;
+    dragState.topEl.classList.remove("dragging");
+    const r = dragState.wrap.getBoundingClientRect();
+    try { chrome.storage.local.set({ cardPosition: { x: r.left, y: r.top } }); } catch (_) {}
+    dragState = null;
+  }, true);
+
+  async function render(card) {
+    const { settings = {}, cardPosition } = await chrome.storage.local.get(["settings", "cardPosition"]);
+    const showHiragana = settings.showHiragana !== false;
+
+    // Per-theme accent colors (baked into CSS string at render time).
+    // Each theme covers: button/seal color, meaning text, forgot button tints.
+    const ACCENT = {
+      blue:   { l:"#2563eb", arti:"#1d4ed8", fBg:"#dbeafe", fFg:"#1e40af",  dk:"#3b82f6", artiDk:"#93c5fd", fBgDk:"#1e3a8a", fFgDk:"#93c5fd"  },
+      red:    { l:"#d34533", arti:"#b23a26", fBg:"#fee2e2", fFg:"#991b1b",  dk:"#e06a55", artiDk:"#fca5a5", fBgDk:"#7f1d1d", fFgDk:"#fca5a5"  },
+      purple: { l:"#7c3aed", arti:"#6d28d9", fBg:"#ede9fe", fFg:"#4c1d95",  dk:"#a78bfa", artiDk:"#c4b5fd", fBgDk:"#2e1065", fFgDk:"#c4b5fd"  },
+      green:  { l:"#16a34a", arti:"#15803d", fBg:"#dcfce7", fFg:"#166534",  dk:"#4ade80", artiDk:"#86efac", fBgDk:"#14532d", fFgDk:"#86efac"  },
+    };
+    const ac = ACCENT[settings.theme] || ACCENT.blue;
+
     host = document.createElement("div");
     host.id = "nihongo-popup-host";
-    // keep the host itself out of the page's layout/flow
     host.style.all = "initial";
     const shadow = host.attachShadow({ mode: "open" });
 
     const style = document.createElement("style");
     style.textContent = `
-      :host { all: initial; }
-      * { box-sizing: border-box; margin: 0; padding: 0; }
+      /* Neutral base. All accent-derived colors follow the selected theme. */
+      :host {
+        --bg:#f7f7f6; --fg:#1c1c1c;
+        --muted:#888; --reading:#444; --notes:#666;
+        --border:rgba(0,0,0,.09);
+        --reveal-bg:#1c1c1c; --reveal-fg:#f7f7f6;
+        --shadow:0 12px 40px rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.07);
+        --x:#aaa;
+        --accent:${ac.l}; --arti:${ac.arti};
+        --forgot-bg:${ac.fBg}; --forgot-fg:${ac.fFg}; --known-bg:${ac.l};
+      }
+      @media (prefers-color-scheme:dark) {
+        :host {
+          --bg:#1e1e1e; --fg:#e8e8e8;
+          --muted:#777; --reading:#b0b0b0; --notes:#888;
+          --border:rgba(255,255,255,.09);
+          --reveal-bg:#e8e8e8; --reveal-fg:#1e1e1e;
+          --shadow:0 12px 40px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.2); --x:#666;
+          --accent:${ac.dk}; --arti:${ac.artiDk};
+          --forgot-bg:${ac.fBgDk}; --forgot-fg:${ac.fFgDk}; --known-bg:${ac.l};
+        }
+      }
+
+      /* ── layout ── */
+      * { box-sizing:border-box; margin:0; padding:0; }
       .wrap {
-        position: fixed; right: 20px; bottom: 20px; z-index: 2147483647;
-        font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP",
-          -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        position:fixed; z-index:2147483647;
+        font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",
+          -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
       }
       .card {
-        width: 320px; max-width: calc(100vw - 40px);
-        background: #f6f3ec; color: #26221c;
-        border: 1px solid rgba(0,0,0,0.08);
-        border-radius: 16px; padding: 18px 18px 16px;
-        box-shadow: 0 12px 40px rgba(0,0,0,0.22), 0 2px 6px rgba(0,0,0,0.08);
-        animation: rise .22s cubic-bezier(.2,.8,.2,1);
+        width:320px; max-width:calc(100vw - 40px);
+        background:var(--bg); color:var(--fg);
+        border:1px solid var(--border); border-radius:16px;
+        padding:18px 18px 16px; box-shadow:var(--shadow);
+        animation:rise .22s cubic-bezier(.2,.8,.2,1);
       }
-      .card.leaving { animation: sink .18s ease forwards; }
-      @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-      @keyframes sink { to { opacity: 0; transform: translateY(10px); } }
-      @media (prefers-reduced-motion: reduce) {
-        .card, .card.leaving { animation: none; }
+      .card.leaving { animation:sink .18s ease forwards; }
+      @keyframes rise { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
+      @keyframes sink { to{opacity:0;transform:translateY(10px)} }
+      @media (prefers-reduced-motion:reduce) { .card,.card.leaving { animation:none } }
+
+      .top {
+        display:flex; align-items:center; justify-content:space-between;
+        margin-bottom:12px; cursor:grab; user-select:none;
       }
-      .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-      .eyebrow { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #9a8f7d; }
-      .seal { display: inline-block; width: 8px; height: 8px; border-radius: 2px; background: #d34533; margin-right: 7px; vertical-align: 1px; }
-      .x { border: 0; background: transparent; color: #b3a895; font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
-      .x:hover { background: rgba(0,0,0,0.05); color: #6b6253; }
-      .kanji { font-size: 46px; font-weight: 500; line-height: 1.15; text-align: center; padding: 10px 0 14px; word-break: break-word; }
-      .answer { display: none; border-top: 1px dashed rgba(0,0,0,0.14); padding-top: 12px; text-align: center; }
-      .answer.show { display: block; }
-      .reading { font-size: 18px; color: #4a4234; }
-      .arti { font-size: 17px; font-weight: 500; color: #b23a26; margin-top: 4px; }
-      .notes { font-size: 13px; color: #7c7264; margin-top: 8px; line-height: 1.5; }
-      .actions { margin-top: 14px; }
-      button.act { width: 100%; border: 0; border-radius: 10px; padding: 11px; font-size: 15px; font-weight: 500; cursor: pointer; font-family: inherit; }
-      .reveal { background: #26221c; color: #f6f3ec; }
-      .reveal:hover { background: #3a342b; }
-      .grade { display: none; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
-      .grade.show { display: grid; }
-      .forgot { background: #efe7df; color: #8a3d2c; }
-      .forgot:hover { background: #e7dbd1; }
-      .known { background: #d34533; color: #fff; }
-      .known:hover { background: #b93a2a; }
-      .snooze { display: block; width: 100%; text-align: center; background: transparent; border: 0; color: #9a8f7d; font-size: 12px; margin-top: 12px; cursor: pointer; font-family: inherit; }
-      .snooze:hover { color: #6b6253; text-decoration: underline; }
-      @media (prefers-color-scheme: dark) {
-        .card { background: #211f1b; color: #ece7dd; border-color: rgba(255,255,255,0.08); }
-        .eyebrow, .snooze { color: #8b8170; }
-        .reading { color: #cfc7b6; }
-        .arti { color: #f0876f; }
-        .notes { color: #9a9082; }
-        .answer { border-top-color: rgba(255,255,255,0.14); }
-        .reveal { background: #ece7dd; color: #211f1b; }
-        .reveal:hover { background: #fff; }
-        .forgot { background: #36302a; color: #f0a08c; }
-        .known { background: #d34533; color: #fff; }
-        .x:hover { background: rgba(255,255,255,0.08); }
+      .top.dragging { cursor:grabbing; }
+      .eyebrow {
+        font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+        color:var(--muted); pointer-events:none;
       }
+      .seal { display:inline-block; width:8px; height:8px; border-radius:2px; background:var(--accent); margin-right:7px; vertical-align:1px; }
+      .x { border:0; background:transparent; color:var(--x); font-size:18px; line-height:1; cursor:pointer; padding:2px 4px; border-radius:6px; flex:none; }
+      .x:hover { background:rgba(0,0,0,.06); color:#444; }
+      .kanji { font-size:46px; font-weight:500; line-height:1.15; text-align:center; padding:10px 0 14px; word-break:break-word; }
+      .answer { display:none; border-top:1px dashed var(--border); padding-top:12px; text-align:center; }
+      .answer.show { display:block; }
+      .reading { font-size:18px; color:var(--reading); }
+      .arti { font-size:17px; font-weight:500; color:var(--arti); margin-top:4px; }
+      .notes { font-size:13px; color:var(--notes); margin-top:8px; line-height:1.5; }
+      .actions { margin-top:14px; }
+      button.act { width:100%; border:0; border-radius:10px; padding:11px; font-size:15px; font-weight:500; cursor:pointer; font-family:inherit; }
+      .reveal { background:var(--reveal-bg); color:var(--reveal-fg); }
+      .reveal:hover { opacity:.88; }
+      .grade { display:none; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+      .grade.show { display:grid; }
+      .forgot { background:var(--forgot-bg); color:var(--forgot-fg); }
+      .forgot:hover { filter:brightness(.96); }
+      .known  { background:var(--known-bg); color:#fff; }
+      .known:hover { filter:brightness(.92); }
+      .snooze { display:block; width:100%; text-align:center; background:transparent; border:0; color:var(--muted); font-size:12px; margin-top:12px; cursor:pointer; font-family:inherit; }
+      .snooze:hover { color:#444; text-decoration:underline; }
     `;
 
     const wrap = document.createElement("div");
     wrap.className = "wrap";
+    positionWrap(wrap, cardPosition);
+
     wrap.innerHTML = `
       <div class="card" role="dialog" aria-label="Japanese flashcard">
         <div class="top">
@@ -130,8 +186,13 @@
     document.documentElement.appendChild(host);
 
     const $ = (s) => shadow.querySelector(s);
+
     $(".kanji").textContent = card.kanji || "";
-    $(".reading").textContent = card.hiragana || "";
+
+    const readingEl = $(".reading");
+    readingEl.textContent = card.hiragana || "";
+    if (!showHiragana || !card.hiragana) readingEl.style.display = "none";
+
     $(".arti").textContent = card.arti || "";
     const notesEl = $(".notes");
     if (card.notes) notesEl.textContent = card.notes;
@@ -139,7 +200,7 @@
 
     const answer = $(".answer");
     const reveal = $(".reveal");
-    const grade = $(".grade");
+    const grade  = $(".grade");
 
     reveal.addEventListener("click", () => {
       answer.classList.add("show");
@@ -159,23 +220,26 @@
       close();
     });
 
-    // Esc closes
+    // Drag — mousedown starts state; mousemove/mouseup are on document (registered above)
+    const topEl = $(".top");
+    topEl.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      const r = wrap.getBoundingClientRect();
+      dragState = { startX: e.clientX, startY: e.clientY, wrapX: r.left, wrapY: r.top, wrap, topEl };
+      topEl.classList.add("dragging");
+    });
+
     const onKey = (e) => {
-      if (e.key === "Escape") {
-        close();
-        document.removeEventListener("keydown", onKey, true);
-      }
+      if (e.key === "Escape") { close(); document.removeEventListener("keydown", onKey, true); }
     };
     document.addEventListener("keydown", onKey, true);
   }
 
   chrome.runtime.onMessage.addListener((msg) => {
-    if (msg.type === "closeCard") {
-      close();
-      return;
-    }
+    if (msg.type === "closeCard") { close(); return; }
     if (msg.type !== "showCard") return;
-    if (host) return; // already showing one — don't stack
+    if (host) return;
     render(msg.card);
   });
 })();
