@@ -11,8 +11,7 @@ const deckList = el("deckList");
 const emptyDecks = el("emptyDecks");
 const intervalInput = el("interval");
 const enabledInput = el("enabled");
-const skipFullscreenInput = el("skipFullscreen");
-const skipWhileTypingInput = el("skipWhileTyping");
+
 
 function timeAgo(ts) {
   if (!ts) return "not synced yet";
@@ -34,8 +33,7 @@ async function render() {
 
   intervalInput.value = state.settings.intervalMinutes;
   enabledInput.checked = !!state.settings.enabled;
-  skipFullscreenInput.checked = !!state.settings.skipFullscreen;
-  skipWhileTypingInput.checked = !!state.settings.skipWhileTyping;
+
 
   deckList.innerHTML = "";
   emptyDecks.style.display = state.decks.length ? "none" : "block";
@@ -129,11 +127,4 @@ intervalInput.addEventListener("change", async () => {
 enabledInput.addEventListener("change", () =>
   send({ type: "updateSettings", patch: { enabled: enabledInput.checked } })
 );
-skipFullscreenInput.addEventListener("change", () =>
-  send({ type: "updateSettings", patch: { skipFullscreen: skipFullscreenInput.checked } })
-);
-skipWhileTypingInput.addEventListener("change", () =>
-  send({ type: "updateSettings", patch: { skipWhileTyping: skipWhileTypingInput.checked } })
-);
-
 render();

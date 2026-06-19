@@ -12,18 +12,6 @@
 
   let host = null; // current overlay host element (null when nothing showing)
 
-  function isTyping() {
-    const el = document.activeElement;
-    if (!el) return false;
-    const tag = el.tagName;
-    return (
-      tag === "INPUT" ||
-      tag === "TEXTAREA" ||
-      el.isContentEditable === true ||
-      (el.getAttribute && el.getAttribute("role") === "textbox")
-    );
-  }
-
   function send(message) {
     try {
       chrome.runtime.sendMessage(message);
@@ -188,9 +176,6 @@
     }
     if (msg.type !== "showCard") return;
     if (host) return; // already showing one — don't stack
-    const s = msg.settings || {};
-    if (s.skipFullscreen && document.fullscreenElement) return; // don't interrupt fullscreen
-    if (s.skipWhileTyping && isTyping()) return; // don't interrupt mid-sentence
     render(msg.card);
   });
 })();

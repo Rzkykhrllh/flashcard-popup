@@ -18,8 +18,6 @@ const ALARM_NAME = "nihongo-tick";
 const DEFAULT_SETTINGS = {
   enabled: true,
   intervalMinutes: 15,
-  skipFullscreen: true,
-  skipWhileTyping: true,
   snoozeUntil: 0,
 };
 
@@ -219,10 +217,6 @@ async function showCardOnActiveTab() {
 
   currentCard = {
     type: "showCard",
-    settings: {
-      skipFullscreen: state.settings.skipFullscreen,
-      skipWhileTyping: state.settings.skipWhileTyping,
-    },
     card: {
       deckId: picked.deckId,
       key: picked.key,
