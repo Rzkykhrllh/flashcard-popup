@@ -1,0 +1,139 @@
+const send = (msg) => chrome.runtime.sendMessage(msg);
+
+const el = (id) => document.getElementById(id);
+const deckName = el("deckName");
+const deckUrl = el("deckUrl");
+const addBtn = el("addBtn");
+const addStatus = el("addStatus");
+const syncAllBtn = el("syncAllBtn");
+const syncStatus = el("syncStatus");
+const deckList = el("deckList");
+const emptyDecks = el("emptyDecks");
+const intervalInput = el("interval");
+const enabledInput = el("enabled");
+const skipFullscreenInput = el("skipFullscreen");
+const skipWhileTypingInput = el("skipWhileTyping");
+
+function timeAgo(ts) {
+  if (!ts) return "not synced yet";
+  const m = Math.round((Date.now() - ts) / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m} min ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h} hr ago`;
+  return `${Math.round(h / 24)} days ago`;
+}
+
+function setStatus(node, text, kind) {
+  node.textContent = text;
+  node.className = "status" + (kind ? " " + kind : "");
+}
+
+async function render() {
+  const state = await send({ type: "getState" });
+
+  intervalInput.value = state.settings.intervalMinutes;
+  enabledInput.checked = !!state.settings.enabled;
+  skipFullscreenInput.checked = !!state.settings.skipFullscreen;
+  skipWhileTypingInput.checked = !!state.settings.skipWhileTyping;
+
+  deckList.innerHTML = "";
+  emptyDecks.style.display = state.decks.length ? "none" : "block";
+
+  for (const deck of state.decks) {
+    const count = Object.keys(state.cards[deck.id] || {}).length;
+    const li = document.createElement("li");
+    li.className = "deck";
+    li.innerHTML = `
+      <label class="switch">
+        <input type="checkbox" ${deck.enabled !== false ? "checked" : ""} />
+        <span class="slider"></span>
+      </label>
+      <div class="meta">
+        <div class="name"></div>
+        <div class="sub">${count} kartu · ${timeAgo(deck.lastSynced)}</div>
+      </div>
+      <button class="rm">Delete</button>
+    `;
+    li.querySelector(".name").textContent = deck.name;
+    li.querySelector("input").addEventListener("change", async (e) => {
+      await send({ type: "toggleDeck", deckId: deck.id, enabled: e.target.checked });
+    });
+    li.querySelector(".rm").addEventListener("click", async () => {
+      if (!confirm(`Delete deck "${deck.name}"? Card progress will be lost.`)) return;
+      await send({ type: "removeDeck", deckId: deck.id });
+      render();
+    });
+    deckList.appendChild(li);
+  }
+}
+
+addBtn.addEventListener("click", async () => {
+  const url = deckUrl.value.trim();
+  if (!url) {
+    setStatus(addStatus, "Paste the Google Sheet tab URL first.", "err");
+    return;
+  }
+  addBtn.disabled = true;
+  setStatus(addStatus, "Adding & syncing…", "");
+  const res = await send({
+    type: "addDeck",
+    name: deckName.value.trim() || "Deck",
+    url,
+  });
+  addBtn.disabled = false;
+  if (!res.ok) {
+    setStatus(addStatus, res.error || "Failed to add deck.", "err");
+    return;
+  }
+  if (res.syncError) {
+    setStatus(addStatus, "Deck added, but sync failed: " + res.syncError, "err");
+  } else {
+    setStatus(addStatus, `Added — ${res.added} cards read.`, "ok");
+    deckName.value = "";
+    deckUrl.value = "";
+  }
+  render();
+});
+
+syncAllBtn.addEventListener("click", async () => {
+  syncAllBtn.disabled = true;
+  syncAllBtn.textContent = "Syncing…";
+  const { results } = await send({ type: "syncAll" });
+  syncAllBtn.disabled = false;
+  syncAllBtn.textContent = "Sync all";
+  const failed = (results || []).filter((r) => !r.ok);
+  const added = (results || []).reduce((s, r) => s + (r.added || 0), 0);
+  const updated = (results || []).reduce((s, r) => s + (r.updated || 0), 0);
+  if (!results || !results.length) {
+    setStatus(syncStatus, "No decks yet.", "");
+  } else if (failed.length) {
+    setStatus(
+      syncStatus,
+      `${failed.length} deck(s) failed: ${failed.map((f) => f.name + " (" + f.error + ")").join("; ")}`,
+      "err"
+    );
+  } else {
+    setStatus(syncStatus, `Done — ${added} new, ${updated} updated.`, "ok");
+  }
+  render();
+});
+
+intervalInput.addEventListener("change", async () => {
+  let v = parseInt(intervalInput.value, 10);
+  if (isNaN(v) || v < 1) v = 1;
+  if (v > 240) v = 240;
+  intervalInput.value = v;
+  await send({ type: "updateSettings", patch: { intervalMinutes: v } });
+});
+enabledInput.addEventListener("change", () =>
+  send({ type: "updateSettings", patch: { enabled: enabledInput.checked } })
+);
+skipFullscreenInput.addEventListener("change", () =>
+  send({ type: "updateSettings", patch: { skipFullscreen: skipFullscreenInput.checked } })
+);
+skipWhileTypingInput.addEventListener("change", () =>
+  send({ type: "updateSettings", patch: { skipWhileTyping: skipWhileTypingInput.checked } })
+);
+
+render();

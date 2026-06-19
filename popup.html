@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="head">
+      <span class="seal"></span>
+      <h1>Nihongo Popup</h1>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><span class="num" id="cardCount">—</span><span class="lbl">cards</span></div>
+      <div class="stat"><span class="num" id="deckCount">—</span><span class="lbl">active decks</span></div>
+    </div>
+
+    <p class="sync" id="syncStatus">Never synced.</p>
+
+    <button class="btn primary" id="quizBtn">Show card now</button>
+    <button class="btn" id="syncBtn">Sync from Google Sheet</button>
+    <button class="btn ghost" id="optionsBtn">Settings & decks</button>
+
+    <p class="state" id="enabledState"></p>
+
+    <p class="credit">by <a href="https://dev.byairu.com" target="_blank">dev.byairu.com</a></p>
+    <script src="popup.js"></script>
+  </body>
+</html>

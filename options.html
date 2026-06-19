@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nihongo Popup — settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <header class="hero">
+        <span class="seal"></span>
+        <div>
+          <h1>Nihongo Popup</h1>
+          <p class="tag">Japanese flashcards from your Google Sheet, popping up while you work.</p>
+        </div>
+      </header>
+
+      <section class="panel">
+        <h2>Add deck</h2>
+        <p class="hint">
+          Each <em>tab</em> in your Google Sheet = one deck. Open the tab you want to add,
+          copy the URL from the address bar (must include <code>#gid=…</code>), paste it here.
+          The sheet must be set to <strong>"Anyone with the link can view"</strong> (Share → General access).
+        </p>
+        <div class="form">
+          <input id="deckName" type="text" placeholder="Deck name (e.g. Job Related)" />
+          <input id="deckUrl" type="text" placeholder="https://docs.google.com/spreadsheets/d/…#gid=…" />
+          <button id="addBtn" class="btn primary">Add & sync</button>
+        </div>
+        <p id="addStatus" class="status"></p>
+      </section>
+
+      <section class="panel">
+        <div class="row-between">
+          <h2>Your decks</h2>
+          <button id="syncAllBtn" class="btn">Sync all</button>
+        </div>
+        <p id="syncStatus" class="status"></p>
+        <ul id="deckList" class="decks"></ul>
+        <p id="emptyDecks" class="empty">No decks yet. Add one above to get started.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Frequency & behavior</h2>
+        <div class="setting">
+          <label for="interval">Show every (minutes)</label>
+          <input id="interval" type="number" min="1" max="240" />
+        </div>
+        <div class="setting toggle">
+          <label for="enabled">Enable popup</label>
+          <input id="enabled" type="checkbox" />
+        </div>
+        <div class="setting toggle">
+          <label for="skipFullscreen">Skip while fullscreen</label>
+          <input id="skipFullscreen" type="checkbox" />
+        </div>
+        <div class="setting toggle">
+          <label for="skipWhileTyping">Skip while typing</label>
+          <input id="skipWhileTyping" type="checkbox" />
+        </div>
+        <p class="hint">All data is stored locally in your browser. No server, no data collection.</p>
+      </section>
+    </main>
+    <p class="credit">made by <a href="https://dev.byairu.com" target="_blank">dev.byairu.com</a></p>
+    <script src="options.js"></script>
+  </body>
+</html>
