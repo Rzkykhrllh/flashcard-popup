@@ -204,6 +204,26 @@ function pickCard(state) {
   return last;
 }
 
+// Send a message to a tab, injecting the content script first if it's not yet loaded.
+// Returns true if the message was delivered successfully.
+async function sendToTab(tabId, message) {
+  try {
+    await chrome.tabs.sendMessage(tabId, message);
+    return true;
+  } catch (_) {
+    // Content script not loaded (tab was open before extension installed, or just navigated).
+    // Try injecting it dynamically, then retry.
+    try {
+      await chrome.scripting.executeScript({ target: { tabId }, files: ["content.js"] });
+      await chrome.tabs.sendMessage(tabId, message);
+      return true;
+    } catch (_) {
+      // Tab is restricted (chrome://, web store, PDF, etc.) — nothing we can do.
+      return false;
+    }
+  }
+}
+
 async function showCardOnActiveTab() {
   const state = await getState();
   if (!state.settings.enabled) return;
@@ -227,24 +247,30 @@ async function showCardOnActiveTab() {
     },
   };
 
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab || !tab.id) return;
-  // chrome://, the web store, PDFs, etc. can't receive our content script — ignore failures.
+  // Find the active tab in the last focused normal browser window.
+  // Using currentWindow:true or active:true alone misfires when the extension popup is
+  // open — it becomes the focused window but has no tabs, so we'd get the wrong window
+  // or an empty result. getLastFocused({windowTypes:['normal']}) skips popup windows.
+  let tabs = [];
   try {
-    await chrome.tabs.sendMessage(tab.id, currentCard);
-  } catch (e) {
-    /* tab can't host the overlay — skip this tick quietly */
+    const win = await chrome.windows.getLastFocused({ windowTypes: ["normal"] });
+    tabs = await chrome.tabs.query({ active: true, windowId: win.id });
+  } catch (_) {
+    tabs = await chrome.tabs.query({ active: true });
   }
+
+  for (const tab of tabs) {
+    if (!tab?.id) continue;
+    if (await sendToTab(tab.id, currentCard)) return; // delivered successfully
+  }
+  // No tab could receive the card; reset so the next alarm tick can try fresh.
+  currentCard = null;
 }
 
 async function closeCardOnAllTabs() {
   const tabs = await chrome.tabs.query({});
   for (const tab of tabs) {
-    try {
-      await chrome.tabs.sendMessage(tab.id, { type: "closeCard" });
-    } catch (e) {
-      /* tab can't receive messages — ignore */
-    }
+    if (tab?.id) sendToTab(tab.id, { type: "closeCard" });
   }
 }
 
@@ -277,11 +303,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 // Follow the user across tabs: show the pending card when they switch to another tab
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   if (!currentCard) return;
-  try {
-    await chrome.tabs.sendMessage(activeInfo.tabId, currentCard);
-  } catch (e) {
-    /* tab can't host the overlay — ignore */
-  }
+  await sendToTab(activeInfo.tabId, currentCard);
 });
 
 chrome.runtime.onInstalled.addListener(async () => {
@@ -352,6 +374,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         break;
       }
       case "showNow": {
+        currentCard = null; // allow forcing a new card even if one is pending
         await showCardOnActiveTab();
         sendResponse({ ok: true });
         break;

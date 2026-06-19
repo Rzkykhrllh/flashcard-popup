@@ -21,8 +21,8 @@
     }
   },
   "options_page": "options.html",
-  "permissions": ["storage", "alarms"],
-  "host_permissions": ["https://docs.google.com/*"],
+  "permissions": ["storage", "alarms", "scripting"],
+  "host_permissions": ["https://docs.google.com/*", "<all_urls>"],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
