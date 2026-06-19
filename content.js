@@ -63,6 +63,7 @@
   async function render(card) {
     const { settings = {}, cardPosition } = await chrome.storage.local.get(["settings", "cardPosition"]);
     const showHiragana = settings.showHiragana !== false;
+    const showFurigana = !!settings.showFurigana;
 
     // Per-theme accent colors (baked into CSS string at render time).
     // Each theme covers: button/seal color, meaning text, forgot button tints.
@@ -135,7 +136,8 @@
       .seal { display:inline-block; width:8px; height:8px; border-radius:2px; background:var(--accent); margin-right:7px; vertical-align:1px; }
       .x { border:0; background:transparent; color:var(--x); font-size:18px; line-height:1; cursor:pointer; padding:2px 4px; border-radius:6px; flex:none; }
       .x:hover { background:rgba(0,0,0,.06); color:#444; }
-      .kanji { font-size:46px; font-weight:500; line-height:1.15; text-align:center; padding:10px 0 14px; word-break:break-word; }
+      .kanji { font-size:46px; font-weight:500; line-height:1.15; text-align:center; padding:10px 0 14px; word-break:break-word; display:flex; flex-direction:column; align-items:center; gap:4px; }
+      .furigana { font-size:0.38em; font-weight:400; color:var(--muted); letter-spacing:0.06em; line-height:1; }
       .answer { display:none; border-top:1px dashed var(--border); padding-top:12px; text-align:center; }
       .answer.show { display:block; }
       .reading { font-size:18px; color:var(--reading); }
@@ -187,7 +189,16 @@
 
     const $ = (s) => shadow.querySelector(s);
 
-    $(".kanji").textContent = card.kanji || "";
+    const kanjiEl = $(".kanji");
+    if (showFurigana && card.hiragana) {
+      const furi = document.createElement("span");
+      furi.className = "furigana";
+      furi.textContent = card.hiragana;
+      kanjiEl.appendChild(furi);
+      kanjiEl.appendChild(document.createTextNode(card.kanji || ""));
+    } else {
+      kanjiEl.textContent = card.kanji || "";
+    }
 
     const readingEl = $(".reading");
     readingEl.textContent = card.hiragana || "";

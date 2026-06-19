@@ -20,6 +20,7 @@ const DEFAULT_SETTINGS = {
   intervalMinutes: 15,
   snoozeUntil: 0,
   showHiragana: true,
+  showFurigana: false,
   theme: "blue",
 };
 

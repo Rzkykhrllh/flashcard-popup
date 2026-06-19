@@ -12,6 +12,7 @@ const emptyDecks     = el("emptyDecks");
 const intervalInput  = el("interval");
 const enabledInput   = el("enabled");
 const showHiragana   = el("showHiragana");
+const showFurigana   = el("showFurigana");
 const swatches       = document.querySelectorAll(".swatch");
 const posButtons     = document.querySelectorAll(".pos-btn");
 
@@ -61,6 +62,7 @@ async function render() {
   intervalInput.value    = state.settings.intervalMinutes;
   enabledInput.checked   = !!state.settings.enabled;
   showHiragana.checked   = state.settings.showHiragana !== false;
+  showFurigana.checked   = !!state.settings.showFurigana;
   applyActiveTheme(state.settings.theme || "blue");
   applyActivePos(cardPosition);
 
@@ -146,6 +148,10 @@ enabledInput.addEventListener("change", () =>
 
 showHiragana.addEventListener("change", () =>
   send({ type: "updateSettings", patch: { showHiragana: showHiragana.checked } })
+);
+
+showFurigana.addEventListener("change", () =>
+  send({ type: "updateSettings", patch: { showFurigana: showFurigana.checked } })
 );
 
 swatches.forEach((btn) => {
