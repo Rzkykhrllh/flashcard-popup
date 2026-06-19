@@ -5,19 +5,18 @@
  *   1. Sync: fetch each deck's Google Sheet tab as CSV, parse, MERGE into storage
  *      (update text, keep per-card progress, add new cards, never delete).
  *   2. Schedule: a single chrome.alarms tick that fires a flashcard on the active tab.
- *   3. Record grades (known/forgot) via SM-2 spaced repetition to schedule next review.
+ *   3. Record grades (known/forgot) via SM-2 state in srs.js to weight future picks.
  *
  * Card SRS fields (per card in storage):
  *   n          — consecutive successful reviews (resets to 0 on forgot)
  *   easeFactor — SM-2 EF, starts at 2.5, minimum 1.3
- *   interval   — last interval in days
- *   dueAt      — Unix ms timestamp for next review
  *
  * Note: the service worker can be shut down by Chrome at any time, so we never
  * keep important state in memory — everything lives in chrome.storage.local.
  */
 
 importScripts("lib/papaparse.min.js"); // exposes global `Papa`
+importScripts("srs.js");              // pickCard, applySM2
 
 const ALARM_NAME = "nihongo-tick";
 
@@ -173,84 +172,6 @@ async function syncAllDecks() {
   return results;
 }
 
-/* ------------------------------ card picking ------------------------------ */
-
-// SM-2 spaced repetition scheduling.
-// Returns updated SRS fields to merge back into the card.
-// - Known   → interval grows (1d → 6d → interval×EF …)
-// - Forgot  → EF drops slightly, card due again in 10 minutes
-function applySM2(card, result) {
-  let n  = card.n  || 0;
-  let ef = card.easeFactor || 2.5;
-  let interval = card.interval || 0;
-
-  if (result === "known") {
-    if (n === 0)      interval = 1;
-    else if (n === 1) interval = 6;
-    else              interval = Math.round(interval * ef);
-    n += 1;
-    // q=4 on SM-2 scale → EF change is 0; kept for correctness
-    const q = 4;
-    ef = Math.max(1.3, ef + 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02));
-    return { n, easeFactor: ef, interval, dueAt: Date.now() + interval * 86_400_000 };
-  } else {
-    // Forgot: ease drops, card comes back in 10 min for quick re-drill
-    ef = Math.max(1.3, ef - 0.2);
-    return { n: 0, easeFactor: ef, interval: 0, dueAt: Date.now() + 10 * 60_000 };
-  }
-}
-
-// SM-2 pick: show only due cards (dueAt <= now), new cards first, then most overdue.
-// Falls back to the soonest-due card if nothing is due yet.
-function pickCard(state) {
-  const now = Date.now();
-  const due = [];
-  const notDue = [];
-
-  for (const deck of state.decks) {
-    if (deck.enabled === false) continue;
-    const cards = state.cards[deck.id] || {};
-    for (const [key, c] of Object.entries(cards)) {
-      const entry = { deckId: deck.id, key, card: c };
-      if ((c.dueAt || 0) <= now) {
-        due.push({ ...entry, overdue: now - (c.dueAt || 0) });
-      } else {
-        notDue.push({ ...entry, dueAt: c.dueAt });
-      }
-    }
-  }
-
-  let pool = due.length > 0 ? due : null;
-
-  if (!pool) {
-    // Nothing due — show the next-soonest card so the popup never goes silent
-    if (notDue.length === 0) return null;
-    notDue.sort((a, b) => a.dueAt - b.dueAt);
-    pool = [notDue[0]];
-  } else {
-    // New (unseen) cards first, then most-overdue
-    pool.sort((a, b) => {
-      const aNew = a.card.seen === 0;
-      const bNew = b.card.seen === 0;
-      if (aNew !== bNew) return aNew ? -1 : 1;
-      return b.overdue - a.overdue;
-    });
-  }
-
-  // Avoid immediate repeat
-  let candidates = pool;
-  if (pool.length > 1 && lastShownKey) {
-    const filtered = pool.filter((p) => `${p.deckId}:${p.key}` !== lastShownKey);
-    if (filtered.length) candidates = filtered;
-  }
-
-  // Pick from the top-3 with a touch of randomness so the queue doesn't feel mechanical
-  const topN = Math.min(3, candidates.length);
-  const pick = candidates[Math.floor(Math.random() * topN)];
-  lastShownKey = `${pick.deckId}:${pick.key}`;
-  return pick;
-}
-
 // Send a message to a tab, injecting the content script first if it's not yet loaded.
 // Returns true if the message was delivered successfully.
 async function sendToTab(tabId, message) {
@@ -279,8 +200,9 @@ async function showCardOnActiveTab() {
   // Don't stack — wait until the current card is graded
   if (currentCard) return;
 
-  const picked = pickCard(state);
+  const picked = pickCard(state, lastShownKey);
   if (!picked) return;
+  lastShownKey = `${picked.deckId}:${picked.key}`;
 
   currentCard = {
     type: "showCard",
