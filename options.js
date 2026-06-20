@@ -3,6 +3,9 @@ const el   = (id)  => document.getElementById(id);
 
 const deckName       = el("deckName");
 const deckUrl        = el("deckUrl");
+const tabPickerWrap  = el("tabPickerWrap");
+const tabPicker      = el("tabPicker");
+const tabFetchStatus = el("tabFetchStatus");
 const addBtn         = el("addBtn");
 const addStatus      = el("addStatus");
 const syncAllBtn     = el("syncAllBtn");
@@ -97,12 +100,67 @@ async function render() {
   }
 }
 
-addBtn.addEventListener("click", async () => {
+/* ----------------------- tab picker (add deck form) ----------------------- */
+
+let fetchedTabs    = null;
+let deckNameEdited = false;
+
+function resetTabPicker() {
+  fetchedTabs = null;
+  tabPickerWrap.style.display = "none";
+  tabFetchStatus.textContent  = "";
+  tabFetchStatus.className    = "status";
+}
+
+async function fetchTabs() {
   const url = deckUrl.value.trim();
-  if (!url) { setStatus(addStatus, "Paste the Google Sheet tab URL first.", "err"); return; }
+  if (!url) return;
+  if (!url.includes("docs.google.com/spreadsheets")) return;
+
+  resetTabPicker();
+  setStatus(tabFetchStatus, "Loading tabs…", "");
+
+  const res = await send({ type: "getSheetTabs", url });
+
+  if (!res.ok || !res.tabs || !res.tabs.length) {
+    setStatus(tabFetchStatus,
+      res.error || 'Could not load tabs. Make sure the sheet is set to "Anyone with the link can view".',
+      "err");
+    return;
+  }
+
+  fetchedTabs = res.tabs;
+  tabFetchStatus.textContent = "";
+  tabPicker.innerHTML = "";
+  for (const tab of res.tabs) {
+    const opt = document.createElement("option");
+    opt.value       = tab.name;
+    opt.textContent = tab.name;
+    tabPicker.appendChild(opt);
+  }
+  tabPickerWrap.style.display = "block";
+  if (!deckNameEdited) deckName.value = res.tabs[0].name;
+}
+
+deckUrl.addEventListener("blur",  fetchTabs);
+deckUrl.addEventListener("paste", () => setTimeout(fetchTabs, 80));
+deckUrl.addEventListener("input", () => { resetTabPicker(); deckNameEdited = false; });
+
+tabPicker.addEventListener("change", () => {
+  if (!deckNameEdited) deckName.value = tabPicker.value;
+});
+
+deckName.addEventListener("input", () => { deckNameEdited = true; });
+
+addBtn.addEventListener("click", async () => {
+  let url = deckUrl.value.trim();
+  if (!url) { setStatus(addStatus, "Paste the Google Sheet URL first.", "err"); return; }
+
+  const sheetName = (fetchedTabs && tabPicker.value) ? tabPicker.value : null;
+
   addBtn.disabled = true;
   setStatus(addStatus, "Adding & syncing…", "");
-  const res = await send({ type: "addDeck", name: deckName.value.trim() || "Deck", url });
+  const res = await send({ type: "addDeck", name: deckName.value.trim() || "Deck", url, sheetName });
   addBtn.disabled = false;
   if (!res.ok) { setStatus(addStatus, res.error || "Failed to add deck.", "err"); return; }
   if (res.syncError) {
@@ -111,6 +169,8 @@ addBtn.addEventListener("click", async () => {
     setStatus(addStatus, `Added — ${res.added} cards read.`, "ok");
     deckName.value = "";
     deckUrl.value  = "";
+    deckNameEdited = false;
+    resetTabPicker();
   }
   render();
 });

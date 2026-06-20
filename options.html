@@ -25,13 +25,16 @@
       <section class="panel">
         <h2>Add deck</h2>
         <p class="hint">
-          Each <em>tab</em> in your Google Sheet = one deck. Open the tab you want to add,
-          copy the URL from the address bar (must include <code>#gid=…</code>), paste it here.
+          Paste any Google Sheets URL — we'll load the available tabs for you.
           The sheet must be set to <strong>"Anyone with the link can view"</strong> (Share → General access).
         </p>
         <div class="form">
+          <input id="deckUrl" type="text" placeholder="https://docs.google.com/spreadsheets/d/…" />
+          <div id="tabPickerWrap" style="display:none">
+            <select id="tabPicker" class="tab-select"></select>
+          </div>
+          <p id="tabFetchStatus" class="status" style="margin-top:0"></p>
           <input id="deckName" type="text" placeholder="Deck name (e.g. Job Related)" />
-          <input id="deckUrl" type="text" placeholder="https://docs.google.com/spreadsheets/d/…#gid=…" />
           <button id="addBtn" class="btn primary">Add & sync</button>
         </div>
         <p id="addStatus" class="status"></p>

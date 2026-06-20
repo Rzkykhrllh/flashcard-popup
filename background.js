@@ -67,8 +67,11 @@ function parseSheetUrl(url) {
   return { spreadsheetId: idMatch[1], gid: gidMatch ? gidMatch[1] : "0" };
 }
 
-function buildCsvUrl(spreadsheetId, gid) {
-  return `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${gid}`;
+function buildCsvUrl(spreadsheetId, gid, sheetName) {
+  if (sheetName) {
+    return `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+  }
+  return `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${gid || "0"}`;
 }
 
 // Stable key for a card so merge can match rows across syncs.
@@ -104,9 +107,49 @@ function rowsToCards(csvText) {
   return out;
 }
 
+// Fetch all sheet tab names from the spreadsheet HTML.
+// Works for sheets that are "anyone with link can view".
+// Returns [{ name }] — no gids needed; CSV is fetched by name via gviz.
+async function fetchSheetTabs(spreadsheetId) {
+  const controller = new AbortController();
+  const tid = setTimeout(() => controller.abort(), 10000);
+  let html;
+  try {
+    const res = await fetch(
+      `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`,
+      { redirect: "follow", signal: controller.signal }
+    );
+    clearTimeout(tid);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.url.includes("docs.google.com/spreadsheets")) {
+      throw new Error('Sheet is not publicly accessible. Set to "anyone with the link can view".');
+    }
+    html = await res.text();
+  } catch (e) {
+    clearTimeout(tid);
+    throw e;
+  }
+
+  const names = [];
+
+  // The currently active tab appears in the title breadcrumb area.
+  const activeM = html.match(/class="[^"]*docs-title-spark-text[^"]*">([^<]+)</);
+  if (activeM) names.push(activeM[1].trim());
+
+  // All other (non-active) tabs appear in the bottom tab bar.
+  const tabRe = /docs-sheet-tab-caption">([^<]+)</g;
+  let m;
+  while ((m = tabRe.exec(html)) !== null) {
+    const name = m[1].trim();
+    if (name && !names.includes(name)) names.push(name);
+  }
+
+  return names.length ? names.map(name => ({ name })) : null;
+}
+
 // MERGE: update text on existing cards (keep progress), add new ones, keep the rest.
 async function syncDeck(deck) {
-  const url = buildCsvUrl(deck.spreadsheetId, deck.gid);
+  const url = buildCsvUrl(deck.spreadsheetId, deck.gid, deck.sheetName);
   const res = await fetch(url, { redirect: "follow" });
   if (!res.ok) {
     throw new Error(`HTTP ${res.status} — make sure the sheet is set to "anyone with the link can view".`);
@@ -295,6 +338,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         sendResponse(await getState());
         break;
       }
+      case "getSheetTabs": {
+        const parsed = parseSheetUrl(msg.url || "");
+        if (!parsed) { sendResponse({ ok: false, error: "Invalid sheet URL." }); break; }
+        try {
+          const tabs = await fetchSheetTabs(parsed.spreadsheetId);
+          sendResponse({ ok: true, tabs });
+        } catch (e) {
+          sendResponse({ ok: false, error: e.message });
+        }
+        break;
+      }
       case "addDeck": {
         const parsed = parseSheetUrl(msg.url || "");
         if (!parsed) {
@@ -308,6 +362,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           url: msg.url,
           spreadsheetId: parsed.spreadsheetId,
           gid: parsed.gid,
+          sheetName: msg.sheetName || null,
           enabled: true,
           lastSynced: 0,
           cardCount: 0,
