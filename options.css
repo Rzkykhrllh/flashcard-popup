@@ -127,3 +127,88 @@ input[type="text"]:focus, input[type="number"]:focus { outline: 2px solid var(--
 .credit { font-size: 12px; color: var(--muted); text-align: center; margin-top: 24px; }
 .credit a { color: var(--muted); text-decoration: none; }
 .credit a:hover { color: var(--shu); }
+
+/* Tab nav */
+.tab-nav {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.tab-btn {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 18px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font-family: inherit;
+  border-radius: 0;
+  transition: color .12s;
+}
+.tab-btn:hover { color: var(--ink); }
+.tab-btn.active { color: var(--shu); border-bottom-color: var(--shu); }
+
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* Stats */
+.stats-deck { margin-bottom: 18px; }
+.stats-deck-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.stats-deck-name { font-weight: 600; font-size: 15px; }
+.stats-deck-count { font-size: 12px; color: var(--muted); }
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.stats-table th {
+  text-align: left;
+  padding: 9px 12px;
+  font-weight: 500;
+  color: var(--muted);
+  font-size: 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.stats-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.stats-table tbody tr:last-child td { border-bottom: none; }
+.stats-table tbody tr:hover { background: var(--surface-2); }
+.stats-table .kanji-cell { font-size: 15px; }
+.stats-table .reading-cell { color: var(--muted); }
+.stats-table .cell-know { color: #2f7d4f; font-weight: 500; }
+.stats-table .cell-lupa { color: #c0392b; font-weight: 500; }
+.stats-table .cell-muted { color: var(--muted); }
+
+.ratio-bar {
+  width: 60px;
+  height: 5px;
+  border-radius: 99px;
+  background: var(--surface-2);
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+.ratio-fill {
+  height: 100%;
+  background: #2f7d4f;
+  border-radius: 99px;
+}

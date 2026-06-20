@@ -16,6 +16,12 @@
         </div>
       </header>
 
+      <nav class="tab-nav">
+        <button class="tab-btn active" data-tab="settings">Settings</button>
+        <button class="tab-btn" data-tab="stats">Stats</button>
+      </nav>
+
+      <div id="tab-settings" class="tab-pane active">
       <section class="panel">
         <h2>Add deck</h2>
         <p class="hint">
@@ -96,6 +102,12 @@
           <p class="hint" style="margin-top:8px">You can also drag the card header to place it anywhere.</p>
         </div>
       </section>
+      </div><!-- #tab-settings -->
+
+      <div id="tab-stats" class="tab-pane">
+        <div id="statsContent"></div>
+      </div>
+
     </main>
     <p class="credit">made by <a href="https://dev.byairu.com" target="_blank">dev.byairu.com</a></p>
     <script src="options.js"></script>
