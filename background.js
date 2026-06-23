@@ -27,6 +27,7 @@ const DEFAULT_SETTINGS = {
   showHiragana: true,
   showFurigana: false,
   theme: "blue",
+  cardMode: "classic",
 };
 
 // in-memory only; used to avoid showing the same card twice in a row.
@@ -295,6 +296,7 @@ async function recordGrade(deckId, key, result) {
   card.seen = (card.seen || 0) + 1;
   card.lastSeen = Date.now();
   if (result === "known") card.known = (card.known || 0) + 1;
+  else if (result === "hint")   card.hint  = (card.hint  || 0) + 1;
   else if (result === "forgot") card.forgot = (card.forgot || 0) + 1;
   Object.assign(card, applySM2(card, result));
   await chrome.storage.local.set({ cards: state.cards });

@@ -64,6 +64,7 @@
     const { settings = {}, cardPosition } = await chrome.storage.local.get(["settings", "cardPosition"]);
     const showHiragana = settings.showHiragana !== false;
     const showFurigana = !!settings.showFurigana;
+    const tiered = settings.cardMode === "tiered";
 
     // Per-theme accent colors (baked into CSS string at render time).
     // Each theme covers: button/seal color, meaning text, forgot button tints.
@@ -149,10 +150,16 @@
       .reveal:hover { opacity:.88; }
       .grade { display:none; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
       .grade.show { display:grid; }
+      .grade-tiered.show { display:flex; flex-direction:column-reverse; gap:8px; }
       .forgot { background:var(--forgot-bg); color:var(--forgot-fg); }
       .forgot:hover { filter:brightness(.96); }
       .known  { background:var(--known-bg); color:#fff; }
       .known:hover { filter:brightness(.92); }
+      .hint-known { background:transparent; border:1.5px solid var(--accent); color:var(--accent); }
+      .hint-known:hover { background:var(--known-bg); color:#fff; }
+      .hint-row { text-align:center; margin-bottom:8px; }
+      button.hint-btn { width:auto; background:transparent; border:1px solid var(--border); color:var(--muted); font-size:13px; padding:5px 16px; border-radius:99px; }
+      button.hint-btn:hover { background:rgba(128,128,128,.08); color:var(--fg); }
       .snooze { display:block; width:100%; text-align:center; background:transparent; border:0; color:var(--muted); font-size:12px; margin-top:12px; cursor:pointer; font-family:inherit; }
       .snooze:hover { color:#444; text-decoration:underline; }
     `;
@@ -168,6 +175,7 @@
           <button class="x" aria-label="Close">×</button>
         </div>
         <div class="kanji"></div>
+        ${tiered ? '<div class="hint-row"><button class="act hint-btn">Show hiragana</button></div>' : ""}
         <div class="answer">
           <div class="reading"></div>
           <div class="arti"></div>
@@ -175,9 +183,10 @@
         </div>
         <div class="actions">
           <button class="act reveal">Reveal answer</button>
-          <div class="grade">
+          <div class="grade ${tiered ? "grade-tiered" : ""}">
             <button class="act forgot">Forgot</button>
-            <button class="act known">Known!</button>
+            ${tiered ? '<button class="act hint-known">Know after hint</button>' : ""}
+            <button class="act known">${tiered ? "Know kanji!" : "Known!"}</button>
           </div>
         </div>
         <button class="snooze">Snooze 30 min</button>
@@ -190,7 +199,7 @@
     const $ = (s) => shadow.querySelector(s);
 
     const kanjiEl = $(".kanji");
-    if (showFurigana && card.hiragana) {
+    if (!tiered && showFurigana && card.hiragana) {
       const furi = document.createElement("span");
       furi.className = "furigana";
       furi.textContent = card.hiragana;
@@ -213,6 +222,19 @@
     const reveal = $(".reveal");
     const grade  = $(".grade");
 
+    if (tiered && card.hiragana) {
+      $(".hint-btn").addEventListener("click", () => {
+        const hint = document.createElement("div");
+        hint.className = "furigana";
+        hint.style.cssText = "font-size:.42em;color:var(--muted);margin-top:6px;letter-spacing:.05em";
+        hint.textContent = card.hiragana;
+        kanjiEl.appendChild(hint);
+        $(".hint-row").style.display = "none";
+      });
+    } else if (tiered) {
+      $(".hint-row").style.display = "none";
+    }
+
     reveal.addEventListener("click", () => {
       answer.classList.add("show");
       reveal.style.display = "none";
@@ -225,6 +247,7 @@
     }
     $(".known").addEventListener("click", () => gradeAndClose("known"));
     $(".forgot").addEventListener("click", () => gradeAndClose("forgot"));
+    $(".hint-known")?.addEventListener("click", () => gradeAndClose("hint"));
     $(".x").addEventListener("click", close);
     $(".snooze").addEventListener("click", () => {
       send({ type: "snooze", minutes: 30 });

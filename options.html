@@ -18,6 +18,7 @@
 
       <nav class="tab-nav">
         <button class="tab-btn active" data-tab="settings">Settings</button>
+        <button class="tab-btn" data-tab="study">Study</button>
         <button class="tab-btn" data-tab="stats">Stats</button>
       </nav>
 
@@ -51,6 +52,20 @@
       </section>
 
       <section class="panel">
+        <h2>Study mode</h2>
+        <div class="mode-grid">
+          <button class="mode-btn" data-mode="classic">
+            <div class="mode-label">Classic</div>
+            <div class="mode-desc">Kanji → Reveal → Know / Forgot</div>
+          </button>
+          <button class="mode-btn" data-mode="tiered">
+            <div class="mode-label">Tiered</div>
+            <div class="mode-desc">Kanji → optional hiragana hint → Reveal → 3 grades</div>
+          </button>
+        </div>
+      </section>
+
+      <section class="panel">
         <h2>Frequency & behavior</h2>
         <div class="setting">
           <label for="interval">Show every (minutes)</label>
@@ -70,7 +85,7 @@
         <h2>Card appearance</h2>
 
         <div class="setting">
-          <label for="showFurigana">Show furigana on front card</label>
+          <label for="showFurigana">Show furigana on front card <span class="label-note">Classic only</span></label>
           <label class="switch">
             <input id="showFurigana" type="checkbox" />
             <span class="slider"></span>
@@ -106,6 +121,10 @@
         </div>
       </section>
       </div><!-- #tab-settings -->
+
+      <div id="tab-study" class="tab-pane">
+        <div id="studyContent"></div>
+      </div>
 
       <div id="tab-stats" class="tab-pane">
         <div id="statsContent"></div>

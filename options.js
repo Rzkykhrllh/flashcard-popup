@@ -18,6 +18,7 @@ const showHiragana   = el("showHiragana");
 const showFurigana   = el("showFurigana");
 const swatches       = document.querySelectorAll(".swatch");
 const posButtons     = document.querySelectorAll(".pos-btn");
+const modeBtns       = document.querySelectorAll(".mode-btn");
 
 function timeAgo(ts) {
   if (!ts) return "not synced yet";
@@ -48,6 +49,10 @@ function applyActiveTheme(theme) {
   document.documentElement.style.setProperty("--shu-d", t.d);
 }
 
+function applyActiveMode(mode) {
+  modeBtns.forEach((b) => b.classList.toggle("active", b.dataset.mode === mode));
+}
+
 function applyActivePos(cardPosition) {
   // Show active preset. If position was custom-dragged (x,y), no button highlighted.
   const preset = cardPosition && cardPosition.preset
@@ -68,6 +73,7 @@ async function render() {
   showFurigana.checked   = !!state.settings.showFurigana;
   applyActiveTheme(state.settings.theme || "blue");
   applyActivePos(cardPosition);
+  applyActiveMode(state.settings.cardMode || "classic");
 
   deckList.innerHTML = "";
   emptyDecks.style.display = state.decks.length ? "none" : "block";
@@ -94,7 +100,191 @@ async function render() {
     li.querySelector(".rm").addEventListener("click", async () => {
       if (!confirm(`Delete deck "${deck.name}"? Card progress will be lost.`)) return;
       await send({ type: "removeDeck", deckId: deck.id });
-      render();
+/* -------------------------------- study tab ------------------------------- */
+
+let studyState = { deckId: null, cards: [], index: 0, revealed: false };
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+async function renderStudy() {
+  const container = el("studyContent");
+  const state     = await send({ type: "getState" });
+
+  if (!state.decks.length) {
+    container.innerHTML = '<p class="empty" style="margin-top:12px">No decks yet. Add one in Settings.</p>';
+    return;
+  }
+
+  studyState.revealed = false;
+
+  // Deck selector
+  let html = '<div class="study-toolbar"><label>Deck</label><select id="studyDeckSelect">';
+  for (const deck of state.decks) {
+    const sel = studyState.deckId === deck.id ? " selected" : "";
+    html += `<option value="${deck.id}"${sel}>${deck.name}</option>`;
+  }
+  html += '</select></div>';
+
+  const selectedId = studyState.deckId || state.decks[0].id;
+  studyState.deckId = selectedId;
+  const cards = state.cards[selectedId] || {};
+  const entries = Object.entries(cards);
+
+  if (!entries.length) {
+    container.innerHTML = html + '<p class="empty" style="margin-top:12px">This deck is empty.</p>';
+    return;
+  }
+
+  if (studyState.cards.length === 0 || studyState.deckId !== selectedId) {
+    studyState.cards = entries.map(([key, c]) => ({ key, ...c }));
+    studyState.index = 0;
+  }
+
+  const current = studyState.cards[studyState.index];
+  const total = studyState.cards.length;
+
+  html += `
+    <div class="study-card" id="studyCard">
+      <div class="front">
+        <div class="front-kanji">${current.kanji}</div>
+        ${current.hiragana ? '<div class="front-hint">click to reveal</div>' : ''}
+      </div>
+      <div class="back ${studyState.revealed ? 'show' : ''}">
+        <div class="back-reading">${current.hiragana || ''}</div>
+        <div class="back-arti">${current.arti || ''}</div>
+        ${current.notes ? `<div class="back-notes">${current.notes}</div>` : ''}
+      </div>
+    </div>
+    <div class="study-actions" id="studyActions">
+      <button class="btn" id="studyForgot" ${studyState.revealed ? '' : 'disabled'}>Forgot</button>
+      <button class="btn" id="studyHint" ${studyState.revealed ? '' : 'disabled'}>Hint</button>
+      <button class="btn primary" id="studyKnow" ${studyState.revealed ? '' : 'disabled'}>Know</button>
+    </div>
+    <div class="study-nav">
+      <button class="btn" id="studyPrev" ${studyState.index > 0 ? '' : 'disabled'}>&larr; Prev</button>
+      <span class="study-progress">${studyState.index + 1} / ${total}</span>
+      <button class="btn" id="studyNext">Next &rarr;</button>
+      <button class="btn" id="studyShuffle">Shuffle</button>
+    </div>
+    <div class="study-browse" id="studyBrowse"></div>
+  `;
+
+  container.innerHTML = html;
+
+  // Render browse table
+  renderStudyBrowse(container, entries);
+
+  // Card click → reveal
+  document.getElementById("studyCard").addEventListener("click", () => {
+    if (!studyState.revealed) {
+      studyState.revealed = true;
+      renderStudy();
+    }
+  });
+
+  document.getElementById("studyKnow").addEventListener("click", async () => {
+    await send({ type: "grade", deckId: studyState.deckId, key: current.key, result: "known" });
+    studyState.revealed = false;
+    if (studyState.index < studyState.cards.length - 1) studyState.index++;
+    renderStudy();
+  });
+
+  document.getElementById("studyHint").addEventListener("click", async () => {
+    await send({ type: "grade", deckId: studyState.deckId, key: current.key, result: "hint" });
+    studyState.revealed = false;
+    if (studyState.index < studyState.cards.length - 1) studyState.index++;
+    renderStudy();
+  });
+
+  document.getElementById("studyForgot").addEventListener("click", async () => {
+    await send({ type: "grade", deckId: studyState.deckId, key: current.key, result: "forgot" });
+    studyState.revealed = false;
+    if (studyState.index < studyState.cards.length - 1) studyState.index++;
+    renderStudy();
+  });
+
+  document.getElementById("studyPrev").addEventListener("click", () => {
+    if (studyState.index > 0) {
+      studyState.revealed = false;
+      studyState.index--;
+      renderStudy();
+    }
+  });
+
+  document.getElementById("studyNext").addEventListener("click", () => {
+    studyState.revealed = false;
+    if (studyState.index < studyState.cards.length - 1) studyState.index++;
+    renderStudy();
+  });
+
+  document.getElementById("studyShuffle").addEventListener("click", () => {
+    shuffle(studyState.cards);
+    studyState.index = 0;
+    studyState.revealed = false;
+    renderStudy();
+  });
+
+  document.getElementById("studyDeckSelect").addEventListener("change", (e) => {
+    studyState.deckId = e.target.value;
+    studyState.cards = [];
+    studyState.index = 0;
+    studyState.revealed = false;
+    renderStudy();
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener("keydown", studyKeyHandler);
+}
+
+function studyKeyHandler(e) {
+  if (!document.getElementById("studyContent") || !document.getElementById("studyContent").offsetParent) return;
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+  switch (e.key) {
+    case " ":
+      e.preventDefault();
+      if (!studyState.revealed) {
+        studyState.revealed = true;
+        renderStudy();
+      }
+      break;
+    case "ArrowRight":
+    case "ArrowDown":
+      document.getElementById("studyNext")?.click();
+      break;
+    case "ArrowLeft":
+    case "ArrowUp":
+      document.getElementById("studyPrev")?.click();
+      break;
+    case "1":
+      document.getElementById("studyForgot")?.click();
+      break;
+    case "2":
+      document.getElementById("studyHint")?.click();
+      break;
+    case "3":
+      document.getElementById("studyKnow")?.click();
+      break;
+  }
+}
+
+function renderStudyBrowse(container, entries) {
+  const wrap = container.querySelector(".study-browse");
+  if (!wrap) return;
+  let html = '<table class="stats-table"><thead><tr><th>Kanji</th><th>Reading</th><th>Arti</th><th>Notes</th></tr></thead><tbody>';
+  for (const [, c] of entries) {
+    html += `<tr><td class="kanji-cell">${c.kanji}</td><td class="reading-cell">${c.hiragana || "—"}</td><td>${c.arti || "—"}</td><td class="cell-muted">${c.notes || ""}</td></tr>`;
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+render();
     });
     deckList.appendChild(li);
   }
@@ -221,6 +411,13 @@ swatches.forEach((btn) => {
   });
 });
 
+modeBtns.forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    await send({ type: "updateSettings", patch: { cardMode: btn.dataset.mode } });
+    applyActiveMode(btn.dataset.mode);
+  });
+});
+
 posButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
     chrome.storage.local.set({ cardPosition: { preset: btn.dataset.pos } });
@@ -240,6 +437,7 @@ tabBtns.forEach((btn) => {
     tabBtns.forEach((b) => b.classList.toggle("active", b === btn));
     tabPanes.forEach((p) => p.classList.toggle("active", p.id === `tab-${tab}`));
     if (tab === "stats") renderStats();
+    if (tab === "study") renderStudy();
   });
 });
 
@@ -289,17 +487,18 @@ async function renderStats() {
     table.className = "stats-table";
     table.innerHTML = `
       <thead><tr>
-        <th>Kanji</th><th>Reading</th><th>Shown</th><th>Last seen</th><th>Know</th><th>Forgot</th><th>Ratio</th>
+        <th>Kanji</th><th>Reading</th><th>Arti</th><th>Shown</th><th>Last seen</th><th>Know</th><th>Hint</th><th>Forgot</th><th>Ratio</th>
       </tr></thead>
       <tbody></tbody>
     `;
     const tbody = table.querySelector("tbody");
 
     for (const [, card] of entries) {
-      const seen  = card.seen  || 0;
-      const known = card.known || 0;
+      const seen  = card.seen   || 0;
+      const known = card.known  || 0;
+      const hintC = card.hint   || 0;
       const lupa  = card.forgot || 0;
-      const total = known + lupa;
+      const total = known + hintC + lupa;
       const pct   = total > 0 ? Math.round((known / total) * 100) : 0;
 
       const tr = document.createElement("tr");
@@ -308,22 +507,207 @@ async function renderStats() {
       tr.innerHTML = `
         <td class="kanji-cell"></td>
         <td class="reading-cell"></td>
+        <td class="arti-cell"></td>
         <td>${seen || "—"}</td>
         <td>${card.lastSeen ? timeAgo(card.lastSeen) : "—"}</td>
-        <td class="${known ? "cell-know" : "cell-muted"}">${seen ? known : "—"}</td>
-        <td class="${lupa  ? "cell-lupa" : "cell-muted"}">${seen ? lupa  : "—"}</td>
+        <td class="${known ? "cell-know"  : "cell-muted"}">${seen ? known : "—"}</td>
+        <td class="${hintC ? "cell-hint"  : "cell-muted"}">${seen ? hintC : "—"}</td>
+        <td class="${lupa  ? "cell-lupa"  : "cell-muted"}">${seen ? lupa  : "—"}</td>
         <td>${seen
           ? `<span class="ratio-bar"><span class="ratio-fill" style="width:${pct}%"></span></span>${pct}%`
           : '<span class="cell-muted">—</span>'}</td>
       `;
       tr.querySelector(".kanji-cell").textContent   = card.kanji;
       tr.querySelector(".reading-cell").textContent = card.hiragana || "—";
+      tr.querySelector(".arti-cell").textContent    = card.arti || "—";
       tbody.appendChild(tr);
     }
 
     section.appendChild(table);
     container.appendChild(section);
   }
+}
+
+/* -------------------------------- study tab ------------------------------- */
+
+let studyState = { deckId: null, cards: [], index: 0, revealed: false };
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+async function renderStudy() {
+  const container = el("studyContent");
+  const state     = await send({ type: "getState" });
+
+  if (!state.decks.length) {
+    container.innerHTML = '<p class="empty" style="margin-top:12px">No decks yet. Add one in Settings.</p>';
+    return;
+  }
+
+  studyState.revealed = false;
+
+  let html = '<div class="study-toolbar"><label>Deck</label><select id="studyDeckSelect">';
+  for (const deck of state.decks) {
+    const sel = studyState.deckId === deck.id ? " selected" : "";
+    html += `<option value="${deck.id}"${sel}>${deck.name}</option>`;
+  }
+  html += '</select></div>';
+
+  const selectedId = studyState.deckId || state.decks[0].id;
+  studyState.deckId = selectedId;
+  const cards = state.cards[selectedId] || {};
+  const entries = Object.entries(cards);
+
+  if (!entries.length) {
+    container.innerHTML = html + '<p class="empty" style="margin-top:12px">This deck is empty.</p>';
+    return;
+  }
+
+  if (studyState.cards.length === 0 || studyState.deckId !== selectedId) {
+    studyState.cards = entries.map(([key, c]) => ({ key, ...c }));
+    studyState.index = 0;
+  }
+
+  const current = studyState.cards[studyState.index];
+  const total = studyState.cards.length;
+
+  html += `
+    <div class="study-card" id="studyCard">
+      <div class="front">
+        <div class="front-kanji">${current.kanji}</div>
+        ${current.hiragana ? '<div class="front-hint">click to reveal</div>' : ''}
+      </div>
+      <div class="back ${studyState.revealed ? 'show' : ''}">
+        <div class="back-reading">${current.hiragana || ''}</div>
+        <div class="back-arti">${current.arti || ''}</div>
+        ${current.notes ? `<div class="back-notes">${current.notes}</div>` : ''}
+      </div>
+    </div>
+    <div class="study-actions" id="studyActions">
+      <button class="btn" id="studyForgot" ${studyState.revealed ? '' : 'disabled'}>Forgot</button>
+      <button class="btn" id="studyHint" ${studyState.revealed ? '' : 'disabled'}>Hint</button>
+      <button class="btn primary" id="studyKnow" ${studyState.revealed ? '' : 'disabled'}>Know</button>
+    </div>
+    <div class="study-nav">
+      <button class="btn" id="studyPrev" ${studyState.index > 0 ? '' : 'disabled'}>&larr; Prev</button>
+      <span class="study-progress">${studyState.index + 1} / ${total}</span>
+      <button class="btn" id="studyNext">Next &rarr;</button>
+      <button class="btn" id="studyShuffle">Shuffle</button>
+    </div>
+    <div class="study-browse" id="studyBrowse"></div>
+  `;
+
+  container.innerHTML = html;
+
+  renderStudyBrowse(container, entries);
+
+  document.getElementById("studyCard").addEventListener("click", () => {
+    if (!studyState.revealed) {
+      studyState.revealed = true;
+      renderStudy();
+    }
+  });
+
+  document.getElementById("studyKnow").addEventListener("click", async () => {
+    await send({ type: "grade", deckId: studyState.deckId, key: current.key, result: "known" });
+    advanceStudy();
+  });
+
+  document.getElementById("studyHint").addEventListener("click", async () => {
+    await send({ type: "grade", deckId: studyState.deckId, key: current.key, result: "hint" });
+    advanceStudy();
+  });
+
+  document.getElementById("studyForgot").addEventListener("click", async () => {
+    await send({ type: "grade", deckId: studyState.deckId, key: current.key, result: "forgot" });
+    advanceStudy();
+  });
+
+  document.getElementById("studyPrev").addEventListener("click", () => {
+    if (studyState.index > 0) {
+      studyState.revealed = false;
+      studyState.index--;
+      renderStudy();
+    }
+  });
+
+  document.getElementById("studyNext").addEventListener("click", () => {
+    advanceStudy();
+  });
+
+  document.getElementById("studyShuffle").addEventListener("click", () => {
+    shuffle(studyState.cards);
+    studyState.index = 0;
+    studyState.revealed = false;
+    renderStudy();
+  });
+
+  document.getElementById("studyDeckSelect").addEventListener("change", (e) => {
+    studyState.deckId = e.target.value;
+    studyState.cards = [];
+    studyState.index = 0;
+    studyState.revealed = false;
+    renderStudy();
+  });
+
+  document.addEventListener("keydown", studyKeyHandler);
+}
+
+function advanceStudy() {
+  studyState.revealed = false;
+  if (studyState.index < studyState.cards.length - 1) {
+    studyState.index++;
+    renderStudy();
+  } else {
+    renderStudy();
+  }
+}
+
+function studyKeyHandler(e) {
+  if (!document.getElementById("studyContent") || !document.getElementById("studyContent").offsetParent) return;
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+  switch (e.key) {
+    case " ":
+      e.preventDefault();
+      if (!studyState.revealed) {
+        studyState.revealed = true;
+        renderStudy();
+      }
+      break;
+    case "ArrowRight":
+    case "ArrowDown":
+      document.getElementById("studyNext")?.click();
+      break;
+    case "ArrowLeft":
+    case "ArrowUp":
+      document.getElementById("studyPrev")?.click();
+      break;
+    case "1":
+      document.getElementById("studyForgot")?.click();
+      break;
+    case "2":
+      document.getElementById("studyHint")?.click();
+      break;
+    case "3":
+      document.getElementById("studyKnow")?.click();
+      break;
+  }
+}
+
+function renderStudyBrowse(container, entries) {
+  const wrap = container.querySelector(".study-browse");
+  if (!wrap) return;
+  let html = '<table class="stats-table"><thead><tr><th>Kanji</th><th>Reading</th><th>Arti</th><th>Notes</th></tr></thead><tbody>';
+  for (const [, c] of entries) {
+    html += `<tr><td class="kanji-cell">${c.kanji}</td><td class="reading-cell">${c.hiragana || "—"}</td><td>${c.arti || "—"}</td><td class="cell-muted">${c.notes || ""}</td></tr>`;
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
 }
 
 render();

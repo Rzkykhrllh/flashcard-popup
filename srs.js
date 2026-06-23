@@ -52,6 +52,9 @@ function applySM2(card, result) {
     // SM-2 EF formula at q=4: delta = 0.1 - 1*(0.08+0.02) = 0 → EF unchanged on correct recall
     const q = 4;
     ef = Math.max(1.3, ef + 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02));
+  } else if (result === "hint") {
+    n += 1;                        // streak continues — you knew it, just needed a nudge
+    ef = Math.max(1.3, ef - 0.1); // small ease penalty so card stays slightly more frequent
   } else {
     n  = 0;
     ef = Math.max(1.3, ef - 0.2); // each forgot lowers ease; floor at 1.3

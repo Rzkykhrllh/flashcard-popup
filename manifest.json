@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Nihongo Popup — kanji yang ngeganggu",
+  "name": "Nihongo Popup",
   "version": "0.1.0",
-  "description": "Flashcard bahasa Jepang dari Google Sheet kamu, muncul tiba-tiba sambil kamu kerja. Recall, lalu nilai sendiri: tau / lupa.",
+  "description": "Japanese flashcards from your Google Sheet, appearing while you work. Recall each word, then grade yourself.",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",

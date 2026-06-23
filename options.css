@@ -104,6 +104,7 @@ input[type="text"]:focus, input[type="number"]:focus { outline: 2px solid var(--
 .setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); }
 .setting:first-of-type { border-top: 0; }
 .setting label:first-child { font-size: 14px; }
+.label-note { font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 4px; }
 .setting input[type="number"] { width: 90px; }
 
 /* Card appearance */
@@ -132,6 +133,18 @@ input[type="text"]:focus, input[type="number"]:focus { outline: 2px solid var(--
 }
 .pos-btn:hover:not(.active) { background: var(--surface-2); border-color: var(--shu); }
 .pos-btn.active { background: var(--shu); color: #fff; border-color: var(--shu); }
+
+/* Study mode selector */
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mode-btn {
+  border: 1.5px solid var(--line); background: var(--paper); color: var(--ink);
+  border-radius: 12px; padding: 14px 12px; cursor: pointer; font-family: inherit;
+  text-align: left; transition: border-color .12s, background .12s;
+}
+.mode-btn:hover { background: var(--surface-2); }
+.mode-btn.active { border-color: var(--shu); background: var(--surface-2); }
+.mode-label { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.mode-desc { font-size: 12px; color: var(--muted); line-height: 1.45; }
 
 .credit { font-size: 12px; color: var(--muted); text-align: center; margin-top: 24px; }
 .credit a { color: var(--muted); text-decoration: none; }
@@ -203,6 +216,7 @@ input[type="text"]:focus, input[type="number"]:focus { outline: 2px solid var(--
 .stats-table .kanji-cell { font-size: 15px; }
 .stats-table .reading-cell { color: var(--muted); }
 .stats-table .cell-know { color: #2f7d4f; font-weight: 500; }
+.stats-table .cell-hint { color: #b45309; font-weight: 500; }
 .stats-table .cell-lupa { color: #c0392b; font-weight: 500; }
 .stats-table .cell-muted { color: var(--muted); }
 
@@ -221,3 +235,41 @@ input[type="text"]:focus, input[type="number"]:focus { outline: 2px solid var(--
   background: #2f7d4f;
   border-radius: 99px;
 }
+
+/* Study tab */
+.study-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.study-toolbar label { font-size: 13px; color: var(--muted); }
+.study-toolbar select { flex: 1; min-width: 160px; }
+
+.study-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 32px 24px;
+  text-align: center;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: box-shadow .15s;
+  user-select: none;
+}
+.study-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.study-card .front-kanji { font-size: 52px; font-weight: 500; line-height: 1.2; word-break: break-word; }
+.study-card .front-hint { font-size: 14px; color: var(--muted); margin-top: 8px; }
+
+.study-card .back { display: none; width: 100%; }
+.study-card .back.show { display: block; }
+.study-card .back-reading { font-size: 20px; color: var(--ink); margin-top: 12px; }
+.study-card .back-arti { font-size: 22px; font-weight: 600; color: var(--shu); margin-top: 8px; }
+.study-card .back-notes { font-size: 14px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+
+.study-actions { display: flex; gap: 10px; margin-top: 18px; justify-content: center; flex-wrap: wrap; }
+.study-actions .btn { min-width: 90px; }
+
+.study-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
+.study-progress { font-size: 13px; color: var(--muted); }
+
+.study-browse { margin-top: 20px; }

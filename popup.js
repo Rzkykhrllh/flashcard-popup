@@ -5,6 +5,7 @@ const deckCountEl = document.getElementById("deckCount");
 const syncStatusEl = document.getElementById("syncStatus");
 const enabledStateEl = document.getElementById("enabledState");
 const quizBtn = document.getElementById("quizBtn");
+const studyBtn = document.getElementById("studyBtn");
 const syncBtn = document.getElementById("syncBtn");
 const optionsBtn = document.getElementById("optionsBtn");
 
@@ -54,7 +55,7 @@ syncBtn.addEventListener("click", async () => {
   const failed = (results || []).filter((r) => !r.ok);
   const added = (results || []).reduce((s, r) => s + (r.added || 0), 0);
   syncBtn.disabled = false;
-  syncBtn.textContent = "Sync dari Google Sheet";
+  syncBtn.textContent = "Sync from Google Sheet";
   if (!results || !results.length) {
     enabledStateEl.textContent = "No decks to sync.";
   } else if (failed.length) {
@@ -65,6 +66,7 @@ syncBtn.addEventListener("click", async () => {
   refresh();
 });
 
+studyBtn.addEventListener("click", () => chrome.runtime.openOptionsPage());
 optionsBtn.addEventListener("click", () => chrome.runtime.openOptionsPage());
 
 refresh();
