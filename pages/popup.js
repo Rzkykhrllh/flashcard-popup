@@ -5,6 +5,8 @@ const deckCountEl = document.getElementById("deckCount");
 const syncStatusEl = document.getElementById("syncStatus");
 const enabledStateEl = document.getElementById("enabledState");
 const quizBtn = document.getElementById("quizBtn");
+const menuToggle = document.getElementById("menuToggle");
+const submenu = document.getElementById("submenu");
 const studyBtn = document.getElementById("studyBtn");
 const bankBtn = document.getElementById("bankBtn");
 const syncBtn = document.getElementById("syncBtn");
@@ -65,6 +67,11 @@ syncBtn.addEventListener("click", async () => {
     enabledStateEl.textContent = added ? `+${added} new cards.` : "Up to date.";
   }
   refresh();
+});
+
+menuToggle.addEventListener("click", () => {
+  menuToggle.classList.toggle("open");
+  submenu.classList.toggle("open");
 });
 
 studyBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html#study") }));

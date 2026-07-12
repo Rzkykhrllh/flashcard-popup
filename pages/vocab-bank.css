@@ -1,6 +1,17 @@
 /* vocab-bank.css — page-specific styles on top of options.css's design system. */
 
 .bank-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.bank-toolbar-2 { margin-top: 14px; }
+
+.btn-row-bank { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.btn-row-bank .btn { width: auto; margin-bottom: 0; }
+
+.search-input {
+  flex: 1 1 240px; min-width: 0; border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+  border-radius: 9px; padding: 10px 12px; font-size: 14px; font-family: inherit;
+}
+.search-input:focus { outline: 2px solid var(--shu); outline-offset: -1px; }
+.search-input::placeholder { color: var(--muted); }
 
 .status-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
 .status-tab {

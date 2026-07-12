@@ -6,14 +6,20 @@ const STATUS_LABEL = { new: "New", learning: "Learning", mastered: "Mastered" };
 
 const statusTabsEl = document.getElementById("statusTabs");
 const groupSelectEl = document.getElementById("groupSelect");
+const searchInputEl = document.getElementById("searchInput");
 const wordRowsEl = document.getElementById("wordRows");
 const emptyStateEl = document.getElementById("emptyState");
 const resultCountEl = document.getElementById("resultCount");
+const exportBtn = document.getElementById("exportBtn");
+const importBtn = document.getElementById("importBtn");
+const importFileEl = document.getElementById("importFile");
+const backupStatusEl = document.getElementById("backupStatus");
 
 let allWords = [];
 let allGroups = [];
 let activeStatus = "";
 let activeGroupId = "";
+let activeQuery = "";
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => (
@@ -41,9 +47,14 @@ function updateCounts() {
 }
 
 function render() {
+  const q = activeQuery.trim().toLowerCase();
   const filtered = allWords.filter((w) => {
     if (activeStatus && w.status !== activeStatus) return false;
     if (activeGroupId && !(w.groupIds || []).includes(activeGroupId)) return false;
+    if (q) {
+      const hay = `${w.kanji || ""} ${w.hiragana || ""} ${w.arti || ""}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
     return true;
   });
 
@@ -61,6 +72,7 @@ function render() {
     .join("");
 
   emptyStateEl.style.display = filtered.length ? "none" : "block";
+  emptyStateEl.textContent = allWords.length ? "No words match." : "No words here yet.";
   resultCountEl.textContent = allWords.length ? `${filtered.length} of ${allWords.length}` : "";
 }
 
@@ -77,6 +89,11 @@ groupSelectEl.addEventListener("change", () => {
   render();
 });
 
+searchInputEl.addEventListener("input", () => {
+  activeQuery = searchInputEl.value;
+  render();
+});
+
 // Top-level tab switching (List / Graph). graph.js listens for "kotoba:data-ready"
 // (dispatched below, once words/groups are loaded) and only starts its own layout
 // once the Graph pane is actually visible — see startGraph() in graph.js.
@@ -88,7 +105,7 @@ document.querySelectorAll(".tab-nav .tab-btn").forEach((btn) => {
   });
 });
 
-async function init() {
+async function reloadData() {
   allWords = await getAllWords();
   allGroups = await getAllGroups();
 
@@ -98,7 +115,64 @@ async function init() {
 
   updateCounts();
   render();
+}
 
+exportBtn.addEventListener("click", async () => {
+  const words = await getAllWords();
+  const groups = await getAllGroups();
+  const payload = { exportedAt: Date.now(), words, groups };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `kotoba-bank-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  backupStatusEl.textContent = `Exported ${words.length} words, ${groups.length} groups.`;
+});
+
+importBtn.addEventListener("click", () => importFileEl.click());
+
+importFileEl.addEventListener("change", async () => {
+  const file = importFileEl.files[0];
+  importFileEl.value = ""; // allow re-selecting the same file later
+  if (!file) return;
+
+  let payload;
+  try {
+    payload = JSON.parse(await file.text());
+  } catch (e) {
+    backupStatusEl.textContent = "Invalid JSON file.";
+    return;
+  }
+
+  const words = Array.isArray(payload.words) ? payload.words : [];
+  const groups = Array.isArray(payload.groups) ? payload.groups : [];
+  if (!words.length && !groups.length) {
+    backupStatusEl.textContent = "No words or groups found in this file.";
+    return;
+  }
+
+  const existingIds = new Set(allWords.map((w) => w.id));
+  const overwriteCount = words.filter((w) => existingIds.has(w.id)).length;
+  const newCount = words.length - overwriteCount;
+
+  const ok = confirm(
+    `Import ${words.length} words & ${groups.length} groups?\n` +
+    `${newCount} new, ${overwriteCount} will be overwritten (same id already exists).`
+  );
+  if (!ok) return;
+
+  await putWords(words);
+  await putGroups(groups);
+  await reloadData();
+  backupStatusEl.textContent = `Imported: ${newCount} new, ${overwriteCount} overwritten.`;
+});
+
+async function init() {
+  await reloadData();
   document.dispatchEvent(new CustomEvent("kotoba:data-ready", { detail: { words: allWords, groups: allGroups } }));
 }
 

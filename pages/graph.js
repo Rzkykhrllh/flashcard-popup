@@ -52,7 +52,7 @@ function startGraph() {
   if (!dataReady) return; // will self-start once kotoba:data-ready fires while this tab is active
   if (graphStarted) { if (focusK) layout(); return; } // re-layout: pane was hidden (0-size) before
   if (!KANJI_SET.size) {
-    detail.innerHTML = '<p class="meaning">Belum ada kanji buat digambar. Sync deck atau tambah kata dulu.</p>';
+    detail.innerHTML = '<p class="meaning">No kanji to draw yet. Sync a deck or add some words first.</p>';
     return;
   }
   graphStarted = true;
@@ -180,7 +180,7 @@ function drawCrumbs() {
 }
 
 const detail = document.getElementById("detail");
-const STATUS_LABEL_ID = { new: "baru", learning: "lagi dipelajari", mastered: "sudah master" };
+const STATUS_LABEL = { new: "New", learning: "Learning", mastered: "Mastered" };
 
 function showKanji(k) {
   const inW = wordsWith[k] || [];
@@ -189,28 +189,28 @@ function showKanji(k) {
     return `<div class="wrow ${wd.status}" data-w="${escapeHtml(wd.w)}"><span class="w">${html}</span>
       <span class="r">${escapeHtml(wd.r || "")}</span><span class="m">${escapeHtml(wd.m || "")}</span></div>`;
   }).join("");
-  const gloss = KANJI_GLOSS[k] || "belum ada arti kanji tunggal";
+  const gloss = KANJI_GLOSS[k] || "no single-kanji meaning yet";
   detail.innerHTML = `<div class="card">
       <div class="lab">kanji</div>
       <div class="big k">${k}</div>
       <div class="meaning">${escapeHtml(gloss)}</div>
-      <div class="stat">dipakai di ${inW.length} kata</div>
+      <div class="stat">used in ${inW.length} word${inW.length === 1 ? "" : "s"}</div>
     </div>
-    <div class="sub">kata yang memuat ${k}</div>
-    <div class="wlist">${rows || '<p class="meaning">Belum ada kata lain yang pakai kanji ini.</p>'}</div>`;
+    <div class="sub">words containing ${k}</div>
+    <div class="wlist">${rows || '<p class="meaning">No other words use this kanji yet.</p>'}</div>`;
   detail.querySelectorAll(".wrow").forEach((r) => r.onclick = () => { wsel = "w:" + r.dataset.w; showWord(WORDS.find((x) => x.w === r.dataset.w)); syncClasses(); });
 }
 function showWord(wd) {
   const parts = [...wd.w].map((c) => (KANJI_SET.has(c)
-    ? `<div class="part link" data-k="${c}"><span class="pk">${c}</span><span class="pm">${escapeHtml(KANJI_GLOSS[c] || "")}</span><span class="go">jadikan pusat ›</span></div>`
+    ? `<div class="part link" data-k="${c}"><span class="pk">${c}</span><span class="pm">${escapeHtml(KANJI_GLOSS[c] || "")}</span><span class="go">center here ›</span></div>`
     : `<div class="part dead"><span class="pk">${c}</span><span class="pm">kana</span></div>`)).join("");
   detail.innerHTML = `<div class="card">
-      <div class="lab">kata</div>
+      <div class="lab">word</div>
       <div class="big">${escapeHtml(wd.w)} <span class="read">${escapeHtml(wd.r || "")}</span></div>
       <div class="meaning">${escapeHtml(wd.m || "")}</div>
-      <span class="badge ${wd.status}">${STATUS_LABEL_ID[wd.status] || wd.status}</span>
+      <span class="badge ${wd.status}">${STATUS_LABEL[wd.status] || wd.status}</span>
     </div>
-    <div class="sub">kanji penyusun</div><div class="parts">${parts}</div>`;
+    <div class="sub">kanji parts</div><div class="parts">${parts}</div>`;
   detail.querySelectorAll(".part.link").forEach((p) => p.onclick = () => setFocus(p.dataset.k));
 }
 
@@ -232,7 +232,7 @@ sb.addEventListener("input", () => {
 });
 sb.addEventListener("blur", () => setTimeout(() => sug.classList.remove("show"), 150));
 
-// ---------- minimap: layout dibekuin sekali (kanji<->kanji), gak ada sim hidup ----------
+// ---------- minimap: layout frozen once (kanji<->kanji), no live simulation ----------
 const MW = 176, MH = 146, MPAD = 15;
 let mapPos = {}, mapLine = []; const mapDot = {};
 function neighborsOf(k) { const s = new Set(); WORDS.forEach((wd) => { const cs = kanjisIn(wd); if (cs.includes(k)) cs.forEach((c) => { if (c !== k) s.add(c); }); }); return s; }
@@ -298,3 +298,17 @@ document.getElementById("mtog").onclick = () => {
 };
 
 window.addEventListener("resize", () => { if (focusK) layout(); });
+
+// ---------- fullscreen ----------
+const graphWrap = document.querySelector("#tab-graph .wrap");
+const fsToggle = document.getElementById("fsToggle");
+fsToggle.addEventListener("click", () => {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else graphWrap.requestFullscreen();
+});
+document.addEventListener("fullscreenchange", () => {
+  const isFs = document.fullscreenElement === graphWrap;
+  fsToggle.textContent = isFs ? "⤢" : "⛶";
+  fsToggle.title = isFs ? "Exit fullscreen" : "Fullscreen";
+  if (focusK) layout(); // svg size changed — recompute node positions
+});

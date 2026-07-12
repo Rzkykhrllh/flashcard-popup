@@ -51,6 +51,17 @@ body {
 .btn.ghost { color: var(--muted); }
 .btn:disabled { opacity: 0.55; cursor: default; }
 
+.btn-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.btn-row .btn { margin-bottom: 0; }
+
+.menu-toggle { display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--muted); }
+.menu-toggle .chev { font-size: 9px; transition: transform .15s ease; }
+.menu-toggle.open .chev { transform: rotate(180deg); }
+
+.submenu { max-height: 0; overflow: hidden; transition: max-height .18s ease; }
+.submenu.open { max-height: 220px; }
+.submenu .btn-row { margin-top: 8px; }
+
 .state { font-size: 11px; color: var(--muted); text-align: center; margin-top: 6px; min-height: 14px; }
 
 .credit { font-size: 10px; color: var(--muted); text-align: center; margin-top: 10px; }

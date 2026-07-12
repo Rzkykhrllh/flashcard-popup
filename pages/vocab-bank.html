@@ -14,7 +14,7 @@
         <span class="seal"></span>
         <div>
           <h1>Kotoba Bank</h1>
-          <p class="tag">Semua kata yang pernah ditemukan — baru lihat, lagi dipelajari, sudah master.</p>
+          <p class="tag">Every word you've ever come across — new, learning, or mastered.</p>
         </div>
       </header>
 
@@ -25,6 +25,19 @@
 
       <div id="tab-list" class="tab-pane active">
         <section class="panel">
+          <div class="row-between">
+            <h2>Backup</h2>
+            <span class="hint" id="backupStatus"></span>
+          </div>
+          <div class="btn-row-bank">
+            <button class="btn" id="exportBtn">Export JSON</button>
+            <button class="btn" id="importBtn">Import JSON</button>
+            <input type="file" id="importFile" accept="application/json" style="display:none" />
+          </div>
+          <p class="hint">All words & groups live only in this browser (IndexedDB) — nothing syncs across devices. Export regularly as a safety net in case the extension gets uninstalled or browser data gets cleared.</p>
+        </section>
+
+        <section class="panel">
           <div class="bank-toolbar">
             <div class="status-tabs" id="statusTabs">
               <button class="status-tab active" data-status="">All <span class="count" id="count-all">0</span></button>
@@ -32,6 +45,9 @@
               <button class="status-tab" data-status="learning">Learning <span class="count" id="count-learning">0</span></button>
               <button class="status-tab" data-status="mastered">Mastered <span class="count" id="count-mastered">0</span></button>
             </div>
+          </div>
+          <div class="bank-toolbar bank-toolbar-2">
+            <input id="searchInput" type="text" class="search-input" placeholder="Search kanji, reading, or meaning…" autocomplete="off" />
             <select id="groupSelect" class="tab-select"></select>
           </div>
         </section>
@@ -46,14 +62,16 @@
               <tr>
                 <th>Kanji</th>
                 <th>Reading</th>
-                <th>Arti</th>
+                <th>Meaning</th>
                 <th>Status</th>
                 <th>Groups</th>
               </tr>
             </thead>
-            <tbody id="wordRows"></tbody>
+            <tbody id="wordRows">
+              <tr><td colspan="5" class="cell-muted">Loading words…</td></tr>
+            </tbody>
           </table>
-          <p class="empty" id="emptyState" style="display:none">Belum ada kata di sini.</p>
+          <p class="empty" id="emptyState" style="display:none">No words here yet.</p>
         </section>
       </div><!-- #tab-list -->
 
@@ -63,21 +81,22 @@
             <svg id="svg"><defs></defs></svg>
             <div class="topbar">
               <div class="searchbox">
-                <input id="search" class="search" placeholder="loncat ke kanji / kata…" autocomplete="off">
+                <input id="search" class="search" placeholder="jump to a kanji / word…" autocomplete="off">
                 <div id="sug" class="sug"></div>
               </div>
               <div id="crumbs" class="crumbs"></div>
+              <button id="fsToggle" class="fs-btn" title="Fullscreen">⛶</button>
             </div>
-            <div class="ghint">Pencet <b>ubin kanji di lingkaran luar</b> buat pindah ke sana. Pencet kata buat lihat artinya.</div>
+            <div class="ghint">Click a <b>kanji tile in the outer ring</b> to jump there. Click a word to see its meaning.</div>
             <div class="minimap" id="minimap">
-              <div class="mhead"><span>peta · seluruh kanji</span><span class="mtog" id="mtog">▾</span></div>
+              <div class="mhead"><span>map · all kanji</span><span class="mtog" id="mtog">▾</span></div>
               <svg id="mapsvg" width="176" height="146"></svg>
             </div>
           </div>
           <aside class="gpanel">
             <div>
               <div class="brand">連<span>関</span></div>
-              <div class="gtag">kanji graph · dari Kotoba Bank kamu</div>
+              <div class="gtag">kanji graph · from your Kotoba Bank</div>
             </div>
             <div id="detail"></div>
           </aside>

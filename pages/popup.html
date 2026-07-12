@@ -18,10 +18,16 @@
     <p class="sync" id="syncStatus">Never synced.</p>
 
     <button class="btn primary" id="quizBtn">Show card now</button>
-    <button class="btn" id="studyBtn">Study cards</button>
-    <button class="btn" id="bankBtn">Kotoba Bank</button>
-    <button class="btn" id="syncBtn">Sync from Google Sheet</button>
-    <button class="btn ghost" id="optionsBtn">Settings & decks</button>
+
+    <button class="btn menu-toggle" id="menuToggle">Menu <span class="chev">▾</span></button>
+    <div class="submenu" id="submenu">
+      <div class="btn-row">
+        <button class="btn" id="studyBtn">Study</button>
+        <button class="btn" id="bankBtn">Kotoba Bank</button>
+      </div>
+      <button class="btn" id="syncBtn">Sync from Google Sheet</button>
+      <button class="btn ghost" id="optionsBtn">Settings & decks</button>
+    </div>
 
     <p class="state" id="enabledState"></p>
 
