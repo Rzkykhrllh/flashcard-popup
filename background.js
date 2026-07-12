@@ -2,17 +2,26 @@
  * background.js — the brain of the extension (Manifest V3 service worker).
  *
  * Responsibilities:
- *   1. Sync: fetch each deck's Google Sheet tab as CSV, parse, MERGE into storage
- *      (update text, keep per-card progress, add new cards, never delete).
+ *   1. Sync: fetch each deck's Google Sheet tab as CSV, parse, MERGE into the
+ *      IndexedDB `words` store (update text, keep per-card progress, add new
+ *      cards, never delete — see core/db.js).
  *   2. Schedule: a single chrome.alarms tick that fires a flashcard on the active tab.
  *   3. Record grades (known/forgot) via SM-2 state in srs.js to weight future picks.
  *
- * Card SRS fields (per card in storage):
+ * Card SRS fields (per word in IndexedDB):
  *   n          — consecutive successful reviews (resets to 0 on forgot)
  *   easeFactor — SM-2 EF, starts at 2.5, minimum 1.3
  *
+ * Storage split: `settings`, `decks` (sync config — url/spreadsheetId/enabled/
+ * lastSynced), and `selection` still live in chrome.storage.local. Actual word
+ * data lives in IndexedDB `words`, keyed by `kanji|hiragana` and linked back to
+ * decks via `groupIds` (a word can belong to more than one deck). getState()
+ * reshapes IndexedDB into the same { [deckId]: { [cardKey]: card } } view the
+ * rest of the extension (popup.js, options.js, srs.js) already expects, so
+ * only this file needed to change.
+ *
  * Note: the service worker can be shut down by Chrome at any time, so we never
- * keep important state in memory — everything lives in chrome.storage.local.
+ * keep important state in memory beyond a single message handler's lifetime.
  */
 
 importScripts("lib/papaparse.min.js"); // exposes global `Papa`
@@ -41,17 +50,44 @@ let currentCard = null;
 
 /* ----------------------------- storage helpers ---------------------------- */
 
+// Word (IndexedDB) -> legacy per-deck card shape that srs.js/popup.js/options.js expect.
+function wordToCard(w) {
+  return {
+    kanji: w.kanji,
+    hiragana: w.hiragana,
+    arti: w.arti,
+    notes: w.notes,
+    seen: w.seen || 0,
+    known: w.known || 0,
+    hint: w.hint || 0,
+    forgot: w.forgot || 0,
+    lastSeen: w.lastSeen || 0,
+    createdAt: w.createdAt || 0,
+    n: w.n || 0,
+    easeFactor: w.easeFactor || 2.5,
+  };
+}
+
 async function getState() {
-  const { settings, decks, cards, selection } = await chrome.storage.local.get([
+  const { settings, decks, selection } = await chrome.storage.local.get([
     "settings",
     "decks",
-    "cards",
     "selection",
   ]);
+  const deckList = decks || [];
+
+  const cards = {}; // { [deckId]: { [cardKey]: card } } — derived from IndexedDB `words`
+  for (const deck of deckList) cards[deck.id] = {};
+  for (const w of await getAllWords()) {
+    for (const groupId of w.groupIds || []) {
+      if (cards[groupId]) cards[groupId][w.id] = wordToCard(w);
+    }
+  }
+
   return {
     settings: { ...DEFAULT_SETTINGS, ...(settings || {}) },
-    decks: decks || [],
-    cards: cards || {}, // { [deckId]: { [cardKey]: card } }
+    decks: deckList,
+    cards,
     selection: selection || {}, // { [deckId]: { [cardKey]: true } }
   };
 }
@@ -153,7 +189,10 @@ async function fetchSheetTabs(spreadsheetId) {
   return names.length ? names.map(name => ({ name })) : null;
 }
 
-// MERGE: update text on existing cards (keep progress), add new ones, keep the rest.
+// MERGE: update text on existing words (keep progress), add new ones, keep the
+// rest. A word already tracked by another deck just gets this deck added to
+// its groupIds — words are shared by kanji|hiragana identity, not duplicated
+// per deck (next_feature.md §1/§7.1).
 async function syncDeck(deck) {
   const url = buildCsvUrl(deck.spreadsheetId, deck.gid, deck.sheetName);
   const res = await fetch(url, { redirect: "follow" });
@@ -167,43 +206,56 @@ async function syncDeck(deck) {
   }
 
   const rows = rowsToCards(text);
-  const state = await getState();
-  const existing = state.cards[deck.id] || {};
   const now = Date.now();
   let added = 0;
   let updated = 0;
 
   for (const r of rows) {
     const key = cardKey(r.kanji, r.hiragana);
-    if (existing[key]) {
+    const existing = await getWord(key);
+    if (existing) {
       // keep progress, refresh the text fields
-      existing[key].kanji = r.kanji;
-      existing[key].hiragana = r.hiragana;
-      existing[key].arti = r.arti;
-      existing[key].notes = r.notes;
+      existing.kanji = r.kanji;
+      existing.hiragana = r.hiragana;
+      existing.arti = r.arti;
+      existing.notes = r.notes;
+      existing.kanjiList = extractKanjiList(r.kanji);
+      existing.groupIds = [...new Set([...(existing.groupIds || []), deck.id])];
+      await putWord(existing);
       updated++;
     } else {
-      existing[key] = {
+      await putWord({
+        id: key,
         kanji: r.kanji,
         hiragana: r.hiragana,
         arti: r.arti,
         notes: r.notes,
+        kanjiList: extractKanjiList(r.kanji),
         seen: 0,
         known: 0,
+        hint: 0,
         forgot: 0,
         lastSeen: 0,
         createdAt: now,
-      };
+        n: 0,
+        easeFactor: 2.5,
+        status: "new",
+        statusOverride: false,
+        source: "sheet",
+        groupIds: [deck.id],
+      });
       added++;
     }
   }
 
-  state.cards[deck.id] = existing;
-  const cardCount = Object.keys(existing).length;
-  const decks = state.decks.map((d) =>
+  const cardCount = (await getWordsByGroup(deck.id)).length;
+  await putGroup({ id: deck.id, name: deck.name, type: "synced", sourceSheetUrl: deck.url || null });
+
+  const { decks: decksNow } = await chrome.storage.local.get("decks");
+  const decks = (decksNow || []).map((d) =>
     d.id === deck.id ? { ...d, lastSynced: now, cardCount } : d
   );
-  await chrome.storage.local.set({ cards: state.cards, decks });
+  await chrome.storage.local.set({ decks });
   return { added, updated, cardCount };
 }
 
@@ -294,9 +346,8 @@ async function closeCardOnAllTabs() {
 
 /* ------------------------------ grade + snooze ---------------------------- */
 
-async function recordGrade(deckId, key, result) {
-  const state = await getState();
-  const card = state.cards[deckId] && state.cards[deckId][key];
+async function recordGrade(key, result) {
+  const card = await getWord(key);
   if (!card) return;
   card.seen = (card.seen || 0) + 1;
   card.lastSeen = Date.now();
@@ -304,7 +355,8 @@ async function recordGrade(deckId, key, result) {
   else if (result === "hint")   card.hint  = (card.hint  || 0) + 1;
   else if (result === "forgot") card.forgot = (card.forgot || 0) + 1;
   Object.assign(card, applySM2(card, result));
-  await chrome.storage.local.set({ cards: state.cards });
+  if (!card.statusOverride) card.status = deriveStatus(card);
+  await putWord(card);
 }
 
 /* ------------------------------- scheduling ------------------------------- */
@@ -332,9 +384,11 @@ chrome.runtime.onInstalled.addListener(async () => {
   await rescheduleAlarm();
   try {
     await runMigration();
+    // One more catch-up before words/groups become the live source of truth,
+    // in case review progress kept landing in storage.local between the
+    // initial migration and this update — see runLiveCutover in migrate.js.
+    await runLiveCutover();
   } catch (e) {
-    // Non-fatal: the live storage.local sync/review path above is unaffected —
-    // IndexedDB is populated separately and can be retried on next install/update.
     console.error("[migrate] failed", e);
   }
 });
@@ -392,10 +446,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         break;
       }
       case "removeDeck": {
+        // Unlink, don't delete: a word can belong to more than one deck, and
+        // the whole point of the word bank is that vocab outlives any one
+        // deck. Only the deck's own group record goes away.
         const state = await getState();
         const decks = state.decks.filter((d) => d.id !== msg.deckId);
-        delete state.cards[msg.deckId];
-        await chrome.storage.local.set({ decks, cards: state.cards });
+        for (const w of await getWordsByGroup(msg.deckId)) {
+          w.groupIds = (w.groupIds || []).filter((g) => g !== msg.deckId);
+          await putWord(w);
+        }
+        await deleteGroup(msg.deckId);
+        await chrome.storage.local.set({ decks });
         sendResponse({ ok: true });
         break;
       }
@@ -419,7 +480,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         break;
       }
       case "grade": {
-        await recordGrade(msg.deckId, msg.key, msg.result);
+        await recordGrade(msg.key, msg.result);
         currentCard = null;
         closeCardOnAllTabs();
         sendResponse({ ok: true });
