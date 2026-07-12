@@ -100,191 +100,7 @@ async function render() {
     li.querySelector(".rm").addEventListener("click", async () => {
       if (!confirm(`Delete deck "${deck.name}"? Card progress will be lost.`)) return;
       await send({ type: "removeDeck", deckId: deck.id });
-/* -------------------------------- study tab ------------------------------- */
-
-let studyState = { deckId: null, cards: [], index: 0, revealed: false };
-
-function shuffle(a) {
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-async function renderStudy() {
-  const container = el("studyContent");
-  const state     = await send({ type: "getState" });
-
-  if (!state.decks.length) {
-    container.innerHTML = '<p class="empty" style="margin-top:12px">No decks yet. Add one in Settings.</p>';
-    return;
-  }
-
-  studyState.revealed = false;
-
-  // Deck selector
-  let html = '<div class="study-toolbar"><label>Deck</label><select id="studyDeckSelect">';
-  for (const deck of state.decks) {
-    const sel = studyState.deckId === deck.id ? " selected" : "";
-    html += `<option value="${deck.id}"${sel}>${deck.name}</option>`;
-  }
-  html += '</select></div>';
-
-  const selectedId = studyState.deckId || state.decks[0].id;
-  studyState.deckId = selectedId;
-  const cards = state.cards[selectedId] || {};
-  const entries = Object.entries(cards);
-
-  if (!entries.length) {
-    container.innerHTML = html + '<p class="empty" style="margin-top:12px">This deck is empty.</p>';
-    return;
-  }
-
-  if (studyState.cards.length === 0 || studyState.deckId !== selectedId) {
-    studyState.cards = entries.map(([key, c]) => ({ key, ...c }));
-    studyState.index = 0;
-  }
-
-  const current = studyState.cards[studyState.index];
-  const total = studyState.cards.length;
-
-  html += `
-    <div class="study-card" id="studyCard">
-      <div class="front">
-        <div class="front-kanji">${current.kanji}</div>
-        ${current.hiragana ? '<div class="front-hint">click to reveal</div>' : ''}
-      </div>
-      <div class="back ${studyState.revealed ? 'show' : ''}">
-        <div class="back-reading">${current.hiragana || ''}</div>
-        <div class="back-arti">${current.arti || ''}</div>
-        ${current.notes ? `<div class="back-notes">${current.notes}</div>` : ''}
-      </div>
-    </div>
-    <div class="study-actions" id="studyActions">
-      <button class="btn" id="studyForgot" ${studyState.revealed ? '' : 'disabled'}>Forgot</button>
-      <button class="btn" id="studyHint" ${studyState.revealed ? '' : 'disabled'}>Hint</button>
-      <button class="btn primary" id="studyKnow" ${studyState.revealed ? '' : 'disabled'}>Know</button>
-    </div>
-    <div class="study-nav">
-      <button class="btn" id="studyPrev" ${studyState.index > 0 ? '' : 'disabled'}>&larr; Prev</button>
-      <span class="study-progress">${studyState.index + 1} / ${total}</span>
-      <button class="btn" id="studyNext">Next &rarr;</button>
-      <button class="btn" id="studyShuffle">Shuffle</button>
-    </div>
-    <div class="study-browse" id="studyBrowse"></div>
-  `;
-
-  container.innerHTML = html;
-
-  // Render browse table
-  renderStudyBrowse(container, entries);
-
-  // Card click → reveal
-  document.getElementById("studyCard").addEventListener("click", () => {
-    if (!studyState.revealed) {
-      studyState.revealed = true;
-      renderStudy();
-    }
-  });
-
-  document.getElementById("studyKnow").addEventListener("click", async () => {
-    await send({ type: "grade", deckId: studyState.deckId, key: current.key, result: "known" });
-    studyState.revealed = false;
-    if (studyState.index < studyState.cards.length - 1) studyState.index++;
-    renderStudy();
-  });
-
-  document.getElementById("studyHint").addEventListener("click", async () => {
-    await send({ type: "grade", deckId: studyState.deckId, key: current.key, result: "hint" });
-    studyState.revealed = false;
-    if (studyState.index < studyState.cards.length - 1) studyState.index++;
-    renderStudy();
-  });
-
-  document.getElementById("studyForgot").addEventListener("click", async () => {
-    await send({ type: "grade", deckId: studyState.deckId, key: current.key, result: "forgot" });
-    studyState.revealed = false;
-    if (studyState.index < studyState.cards.length - 1) studyState.index++;
-    renderStudy();
-  });
-
-  document.getElementById("studyPrev").addEventListener("click", () => {
-    if (studyState.index > 0) {
-      studyState.revealed = false;
-      studyState.index--;
-      renderStudy();
-    }
-  });
-
-  document.getElementById("studyNext").addEventListener("click", () => {
-    studyState.revealed = false;
-    if (studyState.index < studyState.cards.length - 1) studyState.index++;
-    renderStudy();
-  });
-
-  document.getElementById("studyShuffle").addEventListener("click", () => {
-    shuffle(studyState.cards);
-    studyState.index = 0;
-    studyState.revealed = false;
-    renderStudy();
-  });
-
-  document.getElementById("studyDeckSelect").addEventListener("change", (e) => {
-    studyState.deckId = e.target.value;
-    studyState.cards = [];
-    studyState.index = 0;
-    studyState.revealed = false;
-    renderStudy();
-  });
-
-  // Keyboard shortcuts
-  document.addEventListener("keydown", studyKeyHandler);
-}
-
-function studyKeyHandler(e) {
-  if (!document.getElementById("studyContent") || !document.getElementById("studyContent").offsetParent) return;
-  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
-  switch (e.key) {
-    case " ":
-      e.preventDefault();
-      if (!studyState.revealed) {
-        studyState.revealed = true;
-        renderStudy();
-      }
-      break;
-    case "ArrowRight":
-    case "ArrowDown":
-      document.getElementById("studyNext")?.click();
-      break;
-    case "ArrowLeft":
-    case "ArrowUp":
-      document.getElementById("studyPrev")?.click();
-      break;
-    case "1":
-      document.getElementById("studyForgot")?.click();
-      break;
-    case "2":
-      document.getElementById("studyHint")?.click();
-      break;
-    case "3":
-      document.getElementById("studyKnow")?.click();
-      break;
-  }
-}
-
-function renderStudyBrowse(container, entries) {
-  const wrap = container.querySelector(".study-browse");
-  if (!wrap) return;
-  let html = '<table class="stats-table"><thead><tr><th>Kanji</th><th>Reading</th><th>Arti</th><th>Notes</th></tr></thead><tbody>';
-  for (const [, c] of entries) {
-    html += `<tr><td class="kanji-cell">${c.kanji}</td><td class="reading-cell">${c.hiragana || "—"}</td><td>${c.arti || "—"}</td><td class="cell-muted">${c.notes || ""}</td></tr>`;
-  }
-  html += '</tbody></table>';
-  wrap.innerHTML = html;
-}
-
-render();
+      render();
     });
     deckList.appendChild(li);
   }
@@ -431,15 +247,20 @@ posButtons.forEach((btn) => {
 const tabBtns  = document.querySelectorAll(".tab-btn");
 const tabPanes = document.querySelectorAll(".tab-pane");
 
+function switchTab(tab) {
+  tabBtns.forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
+  tabPanes.forEach((p) => p.classList.toggle("active", p.id === `tab-${tab}`));
+  if (tab === "stats") renderStats();
+  if (tab === "study") renderStudy();
+}
+
 tabBtns.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const tab = btn.dataset.tab;
-    tabBtns.forEach((b) => b.classList.toggle("active", b === btn));
-    tabPanes.forEach((p) => p.classList.toggle("active", p.id === `tab-${tab}`));
-    if (tab === "stats") renderStats();
-    if (tab === "study") renderStudy();
-  });
+  btn.addEventListener("click", () => switchTab(btn.dataset.tab));
 });
+
+// Open to a specific tab via URL hash (e.g. options.html#study)
+const hashTab = window.location.hash.replace("#", "");
+if (hashTab) switchTab(hashTab);
 
 /* ---------------------------------- stats --------------------------------- */
 
@@ -487,7 +308,7 @@ async function renderStats() {
     table.className = "stats-table";
     table.innerHTML = `
       <thead><tr>
-        <th>Kanji</th><th>Reading</th><th>Arti</th><th>Shown</th><th>Last seen</th><th>Know</th><th>Hint</th><th>Forgot</th><th>Ratio</th>
+        <th>Kanji</th><th>Reading</th><th>Meaning</th><th>Shown</th><th>Last seen</th><th>Know</th><th>Hint</th><th>Forgot</th><th>Ratio</th>
       </tr></thead>
       <tbody></tbody>
     `;
@@ -530,7 +351,7 @@ async function renderStats() {
 
 /* -------------------------------- study tab ------------------------------- */
 
-let studyState = { deckId: null, cards: [], index: 0, revealed: false };
+let studyState = { deckId: null, cards: [], index: 0, revealed: false, browseOpen: true, done: false, _selectionChanged: false };
 
 function shuffle(a) {
   for (let i = a.length - 1; i > 0; i--) {
@@ -549,9 +370,7 @@ async function renderStudy() {
     return;
   }
 
-  studyState.revealed = false;
-
-  let html = '<div class="study-toolbar"><label>Deck</label><select id="studyDeckSelect">';
+  let html = '<div class="study-toolbar"><label>Deck</label><select id="studyDeckSelect" class="tab-select">';
   for (const deck of state.decks) {
     const sel = studyState.deckId === deck.id ? " selected" : "";
     html += `<option value="${deck.id}"${sel}>${deck.name}</option>`;
@@ -562,15 +381,51 @@ async function renderStudy() {
   studyState.deckId = selectedId;
   const cards = state.cards[selectedId] || {};
   const entries = Object.entries(cards);
+  const selection = state.selection[selectedId] || {};
 
   if (!entries.length) {
     container.innerHTML = html + '<p class="empty" style="margin-top:12px">This deck is empty.</p>';
     return;
   }
 
-  if (studyState.cards.length === 0 || studyState.deckId !== selectedId) {
-    studyState.cards = entries.map(([key, c]) => ({ key, ...c }));
-    studyState.index = 0;
+  if (!studyState.cards.length || studyState._selectionChanged) {
+    studyState._selectionChanged = false;
+    const filtered = entries.filter(([key]) => !Object.keys(selection).length || selection[key]);
+    const prevKey = studyState.cards[studyState.index]?.key;
+    studyState.cards = filtered.map(([key, c]) => ({ key, ...c }));
+    const newIdx = prevKey ? studyState.cards.findIndex((c) => c.key === prevKey) : -1;
+    studyState.index = newIdx >= 0 ? newIdx : 0;
+  }
+
+  studyState._selection = selection;
+  const selectedCount = Object.keys(selection).length;
+
+  // Session complete screen
+  if (studyState.done) {
+    html += `
+      <div style="text-align:center;padding:60px 20px">
+        <div style="font-size:48px;margin-bottom:16px">&#10003;</div>
+        <div style="font-size:20px;font-weight:600;margin-bottom:8px">Session complete</div>
+        <div style="font-size:14px;color:var(--muted);margin-bottom:24px">All cards reviewed.</div>
+        <button class="btn primary" id="restudyBtn" style="min-width:160px">Study again</button>
+      </div>`;
+    container.innerHTML = html;
+    renderStudyBrowse(container, entries);
+    document.getElementById("restudyBtn").addEventListener("click", () => {
+      studyState.done = false;
+      shuffle(studyState.cards);
+      studyState.index = 0;
+      studyState.revealed = false;
+      renderStudy();
+    });
+    return;
+  }
+
+  if (!studyState.cards.length) {
+    html += '<p class="empty" style="margin-top:12px">No cards selected. Check some cards in the vocabulary list below.</p>';
+    container.innerHTML = html;
+    renderStudyBrowse(container, entries);
+    return;
   }
 
   const current = studyState.cards[studyState.index];
@@ -599,12 +454,23 @@ async function renderStudy() {
       <button class="btn" id="studyNext">Next &rarr;</button>
       <button class="btn" id="studyShuffle">Shuffle</button>
     </div>
-    <div class="study-browse" id="studyBrowse"></div>
+    <details class="study-browse" id="studyBrowse" ${studyState.browseOpen ? 'open' : ''}>
+      <summary class="browse-summary">Vocabulary list${selectedCount ? ` (${selectedCount} selected)` : ''}</summary>
+      <div style="margin:8px 0;display:flex;gap:8px">
+        <button class="btn" id="selectAllBtn">Select all</button>
+        <button class="btn" id="clearSelBtn">Clear</button>
+      </div>
+      <div id="browseTable"></div>
+    </details>
   `;
 
   container.innerHTML = html;
 
   renderStudyBrowse(container, entries);
+
+  document.getElementById("studyBrowse").addEventListener("toggle", (e) => {
+    studyState.browseOpen = e.target.open;
+  });
 
   document.getElementById("studyCard").addEventListener("click", () => {
     if (!studyState.revealed) {
@@ -630,6 +496,7 @@ async function renderStudy() {
 
   document.getElementById("studyPrev").addEventListener("click", () => {
     if (studyState.index > 0) {
+      studyState.done = false;
       studyState.revealed = false;
       studyState.index--;
       renderStudy();
@@ -641,13 +508,36 @@ async function renderStudy() {
   });
 
   document.getElementById("studyShuffle").addEventListener("click", () => {
-    shuffle(studyState.cards);
-    studyState.index = 0;
-    studyState.revealed = false;
+    studyState.done = false;
+    const remaining = studyState.cards.slice(studyState.index);
+    shuffle(remaining);
+    studyState.cards = [...studyState.cards.slice(0, studyState.index), ...remaining];
     renderStudy();
   });
 
+  const selectAllBtn = document.getElementById("selectAllBtn");
+  const clearSelBtn = document.getElementById("clearSelBtn");
+  if (selectAllBtn) {
+    selectAllBtn.addEventListener("click", async () => {
+      for (const [key] of entries) {
+        await send({ type: "setCardSelection", deckId: selectedId, key, selected: true });
+      }
+      studyState._selectionChanged = true;
+      renderStudy();
+    });
+  }
+  if (clearSelBtn) {
+    clearSelBtn.addEventListener("click", async () => {
+      for (const [key] of entries) {
+        await send({ type: "setCardSelection", deckId: selectedId, key, selected: false });
+      }
+      studyState._selectionChanged = true;
+      renderStudy();
+    });
+  }
+
   document.getElementById("studyDeckSelect").addEventListener("change", (e) => {
+    studyState.done = false;
     studyState.deckId = e.target.value;
     studyState.cards = [];
     studyState.index = 0;
@@ -664,6 +554,7 @@ function advanceStudy() {
     studyState.index++;
     renderStudy();
   } else {
+    studyState.done = true;
     renderStudy();
   }
 }
@@ -700,14 +591,26 @@ function studyKeyHandler(e) {
 }
 
 function renderStudyBrowse(container, entries) {
-  const wrap = container.querySelector(".study-browse");
+  const wrap = document.getElementById("browseTable");
   if (!wrap) return;
-  let html = '<table class="stats-table"><thead><tr><th>Kanji</th><th>Reading</th><th>Arti</th><th>Notes</th></tr></thead><tbody>';
-  for (const [, c] of entries) {
-    html += `<tr><td class="kanji-cell">${c.kanji}</td><td class="reading-cell">${c.hiragana || "—"}</td><td>${c.arti || "—"}</td><td class="cell-muted">${c.notes || ""}</td></tr>`;
+  const sel = studyState._selection || {};
+  let html = '<table class="stats-table"><thead><tr><th></th><th>Kanji</th><th>Reading</th><th>Meaning</th><th>Notes</th></tr></thead><tbody>';
+  for (const [key, c] of entries) {
+    const checked = sel[key] ? 'checked' : '';
+    html += `<tr data-key="${key}"><td><input type="checkbox" class="card-cb" ${checked} /></td><td class="kanji-cell">${c.kanji}</td><td class="reading-cell">${c.hiragana || "—"}</td><td>${c.arti || "—"}</td><td class="cell-muted">${c.notes || ""}</td></tr>`;
   }
   html += '</tbody></table>';
   wrap.innerHTML = html;
+
+  wrap.querySelectorAll(".card-cb").forEach((cb) => {
+    cb.addEventListener("change", async () => {
+      const tr = cb.closest("tr");
+      const key = tr.dataset.key;
+      await send({ type: "setCardSelection", deckId: studyState.deckId, key, selected: cb.checked });
+      studyState._selectionChanged = true;
+      renderStudy();
+    });
+  });
 }
 
 render();

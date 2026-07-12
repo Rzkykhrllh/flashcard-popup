@@ -17,11 +17,15 @@ function computeWeight(c) {
 // lastShownKey ("deckId:cardKey") prevents an immediate back-to-back repeat.
 // Returns { deckId, key, card } or null if no cards exist.
 function pickCard(state, lastShownKey) {
+  const sel = state.selection || {};
   const pool = [];
   for (const deck of state.decks) {
     if (deck.enabled === false) continue;
     const cards = state.cards[deck.id] || {};
+    const deckSel = sel[deck.id];
     for (const [key, c] of Object.entries(cards)) {
+      // If a selection set exists for this deck, only include selected cards
+      if (deckSel && !deckSel[key]) continue;
       pool.push({ deckId: deck.id, key, card: c, weight: computeWeight(c) });
     }
   }
@@ -60,4 +64,17 @@ function applySM2(card, result) {
     ef = Math.max(1.3, ef - 0.2); // each forgot lowers ease; floor at 1.3
   }
   return { n, easeFactor: ef };
+}
+
+// Derive vocab-bank status ("new" | "learning" | "mastered") straight from the
+// existing seen/n counters — n already tracks the "Tau" streak and resets to 0
+// on forgot (see applySM2 above), so no separate reviewHistory log is needed.
+const MASTERED_STREAK = 3;
+
+function deriveStatus(card) {
+  const seen = card.seen || 0;
+  const n = card.n || 0;
+  if (seen === 0) return "new";
+  if (n >= MASTERED_STREAK) return "mastered";
+  return "learning";
 }

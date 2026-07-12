@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nihongo Popup — Kotoba Bank</title>
+    <link rel="stylesheet" href="options.css" />
+    <link rel="stylesheet" href="vocab-bank.css" />
+    <link rel="stylesheet" href="graph.css" />
+  </head>
+  <body>
+    <main>
+      <header class="hero">
+        <span class="seal"></span>
+        <div>
+          <h1>Kotoba Bank</h1>
+          <p class="tag">Semua kata yang pernah ditemukan — baru lihat, lagi dipelajari, sudah master.</p>
+        </div>
+      </header>
+
+      <nav class="tab-nav">
+        <button class="tab-btn active" data-tab="list">List</button>
+        <button class="tab-btn" data-tab="graph">Graph</button>
+      </nav>
+
+      <div id="tab-list" class="tab-pane active">
+        <section class="panel">
+          <div class="bank-toolbar">
+            <div class="status-tabs" id="statusTabs">
+              <button class="status-tab active" data-status="">All <span class="count" id="count-all">0</span></button>
+              <button class="status-tab" data-status="new">New <span class="count" id="count-new">0</span></button>
+              <button class="status-tab" data-status="learning">Learning <span class="count" id="count-learning">0</span></button>
+              <button class="status-tab" data-status="mastered">Mastered <span class="count" id="count-mastered">0</span></button>
+            </div>
+            <select id="groupSelect" class="tab-select"></select>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="row-between">
+            <h2>Words</h2>
+            <span class="hint" id="resultCount"></span>
+          </div>
+          <table class="stats-table bank-table">
+            <thead>
+              <tr>
+                <th>Kanji</th>
+                <th>Reading</th>
+                <th>Arti</th>
+                <th>Status</th>
+                <th>Groups</th>
+              </tr>
+            </thead>
+            <tbody id="wordRows"></tbody>
+          </table>
+          <p class="empty" id="emptyState" style="display:none">Belum ada kata di sini.</p>
+        </section>
+      </div><!-- #tab-list -->
+
+      <div id="tab-graph" class="tab-pane">
+        <div class="wrap">
+          <div class="stage">
+            <svg id="svg"><defs></defs></svg>
+            <div class="topbar">
+              <div class="searchbox">
+                <input id="search" class="search" placeholder="loncat ke kanji / kata…" autocomplete="off">
+                <div id="sug" class="sug"></div>
+              </div>
+              <div id="crumbs" class="crumbs"></div>
+            </div>
+            <div class="ghint">Pencet <b>ubin kanji di lingkaran luar</b> buat pindah ke sana. Pencet kata buat lihat artinya.</div>
+            <div class="minimap" id="minimap">
+              <div class="mhead"><span>peta · seluruh kanji</span><span class="mtog" id="mtog">▾</span></div>
+              <svg id="mapsvg" width="176" height="146"></svg>
+            </div>
+          </div>
+          <aside class="gpanel">
+            <div>
+              <div class="brand">連<span>関</span></div>
+              <div class="gtag">kanji graph · dari Kotoba Bank kamu</div>
+            </div>
+            <div id="detail"></div>
+          </aside>
+        </div>
+      </div><!-- #tab-graph -->
+    </main>
+    <p class="credit">made by <a href="https://dev.byairu.com" target="_blank">dev.byairu.com</a></p>
+    <script src="../core/db.js"></script>
+    <script src="vocab-bank.js"></script>
+    <script src="graph.js"></script>
+  </body>
+</html>

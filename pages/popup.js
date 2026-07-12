@@ -6,6 +6,7 @@ const syncStatusEl = document.getElementById("syncStatus");
 const enabledStateEl = document.getElementById("enabledState");
 const quizBtn = document.getElementById("quizBtn");
 const studyBtn = document.getElementById("studyBtn");
+const bankBtn = document.getElementById("bankBtn");
 const syncBtn = document.getElementById("syncBtn");
 const optionsBtn = document.getElementById("optionsBtn");
 
@@ -66,7 +67,8 @@ syncBtn.addEventListener("click", async () => {
   refresh();
 });
 
-studyBtn.addEventListener("click", () => chrome.runtime.openOptionsPage());
-optionsBtn.addEventListener("click", () => chrome.runtime.openOptionsPage());
+studyBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html#study") }));
+bankBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/vocab-bank.html") }));
+optionsBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html#settings") }));
 
 refresh();

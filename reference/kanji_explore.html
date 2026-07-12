@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>kelana kanji</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap');
+  :root{
+    --washi:#F6EFE2;            /* warm paper */
+    --washi-2:#FBF6EC;          /* panel */
+    --grid:rgba(74,60,42,.05);
+    --ink:#33303B;              /* warm indigo-charcoal text */
+    --muted:#9A8F7E;
+    --tile:#FFFFFF;
+    --tile-edge:#E7DDCB;
+    --ai:#43508C;               /* 藍 indigo — fokus */
+    --ai-soft:#5C68A0;
+    --matcha:#6E9050;           /* kata yang dipelajari */
+    --matcha-bg:#EBF1E0;
+    --matcha-edge:#C2D2A8;
+    --honey:#E0A04A;            /* hover / delight */
+    --thread:#E0D6C4;           /* garis */
+    --thread-hot:#CFC1A6;
+    --maru:"Zen Maru Gothic",system-ui,sans-serif;
+    --ui:system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:
+      radial-gradient(circle at 1px 1px, var(--grid) 1px, transparent 0) 0 0/22px 22px,
+      radial-gradient(820px 560px at 50% 36%, #FBF5EA 0%, transparent 64%),
+      linear-gradient(160deg,#F8F1E4,#F1E8D6);
+    color:var(--ink);font-family:var(--ui);-webkit-font-smoothing:antialiased;overflow:hidden;
+  }
+  .wrap{display:flex;height:100vh;width:100vw}
+
+  .stage{position:relative;flex:1 1 auto;min-width:0}
+  svg{display:block;width:100%;height:100%;touch-action:manipulation}
+  .edge{stroke:var(--thread);stroke-width:2;stroke-linecap:round;fill:none}
+  .edge.hot{stroke:var(--thread-hot)}
+
+  .node{cursor:pointer}
+  .node text{pointer-events:none;user-select:none}
+  .tile-wrap{transition:transform .16s ease, filter .2s ease;filter:drop-shadow(0 3px 4px rgba(74,55,30,.12))}
+  .node:hover .tile-wrap{transform:translateY(-3px);filter:drop-shadow(0 8px 12px rgba(74,55,30,.18))}
+  .node:active .tile-wrap{transform:scale(.94)}
+
+  .k-tile{fill:var(--tile);stroke:var(--tile-edge);stroke-width:1.5;transition:stroke .2s}
+  .node.nbk:hover .k-tile{stroke:var(--honey)}
+  .node.focus .k-tile{stroke:var(--ai);stroke-width:2.5;fill:#FFFFFF}
+  .k-char{font-family:var(--maru);font-weight:500;fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+  .node.focus .k-char{fill:var(--ai);font-weight:700}
+
+  .w-tile{transition:stroke .2s}
+  .w1 .w-tile{fill:var(--matcha-bg);stroke:var(--matcha-edge);stroke-width:1.5}
+  .w1 .w-char{fill:var(--matcha)}
+  .w2 .w-tile{fill:var(--tile);stroke:var(--tile-edge);stroke-width:1.4}
+  .w2 .w-char{fill:#7A6F60}
+  .node.wsel .w-tile{stroke:var(--ai);stroke-width:2.2}
+  .w-char{font-family:var(--maru);font-weight:500;text-anchor:middle;dominant-baseline:central}
+
+  .topbar{position:absolute;left:0;right:0;top:0;padding:16px 18px;display:flex;gap:12px;align-items:flex-start}
+  .searchbox{position:relative;flex:0 0 auto}
+  .search{background:#FFFDF8;border:1.5px solid var(--tile-edge);color:var(--ink);font-family:var(--ui);
+    font-size:13px;padding:9px 14px;border-radius:22px;width:158px;outline:none;box-shadow:0 2px 5px rgba(74,55,30,.06)}
+  .search:focus{border-color:var(--honey)}
+  .search::placeholder{color:#B6AB99}
+  .sug{position:absolute;top:44px;left:0;width:240px;background:#FFFDF8;border:1.5px solid var(--tile-edge);
+    border-radius:14px;overflow:hidden;display:none;z-index:5;box-shadow:0 14px 32px rgba(74,55,30,.16)}
+  .sug.show{display:block}
+  .sug div{padding:9px 13px;font-size:13px;cursor:pointer;display:flex;gap:9px;align-items:baseline}
+  .sug div:hover{background:var(--matcha-bg)}
+  .sug .sk{font-family:var(--maru);font-size:16px;color:var(--ink)}
+  .sug .sm{color:var(--muted);font-size:11px;margin-left:auto}
+
+  .crumbs{flex:1 1 auto;display:flex;gap:3px;align-items:center;overflow-x:auto;
+    font-family:var(--maru);font-size:19px;padding-top:6px;scrollbar-width:none}
+  .crumbs::-webkit-scrollbar{display:none}
+  .crumbs .cb{color:var(--muted);cursor:pointer;padding:1px 5px;border-radius:8px;white-space:nowrap;transition:.15s}
+  .crumbs .cb:hover{color:var(--ink);background:#FFFFFF80}
+  .crumbs .cb.now{color:var(--ai);font-weight:700}
+  .crumbs .sep{color:#CBBFA9;font-family:var(--ui);font-size:14px}
+
+  .hint{position:absolute;left:18px;bottom:16px;font-size:12px;color:var(--muted);max-width:248px;line-height:1.55}
+  .hint b{color:var(--ink);font-weight:600}
+
+  .minimap{position:absolute;right:14px;bottom:14px;background:rgba(255,253,248,.9);
+    border:1px solid var(--tile-edge);border-radius:14px;padding:7px 8px 4px;
+    box-shadow:0 6px 18px rgba(74,55,30,.12);backdrop-filter:blur(5px)}
+  .minimap .mhead{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    font-size:10px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:0 3px 4px}
+  .minimap .mtog{cursor:pointer;font-size:11px}
+  .minimap.collapsed svg{display:none}
+  .minimap svg{display:block}
+  .mm-edge{stroke:#E4DAC8;stroke-width:1}
+  .mm-edge.hot{stroke:var(--ai-soft);stroke-width:1.4}
+  .mm-dot{fill:#CBBEAA;cursor:pointer;transition:fill .15s}
+  .mm-dot:hover{fill:var(--honey)}
+  .mm-dot.nb{fill:var(--matcha)}
+  .mm-dot.foc{fill:var(--ai);stroke:#fff;stroke-width:1.5}
+
+  .panel{flex:0 0 326px;background:var(--washi-2);border-left:1px solid #EAE0CE;
+    padding:26px 24px;overflow-y:auto;display:flex;flex-direction:column;gap:18px}
+  .brand{font-family:var(--maru);font-size:30px;font-weight:700;letter-spacing:.06em;line-height:1}
+  .brand span{color:var(--ai)}
+  .tag{font-size:12px;color:var(--muted);margin-top:5px}
+
+  .card{background:#FFFDF8;border:1px solid #EFE6D4;border-radius:16px;padding:18px 18px 20px;
+    box-shadow:0 4px 14px rgba(74,55,30,.05)}
+  .big{font-family:var(--maru);font-weight:700;font-size:48px;line-height:1;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .big.k{color:var(--ai)}
+  .big .read{font-family:var(--ui);font-size:13px;color:var(--honey);font-weight:600}
+  .meaning{color:var(--muted);font-size:13px;margin-top:8px}
+  .lab{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .stat{display:inline-block;font-size:12px;font-weight:600;color:#9A6A1F;background:#FBF1DF;border:1px solid #EAD6A8;padding:4px 11px;border-radius:20px;margin-top:13px}
+  .badge{display:inline-block;font-size:11px;font-weight:600;padding:4px 11px;border-radius:20px;margin-top:13px}
+  .badge.b1{color:var(--matcha);background:var(--matcha-bg);border:1px solid var(--matcha-edge)}
+  .badge.b2{color:#8A7C66;background:#F3EBDA;border:1px solid var(--tile-edge)}
+  .sub{font-size:11px;letter-spacing:.04em;color:var(--muted);margin:16px 0 8px;text-transform:uppercase}
+  .wlist{display:flex;flex-direction:column;gap:6px}
+  .wrow{display:flex;align-items:baseline;gap:9px;cursor:pointer;padding:8px 11px;border-radius:11px;
+    border:1px solid transparent;transition:.14s}
+  .wrow.t1{background:var(--matcha-bg)}
+  .wrow.t2{background:#F7F1E6}
+  .wrow:hover{transform:translateX(2px);border-color:var(--honey)}
+  .wrow .w{font-family:var(--maru);font-weight:500;font-size:16px;color:var(--ink)}
+  .wrow .w em{font-style:normal;color:var(--ai);font-weight:700}
+  .wrow .r{font-size:12px;color:var(--muted)}
+  .wrow .m{font-size:11px;color:#A99D8B;margin-left:auto;text-align:right}
+  .parts{display:flex;flex-direction:column;gap:7px}
+  .part{display:flex;align-items:center;gap:12px;background:#F7F1E6;border:1px solid transparent;
+    border-radius:11px;padding:9px 12px;transition:.14s}
+  .part.link{cursor:pointer}.part.link:hover{border-color:var(--ai);background:#FFFFFF}
+  .part .pk{font-family:var(--maru);font-weight:700;font-size:24px;color:var(--ink)}
+  .part .pm{font-size:11px;color:var(--muted)}
+  .part .go{margin-left:auto;color:var(--ai);font-size:12px;font-weight:600;opacity:0;transition:.14s}
+  .part.link:hover .go{opacity:1}
+  .part.dead{opacity:.6}.part.dead .pk{color:var(--muted)}
+
+  @media (prefers-reduced-motion:reduce){.tile-wrap{transition:none}.wrow,.part{transition:none}}
+  @media (max-width:760px){
+    .wrap{flex-direction:column}
+    .panel{flex:0 0 auto;border-left:none;border-top:1px solid #EAE0CE;max-height:42vh}
+    .stage{flex:1 1 58vh}
+    .search{width:122px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="stage">
+    <svg id="svg"><defs></defs></svg>
+    <div class="topbar">
+      <div class="searchbox">
+        <input id="search" class="search" placeholder="loncat ke kanji / kata…" autocomplete="off">
+        <div id="sug" class="sug"></div>
+      </div>
+      <div id="crumbs" class="crumbs"></div>
+    </div>
+    <div class="hint">Pencet <b>ubin kanji di lingkaran luar</b> buat pindah ke sana. Pencet kata buat lihat artinya.</div>
+    <div class="minimap" id="minimap">
+      <div class="mhead"><span>peta · seluruh kanji</span><span class="mtog" id="mtog">▾</span></div>
+      <svg id="mapsvg" width="176" height="146"></svg>
+    </div>
+  </div>
+  <aside class="panel">
+    <div>
+      <div class="brand">連<span>関</span></div>
+      <div class="tag">kelana kanji · dari catatan N3 kamu</div>
+    </div>
+    <div id="detail"></div>
+  </aside>
+</div>
+
+<script>
+const REDUCE = matchMedia("(prefers-reduced-motion:reduce)").matches;
+const KANJI = {
+ "動":"bergerak",
+ "業":"Business",
+ "料":"Fee, Material",
+ "自":"oneself",
+ "以":"berdasarkan",
+ "学":"study, science",
+ "実":"Reality, Truth",
+ "的":"Mark, Target",
+ "事":"Urusan, hal",
+ "前":"before",
+ "意":"Idea, Heart",
+ "本":"book, True, Real",
+ "様":"Bentuk, Cara",
+ "活":"Lively",
+ "生":"Life、Birth",
+ "重":"Important、Heavy",
+ "験":"verification",
+ "交":"Mingle, Mixing",
+ "在":"exist",
+ "多":"Many, Much",
+ "成":"Menjadi, Tercapai",
+ "現":"present, actual",
+ "用":"utilize",
+ "画":"Picture",
+ "習":"Belajar",
+ "要":"need, main point",
+ "計":"Plan, Scheme",
+ "値":"value、Price",
+ "力":"Power",
+ "卒":"Graduate",
+ "単":"Simple, Single",
+ "味":"—",
+ "対":"Opposite",
+ "常":"Ordinary, Normal, Common",
+ "広":"Luas, Lebar",
+ "式":"Cara, Sistem、Upacara",
+ "感":"Feeling",
+ "慣":"Terbiasa",
+ "授":"Impact",
+ "換":"—",
+ "期":"Period, Date",
+ "次":"Next, Sequence",
+ "歴":"continuation",
+ "流":"Current",
+ "深":"Deep",
+ "積":"Menumpuk, to stack",
+ "触":"—",
+ "語":"Word, Speech, Language",
+ "通":"Lewat, Hubungan",
+ "過":"overdo, exceed",
+ "際":"Occasion, side",
+ "集":"Gather, Meet",
+ "非":"un-, negative",
+ "企":"—",
+ "位":"Rank, Grade",
+ "体":"Tubuh",
+ "価":"value",
+ "信":"Faith, Truth",
+ "先":"Before, Ahead",
+ "史":"History, Chronical",
+ "就":"—",
+ "採":"pick, take",
+ "政":"—",
+ "日":"—",
+ "来":"—",
+ "格":"Status, Rank",
+ "極":"—",
+ "母":"Ibu",
+ "気":"Spirit, Mind",
+ "治":"—",
+ "然":"sort of thing, so",
+ "留":"—",
+ "経":"—",
+ "績":"achievements",
+ "興":"—",
+ "行":"—",
+ "見":"See",
+ "視":"—",
+ "観":"Outlook, appearance",
+ "象":"Bentuk, Objek, Fenomena",
+ "費":"Cost, Expense",
+ "軽":"—",
+ "野":"—",
+ "魅":"—",
+ "優":"Excel, Surpass"
+};
+const WORDS = [
+ ["現在","げんざい","Present",1],
+ ["経験","けいけん","Experience",1],
+ ["自信","じしん","Self Confidence",1],
+ ["以来","いらい","Since",1],
+ ["日常","にちじょう","Setiap Hari",1],
+ ["生活","せいかつ","Kehidupan",1],
+ ["気軽","きがる","Santai, tidak sungkan",1],
+ ["交流","こうりゅう","Interaksi",1],
+ ["魅力","みりょく","Daya Tarik",1],
+ ["授業","じゅぎょう","Kelas",1],
+ ["実際","じっさい","Realita, In Practice",1],
+ ["重要","じゅうよう","Important",1],
+ ["政治","せいじ","Politics",1],
+ ["歴史","れきし","History",1],
+ ["意見","いけん","Pendapat",1],
+ ["積極的","せっきょくてき","Proaktif",1],
+ ["行動","こうどう","Action",1],
+ ["深い","ふかい","Deep",1],
+ ["実感","じっかん","Merasakan Secara Nyata",1],
+ ["多様","たよう","Diverse, Beragam",1],
+ ["価値観","かちかん","sistem nilai, values",1],
+ ["触る","さわる","Menyentuh",1],
+ ["集める","あつめる","To Collect",1],
+ ["様式","ようしき","Bentuk, Format, Gaya",1],
+ ["習慣","しゅうかん","Kebiasaan, Habit",1],
+ ["体験","たいけん","Pengalaman langsung",1],
+ ["通じる","つうじる","tersampaikan, terhubung",1],
+ ["積む","つむ","Menumpuk",1],
+ ["視野","しや","Wawasan",1],
+ ["広げる","ひろげる","Meluas, Melebar",1],
+ ["授業料","じゅぎょうりょう","tuition fee",1],
+ ["生活費","せいかつひ","Biaya Hidup",1],
+ ["母語","ぼご","Bahasa Ibu",1],
+ ["非常","ひじょう","Emergency, Extreme",1],
+ ["自然","しぜん","Natural",1],
+ ["成績","せいせき","Hasil/Nilai",1],
+ ["過ごす","すごす","to spend (time), to live",1],
+ ["卒業","そつぎょう","Graduation",1],
+ ["計画","けいかく","Rencana",1],
+ ["単位","たんい","Satuan, Unit",1],
+ ["事前","じぜん","Sebelumnya",1],
+ ["次期","じき","Next Period",1],
+ ["活動","かつどう","Activity",1],
+ ["重ねる","かさねる","Menumpuk, menindih",1],
+ ["重なる","かさなる","Bertumpuk",1],
+ ["交換留学","こうかんりゅうがく","Pertukaran Pelajar",1],
+ ["対象","たいしょう","sasaran, target, objek",1],
+ ["就活","しゅうかつ","Job Hunting",1],
+ ["本格的","ほんかくてき","sungguh-sungguh, autentik",1],
+ ["企業","きぎょう","Perusahaan, Enterprise",1],
+ ["在学","ざいがく","Berstatus Mahasiswa",1],
+ ["採用","さいよう","Hiring, Perekrutan",1],
+ ["興味","きょうみ","Interest",1],
+ ["表現","ひょうげん","Expression",2],
+ ["現実","げんじつ","Reality",2],
+ ["存在","そんざい","Existance",2],
+ ["試験","しけん","Ujian",2],
+ ["実験","じっけん","Experiment",2],
+ ["自身","じしん","Diri Sendiri",2],
+ ["以上","いじょう","Lebih Dari",2],
+ ["以外","いがい","Selain",2],
+ ["以下","いか","Kurang Dari",2],
+ ["以前","いぜん","Sebelum",2],
+ ["生る","うまる","Lahir",2],
+ ["交換する","こうかんする","Exchange",2],
+ ["流れ","ながれ","Flow",2],
+ ["努力","どりょく","Effort",2],
+ ["残業","ざんぎょう","Lembur",2],
+ ["営業","えいぎょう","Business",2],
+ ["国際","こくさい","International",2],
+ ["必要","ひつよう","Need",2],
+ ["概要","がいよう","Summary",2],
+ ["履歴","りれき","Personal History",2],
+ ["意味","いみ","Meaning",2],
+ ["得意","とくい","Mahir",2],
+ ["注意","ちゅうい","Perhatian",2],
+ ["目的","もくてき","Goal",2],
+ ["基本的","きほんてき","Dasar",2],
+ ["一般的","いっぱんてき","Umum",2],
+ ["運動","うんどう","Exercise",2],
+ ["自動","じどう","Otomatis",2],
+ ["動画","どうが","Video",2],
+ ["動物","どうぶつ","Hewan",2],
+ ["動く","うごく","bergerak",2],
+ ["移動","いどう","perpindahan",2],
+ ["深刻","しんこく","Serious",2],
+ ["感じる","かんじる","To Feel",2],
+ ["多い","おおい","Many",2],
+ ["多分","たぶん","Mungkin",2],
+ ["同様","どうよう","Sama Seperti",2],
+ ["様々","さまざま","Bermacam",2],
+ ["値段","ねだん","Harga",2],
+ ["触れる","ふれる","Bersentuhan",2],
+ ["編集","へんしゅう","Editing",2],
+ ["卒業式","そつぎょうしき","Graduation",2],
+ ["学習","がくしゅう","Pembelajaran",2],
+ ["復習","ふくしゅう","Review",2],
+ ["慣れる","なれる","Terbiasa",2],
+ ["通知","つうち","Notification",2],
+ ["広い","ひろい","Luas",2],
+ ["料金","りょうきん","Biaya",2],
+ ["給料","きゅうりょう","Salary",2],
+ ["材料","ざいりょう","Bahan",2],
+ ["無料","むりょう","Gratis",2],
+ ["有料","ゆうりょう","Berbayar",2],
+ ["物語","ものがたり","Story",2],
+ ["是非","ぜひ","Pastinya",2],
+ ["自分","じぶん","Myself",2],
+ ["自由","じゆう","Freedom",2],
+ ["成功","せいこう","Berhasil",2],
+ ["賛成","さんせい","Approval",2],
+ ["過去","かこ","Past",2],
+ ["設計","せっけい","Design",2],
+ ["計算","けいさん","Calculation",2],
+ ["映画","えいが","Movie",2],
+ ["簡単","かんたん","Mudah",2],
+ ["仕事","しごと","Pekerjaan",2],
+ ["事故","じこ","Kecelakaan",2],
+ ["事実","じじつ","Fakta",2],
+ ["午前","ごぜん","AM",2],
+ ["名前","なまえ","Name",2],
+ ["目次","もくじ","Daftar isi",2],
+ ["期間","きかん","Periode",2],
+ ["手動","しゅどう","Manually",2],
+ ["重い","おもい","Berat",2],
+ ["反対","はんたい","Opposite",2],
+ ["基本","きほん","Basic",2],
+ ["本当","ほんとう","Truth",2],
+ ["先生","せんせい","Guru",2],
+ ["大学","だいがく","University",2],
+ ["学校","がっこう","Sekolah",2],
+ ["使用","しよう","Penggunaan",2],
+ ["利用","りよう","Pemanfaatan",2]
+].map(([w,r,m,t])=>({w,r,m,t}));
+
+const kanjisIn = w => [...w].filter(c=>KANJI[c]);
+const wordsWith = {};
+WORDS.forEach(wd=>kanjisIn(wd.w).forEach(k=>{(wordsWith[k]=wordsWith[k]||[]).push(wd);}));
+const deg = k => (wordsWith[k]||[]).length;
+const kSide = k => 44 + Math.min(deg(k)*3, 18);   // hub lebih gede
+
+const NS="http://www.w3.org/2000/svg";
+const svg=document.getElementById("svg");
+const gE=document.createElementNS(NS,"g"),gN=document.createElementNS(NS,"g");
+svg.append(gE,gN);
+
+let view=new Map(), edges=[], edgeEls=[], focusK=null, trail=[], raf=0, wsel=null;
+
+function setFocus(k,fromCrumb){
+  if(!KANJI[k])return;
+  focusK=k; wsel=null;
+  if(!fromCrumb){const i=trail.indexOf(k); trail = i>=0 ? trail.slice(0,i+1) : [...trail,k];}
+  layout(); drawCrumbs(); showKanji(k); updateMap();
+}
+function layout(){
+  const W=svg.clientWidth,H=svg.clientHeight,cx=W/2,cy=H/2,maxR=Math.min(cx,cy)-52;
+  const words=wordsWith[focusK]||[], N=words.length;
+  const Rw=Math.min(Math.max(118, 82+N*9), maxR*0.6);
+  const Rk=Math.min(Rw+122, maxR);
+  const tgt=new Map();
+  tgt.set("k:"+focusK,{id:"k:"+focusK,type:"k",label:focusK,gloss:KANJI[focusK],focus:true,tx:cx,ty:cy,wait:0});
+  const wAng={};
+  words.forEach((wd,i)=>{const a=-Math.PI/2 + i*2*Math.PI/Math.max(N,1);wAng[wd.w]=a;
+    tgt.set("w:"+wd.w,{id:"w:"+wd.w,type:"w",tier:wd.t,label:wd.w,data:wd,tx:cx+Rw*Math.cos(a),ty:cy+Rw*Math.sin(a),wait:2+i*1.4});});
+  words.forEach((wd,i)=>{const comps=kanjisIn(wd.w).filter(c=>c!==focusK);
+    comps.forEach((c,j)=>{if(tgt.has("k:"+c))return;const m=comps.length,off=(j-(m-1)/2)*0.24,a=wAng[wd.w]+off;
+      tgt.set("k:"+c,{id:"k:"+c,type:"k",label:c,gloss:KANJI[c],tx:cx+Rk*Math.cos(a),ty:cy+Rk*Math.sin(a),wait:5+i*1.4});});});
+  edges=[];
+  words.forEach(wd=>{edges.push({a:"k:"+focusK,b:"w:"+wd.w});
+    kanjisIn(wd.w).forEach(c=>{if(c!==focusK)edges.push({a:"w:"+wd.w,b:"k:"+c});});});
+  view.forEach(n=>{n.dead=true;n.tx=cx;n.ty=cy;n.wait=0;});   // layout lama nyedot ke tengah
+  tgt.forEach((t,id)=>{let n=view.get(id);
+    if(n){n.dead=false;Object.assign(n,{type:t.type,label:t.label,tier:t.tier,data:t.data,gloss:t.gloss,focus:!!t.focus,tx:t.tx,ty:t.ty,wait:0});}
+    else{view.set(id,{...t,focus:!!t.focus,dead:false,x:cx,y:cy,op:0,s:REDUCE?1:0.4,wait:REDUCE?0:Math.round(t.wait||0)});}});
+  syncDOM(); animate();
+}
+
+const elMap=new Map();
+function makeEl(n){
+  const g=document.createElementNS(NS,"g");g.setAttribute("class","node");
+  const wrap=document.createElementNS(NS,"g");wrap.setAttribute("class","tile-wrap");
+  if(n.type==="k"){
+    const S=kSide(n.label.slice(0,1)||n.label);
+    const r=document.createElementNS(NS,"rect");r.setAttribute("class","k-tile");
+    r.setAttribute("width",S);r.setAttribute("height",S);r.setAttribute("x",-S/2);r.setAttribute("y",-S/2);r.setAttribute("rx",S*0.28);
+    const t=document.createElementNS(NS,"text");t.setAttribute("class","k-char");t.setAttribute("font-size",S*0.52);t.textContent=n.label;
+    wrap.append(r,t);g.appendChild(wrap);
+    g.addEventListener("click",()=>{n.id.slice(2)!==focusK?setFocus(n.id.slice(2)):showKanji(focusK);});
+  }else{
+    const wl=[...n.label].length, w=wl*19+18, h=32;
+    const r=document.createElementNS(NS,"rect");r.setAttribute("class","w-tile");
+    r.setAttribute("width",w);r.setAttribute("height",h);r.setAttribute("x",-w/2);r.setAttribute("y",-h/2);r.setAttribute("rx",h/2);
+    const t=document.createElementNS(NS,"text");t.setAttribute("class","w-char");t.setAttribute("font-size","16");t.textContent=n.label;
+    wrap.append(r,t);g.appendChild(wrap);
+    g.addEventListener("click",()=>{wsel=n.id;showWord(n.data);syncClasses();});
+  }
+  gN.appendChild(g);elMap.set(n.id,g);return g;
+}
+function syncDOM(){
+  while(gE.firstChild)gE.removeChild(gE.firstChild);
+  edgeEls=edges.map(e=>{const l=document.createElementNS(NS,"path");l.setAttribute("class","edge"+(e.a==="k:"+focusK?" hot":""));gE.appendChild(l);return l;});
+  view.forEach((n,id)=>{if(!elMap.has(id))makeEl(n);});
+  syncClasses();
+}
+function syncClasses(){
+  view.forEach((n,id)=>{const el=elMap.get(id);if(!el)return;
+    el.setAttribute("class","node"+(n.type==="w"?" w"+n.tier:"")+(n.focus?" focus":"")+
+      (n.type==="k"&&!n.focus?" nbk":"")+(id===wsel?" wsel":""));});
+}
+function draw(){
+  edges.forEach((e,i)=>{const a=view.get(e.a),b=view.get(e.b),l=edgeEls[i];if(!l)return;
+    if(!a||!b){l.setAttribute("opacity",0);return;}
+    l.setAttribute("d",`M${a.x.toFixed(1)} ${a.y.toFixed(1)} L${b.x.toFixed(1)} ${b.y.toFixed(1)}`);
+    l.setAttribute("opacity",Math.min(a.op,b.op).toFixed(2));});
+  view.forEach((n,id)=>{const el=elMap.get(id);if(!el)return;
+    el.setAttribute("transform",`translate(${n.x.toFixed(1)},${n.y.toFixed(1)}) scale(${n.s.toFixed(3)})`);
+    el.setAttribute("opacity",n.op.toFixed(2));});
+}
+function animate(){if(!raf)raf=requestAnimationFrame(step);}
+function step(){
+  raf=0;let moving=false;
+  view.forEach(n=>{
+    if(n.wait>0){n.wait--;moving=true;return;}           // tahan di tengah dulu (stagger)
+    const k=REDUCE?1:0.18; n.x+=(n.tx-n.x)*k; n.y+=(n.ty-n.y)*k;
+    const o=n.dead?0:1; n.op+=(o-n.op)*(REDUCE?1:0.22);
+    const ts=n.dead?0.4:(n.focus?1.18:1); n.s+=(ts-n.s)*(REDUCE?1:0.2);
+    if(Math.abs(n.tx-n.x)+Math.abs(n.ty-n.y)>0.5||Math.abs(o-n.op)>0.02||Math.abs(ts-n.s)>0.01)moving=true;
+  });
+  [...view.keys()].forEach(id=>{const n=view.get(id);if(n.dead&&n.op<0.04){const el=elMap.get(id);if(el){el.remove();elMap.delete(id);}view.delete(id);}});
+  draw(); if(moving)raf=requestAnimationFrame(step);
+}
+
+function drawCrumbs(){
+  const c=document.getElementById("crumbs");c.innerHTML="";
+  trail.forEach((k,i)=>{if(i)c.insertAdjacentHTML("beforeend",`<span class="sep">›</span>`);
+    const s=document.createElement("span");s.className="cb"+(k===focusK?" now":"");s.textContent=k;
+    s.onclick=()=>setFocus(k,true);c.appendChild(s);});
+}
+
+const detail=document.getElementById("detail");
+function showKanji(k){
+  const inW=wordsWith[k]||[];
+  const rows=inW.map(wd=>{const html=[...wd.w].map(ch=>ch===k?`<em>${ch}</em>`:ch).join("");
+    return `<div class="wrow ${wd.t===1?'t1':'t2'}" data-w="${wd.w}"><span class="w">${html}</span>
+      <span class="r">${wd.r}</span><span class="m">${wd.m}</span></div>`;}).join("");
+  detail.innerHTML=`<div class="card">
+      <div class="lab">kanji</div>
+      <div class="big k">${k}</div>
+      <div class="meaning">${KANJI[k]}</div>
+      <div class="stat">dipakai di ${inW.length} kata</div>
+    </div>
+    <div class="sub">kata yang memuat ${k}</div><div class="wlist">${rows}</div>`;
+  detail.querySelectorAll(".wrow").forEach(r=>r.onclick=()=>{wsel="w:"+r.dataset.w;showWord(WORDS.find(x=>x.w===r.dataset.w));syncClasses();});
+}
+function showWord(wd){
+  const parts=[...wd.w].map(c=>KANJI[c]
+    ?`<div class="part link" data-k="${c}"><span class="pk">${c}</span><span class="pm">${KANJI[c]}</span><span class="go">jadikan pusat ›</span></div>`
+    :`<div class="part dead"><span class="pk">${c}</span><span class="pm">kana</span></div>`).join("");
+  detail.innerHTML=`<div class="card">
+      <div class="lab">kata</div>
+      <div class="big">${wd.w} <span class="read">${wd.r}</span></div>
+      <div class="meaning">${wd.m}</div>
+      <span class="badge ${wd.t===1?'b1':'b2'}">${wd.t===1?'dipelajari':'kata terkait'}</span>
+    </div>
+    <div class="sub">kanji penyusun</div><div class="parts">${parts}</div>`;
+  detail.querySelectorAll(".part.link").forEach(p=>p.onclick=()=>setFocus(p.dataset.k));
+}
+
+const sb=document.getElementById("search"),sug=document.getElementById("sug");
+sb.addEventListener("input",()=>{
+  const q=sb.value.trim().toLowerCase();if(!q){sug.classList.remove("show");return;}
+  const ks=Object.keys(KANJI).filter(k=>k.includes(q)||KANJI[k].toLowerCase().includes(q)).map(k=>({type:"k",k,label:k,m:KANJI[k]}));
+  const ws=WORDS.filter(w=>w.w.includes(q)||w.r.includes(q)||w.m.toLowerCase().includes(q)).map(w=>({type:"w",k:kanjisIn(w.w)[0],label:w.w,m:w.r}));
+  const all=[...ks,...ws].slice(0,8);
+  sug.innerHTML=all.map((x,i)=>`<div data-i="${i}"><span class="sk">${x.label}</span><span class="sm">${x.m}</span></div>`).join("");
+  sug.classList.toggle("show",all.length>0);
+  sug.querySelectorAll("div").forEach((d,i)=>d.onclick=()=>{const x=all[i];if(x.k){setFocus(x.k);
+    if(x.type==="w"){const wd=WORDS.find(w=>w.w===x.label);wsel="w:"+wd.w;showWord(wd);syncClasses();}}
+    sb.value="";sug.classList.remove("show");});
+});
+sb.addEventListener("blur",()=>setTimeout(()=>sug.classList.remove("show"),150));
+
+// ---------- minimap: layout DIBEKUIN sekali (kanji↔kanji), gak ada sim hidup ----------
+const MW=176,MH=146,MPAD=15;
+let mapPos={}, mapLine=[]; const mapDot={};
+function neighborsOf(k){const s=new Set();WORDS.forEach(wd=>{const cs=kanjisIn(wd.w);if(cs.includes(k))cs.forEach(c=>{if(c!==k)s.add(c);});});return s;}
+function computeMapLayout(){
+  const ks=Object.keys(KANJI), P={};
+  ks.forEach((k,i)=>{P[k]={x:Math.cos(i*2.4)*50,y:Math.sin(i*2.4)*50,vx:0,vy:0};});
+  const E=[],seen=new Set();
+  WORDS.forEach(wd=>{const cs=kanjisIn(wd.w);for(let i=0;i<cs.length;i++)for(let j=i+1;j<cs.length;j++){
+    const a=cs[i],b=cs[j],key=a<b?a+b:b+a;if(!seen.has(key)){seen.add(key);E.push([a,b]);}}});
+  for(let t=0;t<340;t++){const al=1-t/340;
+    for(let i=0;i<ks.length;i++)for(let j=i+1;j<ks.length;j++){const a=P[ks[i]],b=P[ks[j]];
+      let dx=a.x-b.x,dy=a.y-b.y,d2=dx*dx+dy*dy||1,d=Math.sqrt(d2),f=150/d2;
+      a.vx+=dx/d*f;a.vy+=dy/d*f;b.vx-=dx/d*f;b.vy-=dy/d*f;}
+    E.forEach(([a,b])=>{const A=P[a],B=P[b];let dx=B.x-A.x,dy=B.y-A.y,d=Math.hypot(dx,dy)||1,f=(d-26)*0.06;
+      A.vx+=dx/d*f;A.vy+=dy/d*f;B.vx-=dx/d*f;B.vy-=dy/d*f;});
+    ks.forEach(k=>{const p=P[k];p.vx+=-p.x*0.02;p.vy+=-p.y*0.02;p.vx*=0.82;p.vy*=0.82;p.x+=p.vx*al;p.y+=p.vy*al;});}
+  return {P,E};
+}
+function buildMap(){
+  const {P,E}=computeMapLayout();
+  const xs=Object.values(P).map(p=>p.x), ys=Object.values(P).map(p=>p.y);
+  const mnx=Math.min(...xs),mxx=Math.max(...xs),mny=Math.min(...ys),mxy=Math.max(...ys);
+  const sx=(MW-2*MPAD)/((mxx-mnx)||1), sy=(MH-2*MPAD)/((mxy-mny)||1);
+  Object.keys(P).forEach(k=>mapPos[k]={x:MPAD+(P[k].x-mnx)*sx, y:MPAD+(P[k].y-mny)*sy});
+  const msvg=document.getElementById("mapsvg");msvg.setAttribute("viewBox",`0 0 ${MW} ${MH}`);
+  const ge=document.createElementNS(NS,"g"),gd=document.createElementNS(NS,"g");msvg.append(ge,gd);
+  mapLine=E.map(([a,b])=>{const l=document.createElementNS(NS,"line");l.setAttribute("class","mm-edge");
+    l.setAttribute("x1",mapPos[a].x);l.setAttribute("y1",mapPos[a].y);l.setAttribute("x2",mapPos[b].x);l.setAttribute("y2",mapPos[b].y);
+    ge.appendChild(l);return{l,a,b};});
+  Object.keys(mapPos).forEach(k=>{const c=document.createElementNS(NS,"circle");c.setAttribute("class","mm-dot");
+    c.setAttribute("cx",mapPos[k].x);c.setAttribute("cy",mapPos[k].y);c.setAttribute("r",3);
+    const ti=document.createElementNS(NS,"title");ti.textContent=k+" · "+KANJI[k];c.appendChild(ti);
+    c.addEventListener("click",()=>setFocus(k));mapDot[k]=c;gd.appendChild(c);});
+}
+function updateMap(){
+  if(!Object.keys(mapDot).length)return;
+  const nb=neighborsOf(focusK);
+  Object.keys(mapDot).forEach(k=>{const c=mapDot[k];
+    c.setAttribute("class","mm-dot"+(k===focusK?" foc":nb.has(k)?" nb":""));
+    c.setAttribute("r",k===focusK?6:nb.has(k)?4.2:3);});
+  mapLine.forEach(o=>o.l.setAttribute("class","mm-edge"+((o.a===focusK||o.b===focusK)?" hot":"")));
+}
+document.getElementById("mtog").onclick=()=>{const m=document.getElementById("minimap");
+  m.classList.toggle("collapsed");
+  document.getElementById("mtog").textContent=m.classList.contains("collapsed")?"▸":"▾";};
+
+window.addEventListener("resize",()=>{if(focusK)layout();});
+buildMap();
+setFocus("動");
+</script>
+</body>
+</html>

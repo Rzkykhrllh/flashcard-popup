@@ -16,7 +16,10 @@
  */
 
 importScripts("lib/papaparse.min.js"); // exposes global `Papa`
-importScripts("srs.js");              // pickCard, applySM2
+importScripts("core/srs.js");         // pickCard, applySM2, deriveStatus
+importScripts("core/kanji.js");       // extractKanjiList
+importScripts("core/db.js");          // IndexedDB words/groups layer
+importScripts("core/migrate.js");     // one-time chrome.storage.local -> IndexedDB migration
 
 const ALARM_NAME = "nihongo-tick";
 
@@ -39,15 +42,17 @@ let currentCard = null;
 /* ----------------------------- storage helpers ---------------------------- */
 
 async function getState() {
-  const { settings, decks, cards } = await chrome.storage.local.get([
+  const { settings, decks, cards, selection } = await chrome.storage.local.get([
     "settings",
     "decks",
     "cards",
+    "selection",
   ]);
   return {
     settings: { ...DEFAULT_SETTINGS, ...(settings || {}) },
     decks: decks || [],
     cards: cards || {}, // { [deckId]: { [cardKey]: card } }
+    selection: selection || {}, // { [deckId]: { [cardKey]: true } }
   };
 }
 
@@ -325,6 +330,13 @@ chrome.runtime.onInstalled.addListener(async () => {
   const { settings } = await chrome.storage.local.get("settings");
   if (!settings) await chrome.storage.local.set({ settings: DEFAULT_SETTINGS });
   await rescheduleAlarm();
+  try {
+    await runMigration();
+  } catch (e) {
+    // Non-fatal: the live storage.local sync/review path above is unaffected —
+    // IndexedDB is populated separately and can be retried on next install/update.
+    console.error("[migrate] failed", e);
+  }
 });
 
 chrome.runtime.onStartup.addListener(() => {
@@ -425,6 +437,21 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         const next = await saveSettings(msg.patch || {});
         if (msg.patch && "intervalMinutes" in msg.patch) await rescheduleAlarm();
         sendResponse({ ok: true, settings: next });
+        break;
+      }
+      case "getSelection": {
+        const { selection } = await chrome.storage.local.get("selection");
+        sendResponse({ selection: selection || {} });
+        break;
+      }
+      case "setCardSelection": {
+        const { selection } = await chrome.storage.local.get("selection");
+        const sel = selection || {};
+        if (!sel[msg.deckId]) sel[msg.deckId] = {};
+        if (msg.selected) sel[msg.deckId][msg.key] = true;
+        else delete sel[msg.deckId][msg.key];
+        await chrome.storage.local.set({ selection: sel });
+        sendResponse({ ok: true });
         break;
       }
       default:
