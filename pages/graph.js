@@ -6,7 +6,7 @@
 // Data arrives via the "kotoba:data-ready" event dispatched by vocab-bank.js
 // once it has loaded words/groups from IndexedDB. Actual layout only starts
 // once the Graph tab becomes visible (SVG needs a laid-out, non-zero size) —
-// see startGraph(), called from vocab-bank.js's tab-switch handler.
+// see startGraph(), called from options.js's switchTab().
 
 const REDUCE = matchMedia("(prefers-reduced-motion:reduce)").matches;
 

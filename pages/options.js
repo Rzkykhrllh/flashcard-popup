@@ -250,8 +250,9 @@ const tabPanes = document.querySelectorAll(".tab-pane");
 function switchTab(tab) {
   tabBtns.forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
   tabPanes.forEach((p) => p.classList.toggle("active", p.id === `tab-${tab}`));
-  if (tab === "stats") renderStats();
   if (tab === "study") renderStudy();
+  if (tab === "list" && typeof reloadData === "function") reloadData(); // refresh in case Study just recorded grades
+  if (tab === "graph" && typeof startGraph === "function") startGraph();
 }
 
 tabBtns.forEach((btn) => {
@@ -261,93 +262,6 @@ tabBtns.forEach((btn) => {
 // Open to a specific tab via URL hash (e.g. options.html#study)
 const hashTab = window.location.hash.replace("#", "");
 if (hashTab) switchTab(hashTab);
-
-/* ---------------------------------- stats --------------------------------- */
-
-async function renderStats() {
-  const container = el("statsContent");
-  const state     = await send({ type: "getState" });
-
-  if (!state.decks.length) {
-    container.innerHTML = '<p class="empty" style="margin-top:12px">No decks yet.</p>';
-    return;
-  }
-
-  container.innerHTML = "";
-
-  for (const deck of state.decks) {
-    const cards   = state.cards[deck.id] || {};
-    const entries = Object.entries(cards);
-
-    const section = document.createElement("div");
-    section.className = "stats-deck";
-
-    const hdr = document.createElement("div");
-    hdr.className = "stats-deck-header";
-    hdr.innerHTML = `<span class="stats-deck-name"></span><span class="stats-deck-count">${entries.length} cards</span>`;
-    hdr.querySelector(".stats-deck-name").textContent = deck.name;
-    section.appendChild(hdr);
-
-    if (!entries.length) {
-      const p = document.createElement("p");
-      p.className = "empty";
-      p.textContent = "This deck is empty.";
-      section.appendChild(p);
-      container.appendChild(section);
-      continue;
-    }
-
-    // Seen cards first (desc), then unseen alphabetically.
-    entries.sort((a, b) => {
-      const sa = a[1].seen || 0, sb = b[1].seen || 0;
-      if (sb !== sa) return sb - sa;
-      return a[1].kanji.localeCompare(b[1].kanji);
-    });
-
-    const table = document.createElement("table");
-    table.className = "stats-table";
-    table.innerHTML = `
-      <thead><tr>
-        <th>Kanji</th><th>Reading</th><th>Meaning</th><th>Shown</th><th>Last seen</th><th>Know</th><th>Hint</th><th>Forgot</th><th>Ratio</th>
-      </tr></thead>
-      <tbody></tbody>
-    `;
-    const tbody = table.querySelector("tbody");
-
-    for (const [, card] of entries) {
-      const seen  = card.seen   || 0;
-      const known = card.known  || 0;
-      const hintC = card.hint   || 0;
-      const lupa  = card.forgot || 0;
-      const total = known + hintC + lupa;
-      const pct   = total > 0 ? Math.round((known / total) * 100) : 0;
-
-      const tr = document.createElement("tr");
-      if (!seen) tr.className = "cell-muted";
-
-      tr.innerHTML = `
-        <td class="kanji-cell"></td>
-        <td class="reading-cell"></td>
-        <td class="arti-cell"></td>
-        <td>${seen || "—"}</td>
-        <td>${card.lastSeen ? timeAgo(card.lastSeen) : "—"}</td>
-        <td class="${known ? "cell-know"  : "cell-muted"}">${seen ? known : "—"}</td>
-        <td class="${hintC ? "cell-hint"  : "cell-muted"}">${seen ? hintC : "—"}</td>
-        <td class="${lupa  ? "cell-lupa"  : "cell-muted"}">${seen ? lupa  : "—"}</td>
-        <td>${seen
-          ? `<span class="ratio-bar"><span class="ratio-fill" style="width:${pct}%"></span></span>${pct}%`
-          : '<span class="cell-muted">—</span>'}</td>
-      `;
-      tr.querySelector(".kanji-cell").textContent   = card.kanji;
-      tr.querySelector(".reading-cell").textContent = card.hiragana || "—";
-      tr.querySelector(".arti-cell").textContent    = card.arti || "—";
-      tbody.appendChild(tr);
-    }
-
-    section.appendChild(table);
-    container.appendChild(section);
-  }
-}
 
 /* -------------------------------- study tab ------------------------------- */
 

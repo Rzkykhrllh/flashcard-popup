@@ -75,7 +75,7 @@ menuToggle.addEventListener("click", () => {
 });
 
 studyBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html#study") }));
-bankBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/vocab-bank.html") }));
+bankBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html#list") }));
 optionsBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html#settings") }));
 
 refresh();

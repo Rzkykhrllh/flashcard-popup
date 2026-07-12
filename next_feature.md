@@ -211,10 +211,12 @@ core/                       modul logic, di-load lewat importScripts (background
   migrate.js                BARU — one-time migration dari chrome.storage.local
 
 pages/                       semua UI surface
-  popup.html/js/css          toolbar: quiz sekarang / sync / quick-add / buka vocab-bank
-  options.html/js/css        kelola deck+group, atur frekuensi (existing)
-  vocab-bank.html/js/css     BARU — browse words, assign group, export/import
-  graph.js/css               BARU — kanji graph (di dalam vocab-bank.html, tab terpisah)
+  popup.html/js/css          toolbar: quiz sekarang / sync / quick-add / buka Kotoba Bank
+  options.html/js/css        satu halaman, 4 tab: Settings | List | Study | Graph
+                              (tab Stats lama dipensiunin, List gantiin fungsinya)
+  vocab-bank.js/css          BARU — logic tab List: browse words, export/import
+                              (bukan halaman terpisah lagi — di-load bareng options.html)
+  graph.js/css               BARU — logic tab Graph: kanji graph
 
 reference/
   kanji_explore.html         prototype project "Kanji" asli — sumber yang di-port ke pages/graph.js

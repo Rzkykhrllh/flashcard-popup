@@ -3,23 +3,26 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Nihongo Popup — settings</title>
+    <title>Nihongo Popup — Kotoba Bank</title>
     <link rel="stylesheet" href="options.css" />
+    <link rel="stylesheet" href="vocab-bank.css" />
+    <link rel="stylesheet" href="graph.css" />
   </head>
   <body>
     <main>
       <header class="hero">
         <span class="seal"></span>
         <div>
-          <h1>Nihongo Popup</h1>
+          <h1>Nihongo Popup — Kotoba Bank</h1>
           <p class="tag">Japanese flashcards from your Google Sheet, popping up while you work.</p>
         </div>
       </header>
 
       <nav class="tab-nav">
         <button class="tab-btn active" data-tab="settings">Settings</button>
+        <button class="tab-btn" data-tab="list">List</button>
         <button class="tab-btn" data-tab="study">Study</button>
-        <button class="tab-btn" data-tab="stats">Stats</button>
+        <button class="tab-btn" data-tab="graph">Graph</button>
       </nav>
 
       <div id="tab-settings" class="tab-pane active">
@@ -122,16 +125,95 @@
       </section>
       </div><!-- #tab-settings -->
 
+      <div id="tab-list" class="tab-pane">
+        <section class="panel">
+          <div class="row-between">
+            <h2>Backup</h2>
+            <span class="hint" id="backupStatus"></span>
+          </div>
+          <div class="btn-row-bank">
+            <button class="btn" id="exportBtn">Export JSON</button>
+            <button class="btn" id="importBtn">Import JSON</button>
+            <input type="file" id="importFile" accept="application/json" style="display:none" />
+          </div>
+          <p class="hint">All words & groups live only in this browser (IndexedDB) — nothing syncs across devices. Export regularly as a safety net in case the extension gets uninstalled or browser data gets cleared.</p>
+        </section>
+
+        <section class="panel">
+          <div class="bank-toolbar">
+            <div class="status-tabs" id="statusTabs">
+              <button class="status-tab active" data-status="">All <span class="count" id="count-all">0</span></button>
+              <button class="status-tab" data-status="new">New <span class="count" id="count-new">0</span></button>
+              <button class="status-tab" data-status="learning">Learning <span class="count" id="count-learning">0</span></button>
+              <button class="status-tab" data-status="mastered">Mastered <span class="count" id="count-mastered">0</span></button>
+            </div>
+          </div>
+          <div class="bank-toolbar bank-toolbar-2">
+            <input id="searchInput" type="text" class="search-input" placeholder="Search kanji, reading, or meaning…" autocomplete="off" />
+            <select id="groupSelect" class="tab-select"></select>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="row-between">
+            <h2>Words</h2>
+            <span class="hint" id="resultCount"></span>
+          </div>
+          <table class="stats-table bank-table">
+            <thead>
+              <tr>
+                <th>Kanji</th>
+                <th>Reading</th>
+                <th>Meaning</th>
+                <th>Status</th>
+                <th>Groups</th>
+              </tr>
+            </thead>
+            <tbody id="wordRows">
+              <tr><td colspan="5" class="cell-muted">Loading words…</td></tr>
+            </tbody>
+          </table>
+          <p class="empty" id="emptyState" style="display:none">No words here yet.</p>
+        </section>
+      </div><!-- #tab-list -->
+
       <div id="tab-study" class="tab-pane">
         <div id="studyContent"></div>
       </div>
 
-      <div id="tab-stats" class="tab-pane">
-        <div id="statsContent"></div>
-      </div>
+      <div id="tab-graph" class="tab-pane">
+        <div class="wrap">
+          <div class="stage">
+            <svg id="svg"><defs></defs></svg>
+            <div class="topbar">
+              <div class="searchbox">
+                <input id="search" class="search" placeholder="jump to a kanji / word…" autocomplete="off">
+                <div id="sug" class="sug"></div>
+              </div>
+              <div id="crumbs" class="crumbs"></div>
+              <button id="fsToggle" class="fs-btn" title="Fullscreen">⛶</button>
+            </div>
+            <div class="ghint">Click a <b>kanji tile in the outer ring</b> to jump there. Click a word to see its meaning.</div>
+            <div class="minimap" id="minimap">
+              <div class="mhead"><span>map · all kanji</span><span class="mtog" id="mtog">▾</span></div>
+              <svg id="mapsvg" width="176" height="146"></svg>
+            </div>
+          </div>
+          <aside class="gpanel">
+            <div>
+              <div class="brand">連<span>関</span></div>
+              <div class="gtag">kanji graph · from your Kotoba Bank</div>
+            </div>
+            <div id="detail"></div>
+          </aside>
+        </div>
+      </div><!-- #tab-graph -->
 
     </main>
     <p class="credit">made by <a href="https://dev.byairu.com" target="_blank">dev.byairu.com</a></p>
+    <script src="../core/db.js"></script>
+    <script src="vocab-bank.js"></script>
+    <script src="graph.js"></script>
     <script src="options.js"></script>
   </body>
 </html>

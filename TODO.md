@@ -41,26 +41,34 @@ dicentang manual tiap sub-task kelar.
 
 ### Vocab bank
 
-- [x] `vocab-bank.html/js/css` — browse semua `words`, filter by `status`/`groupIds`
+- [x] `vocab-bank.js/css` — browse semua `words`, filter by `status`/`groupIds`
       (tab status + dropdown group, termasuk opsi virtual "All (General)"),
-      plus search box. Sekarang **live** — status ke-update begitu direview di
-      popup, gak lagi snapshot basi.
-  - Entry point: tombol "Kotoba Bank" baru di `popup.html` toolbar
+      plus search box. **Live** — status ke-update begitu direview di popup.
 - [x] Kanji graph (ego-centric, 1-hop) — di-port dari `reference/kanji_explore.html`
-      (project "Kanji"), jadi tab "Graph" di dalam `vocab-bank.html`. Fisika/animasi/
-      visual style dipertahankan apa adanya; data source diganti ke IndexedDB `words`,
-      pewarnaan node diganti dari tier(1/2) jadi `status` (new/learning/mastered).
-      Fullscreen toggle pakai native Fullscreen API.
+      (project "Kanji"). Fisika/animasi/visual style dipertahankan apa adanya;
+      data source diganti ke IndexedDB `words`, pewarnaan node diganti dari
+      tier(1/2) jadi `status` (new/learning/mastered). Fullscreen toggle pakai
+      native Fullscreen API.
 - [x] Export/import JSON (`words` + `groups`), dengan konfirmasi jumlah
       baru/ketimpa sebelum eksekusi
 
-### Konsolidasi halaman (belum dikerjakan)
+### Konsolidasi halaman
 
-- [ ] Gabung `vocab-bank.html` (List+Graph) ke `options.html` jadi satu tab-nav:
-      Settings | Study | Bank | Graph. Pensiunin tab Stats yang lama (List di
-      Bank strict upgrade-nya — ada filter status/group/search yang Stats gak
-      punya). Update entry point di popup jadi hash-link ke 1 halaman
-      (`options.html#bank` dst), bukan 2 page terpisah.
+- [x] `vocab-bank.html` dihapus — List & Graph digabung jadi tab di `options.html`,
+      satu tab-nav: **Settings | List | Study | Graph**. Tab Stats lama dipensiunin
+      (dead code `renderStats` + CSS-nya dihapus) — List sudah strict upgrade-nya
+      (ada filter status/group/search yang Stats gak punya). Popup toolbar tombol
+      "Kotoba Bank" sekarang ke `options.html#list`.
+  - **Penting**: `db.js`, `vocab-bank.js`, `graph.js`, `options.js` semuanya
+    `<script>` classic (bukan module) di 1 halaman → **share 1 global scope**.
+    Nama top-level (`const`/`let`/`function`) yang sama di 2 file bakal bentrok
+    jadi `SyntaxError` yang mematikan SELURUH script itu diam-diam (kejadian
+    beneran 2x: `STATUS_LABEL`, `render`). Kalau nambah top-level identifier baru
+    di salah satu file ini, cek dulu gak collide sama yang lain.
+  - Urutan `<script>` di `options.html` wajib: `db.js` → `vocab-bank.js` →
+    `graph.js` → **`options.js` paling akhir** (dia langsung manggil
+    `switchTab()` dari hash URL di top-level-nya sendiri, butuh
+    `reloadData`/`startGraph` udah ke-define duluan).
 
 ## Housekeeping
 

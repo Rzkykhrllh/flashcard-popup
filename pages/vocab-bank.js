@@ -1,5 +1,8 @@
-// vocab-bank.js — browse/filter view over the IndexedDB `words`/`groups` store.
-// db.js is loaded first via <script>, exposing getAllWords/getAllGroups globally.
+// vocab-bank.js — the "List" tab in options.html: browse/filter view over the
+// IndexedDB `words`/`groups` store, plus export/import. Loaded alongside
+// options.js, core/db.js and graph.js on the same page — all classic <script>
+// tags sharing one global scope, so top-level names here must not collide
+// with the others (see the GRAPH_STATUS_LABEL / renderList naming).
 
 const GENERAL_GROUP = { id: "", name: "All (General)" };
 const STATUS_LABEL = { new: "New", learning: "Learning", mastered: "Mastered" };
@@ -46,7 +49,7 @@ function updateCounts() {
   }
 }
 
-function render() {
+function renderList() {
   const q = activeQuery.trim().toLowerCase();
   const filtered = allWords.filter((w) => {
     if (activeStatus && w.status !== activeStatus) return false;
@@ -81,29 +84,22 @@ statusTabsEl.addEventListener("click", (e) => {
   if (!btn) return;
   activeStatus = btn.dataset.status;
   for (const b of statusTabsEl.querySelectorAll(".status-tab")) b.classList.toggle("active", b === btn);
-  render();
+  renderList();
 });
 
 groupSelectEl.addEventListener("change", () => {
   activeGroupId = groupSelectEl.value;
-  render();
+  renderList();
 });
 
 searchInputEl.addEventListener("input", () => {
   activeQuery = searchInputEl.value;
-  render();
+  renderList();
 });
 
-// Top-level tab switching (List / Graph). graph.js listens for "kotoba:data-ready"
-// (dispatched below, once words/groups are loaded) and only starts its own layout
-// once the Graph pane is actually visible — see startGraph() in graph.js.
-document.querySelectorAll(".tab-nav .tab-btn").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    for (const b of document.querySelectorAll(".tab-nav .tab-btn")) b.classList.toggle("active", b === btn);
-    for (const pane of document.querySelectorAll(".tab-pane")) pane.classList.toggle("active", pane.id === `tab-${btn.dataset.tab}`);
-    if (btn.dataset.tab === "graph" && typeof startGraph === "function") startGraph();
-  });
-});
+// Tab switching (Settings / List / Study / Graph) is owned by options.js's
+// switchTab() — it calls renderList()/startGraph() when those tabs are shown,
+// the same way it already calls renderStats()/renderStudy().
 
 async function reloadData() {
   allWords = await getAllWords();
@@ -114,7 +110,7 @@ async function reloadData() {
     .join("");
 
   updateCounts();
-  render();
+  renderList();
 }
 
 exportBtn.addEventListener("click", async () => {
