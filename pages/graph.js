@@ -180,7 +180,11 @@ function drawCrumbs() {
 }
 
 const detail = document.getElementById("detail");
-const STATUS_LABEL = { new: "New", learning: "Learning", mastered: "Mastered" };
+// Named distinctly from vocab-bank.js's own STATUS_LABEL — both scripts run in
+// the same page's global scope (classic <script>, not modules), so identical
+// top-level `const` names collide with a SyntaxError that silently kills the
+// whole script.
+const GRAPH_STATUS_LABEL = { new: "New", learning: "Learning", mastered: "Mastered" };
 
 function showKanji(k) {
   const inW = wordsWith[k] || [];
@@ -208,7 +212,7 @@ function showWord(wd) {
       <div class="lab">word</div>
       <div class="big">${escapeHtml(wd.w)} <span class="read">${escapeHtml(wd.r || "")}</span></div>
       <div class="meaning">${escapeHtml(wd.m || "")}</div>
-      <span class="badge ${wd.status}">${STATUS_LABEL[wd.status] || wd.status}</span>
+      <span class="badge ${wd.status}">${GRAPH_STATUS_LABEL[wd.status] || wd.status}</span>
     </div>
     <div class="sub">kanji parts</div><div class="parts">${parts}</div>`;
   detail.querySelectorAll(".part.link").forEach((p) => p.onclick = () => setFocus(p.dataset.k));
