@@ -38,6 +38,17 @@
 
 .bank-table { margin-top: 4px; }
 
+/* Kanji tab table — readings stay compact, meaning/words get the room
+   (on'yomi/kun'yomi is reference info, the meaning and which words actually
+   use the kanji is what you scan for). */
+.kanji-table { table-layout: fixed; }
+.kt-col-kanji { width: 56px; }
+.kt-col-readings { width: 18%; }
+.kt-col-meaning { width: 20%; }
+.kt-col-words { width: auto; }
+.kt-readings { font-size: 12px; color: var(--muted); }
+.kt-words { font-size: 13px; line-height: 1.6; word-break: break-word; }
+
 .status-badge {
   display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 9px;
   border-radius: 999px; text-transform: uppercase; letter-spacing: .02em; white-space: nowrap;
@@ -96,6 +107,21 @@
 }
 .wv-example { font-size: 14px; color: var(--ink); line-height: 1.5; }
 .wv-notes { font-size: 13px; color: var(--muted); line-height: 1.55; }
+
+/* Kanji card — same family as the word view card above, always-visible
+   sections (unlike .wv-section, which is optional/toggled). */
+.kv-readings { display: flex; gap: 24px; margin-top: 6px; }
+.kv-reading-group { flex: 1; min-width: 0; text-align: left; }
+.kv-reading-group .reading-list { margin-top: 4px; }
+.kv-divider { height: 1px; background: var(--line); margin: 20px 0 16px; }
+.kv-section { text-align: left; }
+.kv-meaning-row { display: flex; gap: 8px; align-items: center; }
+.kv-meaning-row input {
+  flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+  border-radius: 9px; padding: 9px 11px; font-size: 14px; font-family: inherit;
+}
+.kv-meaning-row input:focus { outline: 2px solid var(--shu); outline-offset: -1px; }
+.kv-meaning-row .btn { flex: none; }
 
 .field-label { display: block; font-size: 12px; color: var(--muted); margin-top: 10px; }
 .field-label:first-child { margin-top: 0; }

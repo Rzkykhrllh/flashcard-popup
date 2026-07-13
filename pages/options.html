@@ -194,18 +194,17 @@
             <h2>Kanji</h2>
             <span class="hint">Every kanji used across your words. Click a row for on'yomi/kun'yomi and to set its meaning.</span>
           </div>
-          <table class="stats-table bank-table">
+          <table class="stats-table bank-table kanji-table">
             <thead>
               <tr>
-                <th>Kanji</th>
-                <th>On'yomi</th>
-                <th>Kun'yomi</th>
-                <th>Meaning</th>
-                <th>Used in</th>
+                <th class="kt-col-kanji">Kanji</th>
+                <th class="kt-col-readings">Readings</th>
+                <th class="kt-col-meaning">Meaning</th>
+                <th class="kt-col-words">Words containing it</th>
               </tr>
             </thead>
             <tbody id="kanjiRows">
-              <tr><td colspan="5" class="cell-muted">Loading…</td></tr>
+              <tr><td colspan="4" class="cell-muted">Loading…</td></tr>
             </tbody>
           </table>
           <p class="empty" id="kanjiEmptyState" style="display:none">No kanji yet — add some words first.</p>
@@ -269,21 +268,38 @@
       </div>
 
       <div class="modal-overlay" id="kanjiModalOverlay">
-        <div class="modal-card">
-          <div class="row-between">
-            <h2 id="kModalChar"></h2>
-            <button class="modal-close" id="kModalClose">&times;</button>
+        <div class="modal-card word-modal-card">
+          <button class="modal-close modal-close-abs" id="kModalClose">&times;</button>
+
+          <div class="wv-kanji" id="kModalChar"></div>
+
+          <div class="kv-readings">
+            <div class="kv-reading-group">
+              <div class="wv-label">On'yomi</div>
+              <div id="kOn" class="reading-list"></div>
+            </div>
+            <div class="kv-reading-group">
+              <div class="wv-label">Kun'yomi</div>
+              <div id="kKun" class="reading-list"></div>
+            </div>
           </div>
-          <label class="field-label">Meaning <span class="label-note">(your own — not from the dictionary)</span>
-            <input id="kMeaningInput" type="text" placeholder="e.g. to eat, food" />
-          </label>
-          <button class="btn primary" id="kMeaningSaveBtn" style="margin-top:8px">Save meaning</button>
-          <div class="sub">On'yomi</div>
-          <div id="kOn" class="reading-list"></div>
-          <div class="sub">Kun'yomi</div>
-          <div id="kKun" class="reading-list"></div>
-          <div class="sub">Related words</div>
-          <div id="kRelated" class="wlist-plain"></div>
+
+          <div class="kv-divider"></div>
+
+          <div class="kv-section">
+            <div class="wv-label">Meaning <span class="label-note">(your own, not the dictionary)</span></div>
+            <div class="kv-meaning-row">
+              <input id="kMeaningInput" type="text" placeholder="e.g. to eat, food" />
+              <button class="btn primary" id="kMeaningSaveBtn">Save</button>
+            </div>
+          </div>
+
+          <div class="kv-divider"></div>
+
+          <div class="kv-section">
+            <div class="wv-label">Related words</div>
+            <div id="kRelated" class="wlist-plain"></div>
+          </div>
         </div>
       </div>
 

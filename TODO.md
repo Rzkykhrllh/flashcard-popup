@@ -94,9 +94,14 @@ dicentang manual tiap sub-task kelar.
 - [x] Kanji card di-revamp: **meaning kanji manual** (bukan dari dict) —
       store baru `kanjiMeta` di IndexedDB (`db.js` v2, keyPath `char`), field
       `on`/`kun` tetap dari `data/kanjidic.json`, gak pernah ke-mix.
+  - Layout kanji card disamain sama word view card (kanji besar di tengah,
+    section berlabel + divider) — sebelumnya cuma list `<h2>`+form polos.
 - [x] Tab **"Kanji"** baru — browse semua kanji yang pernah muncul di kata-kata
       (auto dari `kanjiList`), sortable by usage count, search by kanji/meaning.
-      Klik row → buka kanji card yang sama (reuse dari word editor).
+      Klik row → buka kanji card yang sama (reuse dari word editor). Kolom:
+      Kanji | Readings (on/kun digabung compact, cuma referensi) | Meaning |
+      **Words containing it** (tampilin katanya langsung, bukan cuma angka
+      "used in N" — di-cap 6 kata + "+N more", full list tetep ada di kanji card).
 - [x] Word card di-revamp jadi 2 mode dalam 1 modal: **View** (default pas
       klik kata existing — furigana kecil di atas, kanji besar di tengah
       *(tiap kanji individual clickable → kanji card)*, meaning, lalu section
