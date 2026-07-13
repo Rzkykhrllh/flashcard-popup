@@ -21,6 +21,7 @@
       <nav class="tab-nav">
         <button class="tab-btn active" data-tab="settings">Settings</button>
         <button class="tab-btn" data-tab="list">List</button>
+        <button class="tab-btn" data-tab="kanji">Kanji</button>
         <button class="tab-btn" data-tab="stats">Stats</button>
         <button class="tab-btn" data-tab="study">Study</button>
         <button class="tab-btn" data-tab="graph">Graph</button>
@@ -181,35 +182,81 @@
         </section>
       </div><!-- #tab-list -->
 
-      <div class="modal-overlay" id="wordModalOverlay">
-        <div class="modal-card">
+      <div id="tab-kanji" class="tab-pane">
+        <section class="panel">
+          <div class="bank-toolbar">
+            <input id="kanjiSearchInput" type="text" class="search-input" placeholder="Search kanji or meaning…" autocomplete="off" />
+          </div>
+        </section>
+
+        <section class="panel">
           <div class="row-between">
+            <h2>Kanji</h2>
+            <span class="hint">Every kanji used across your words. Click a row for on'yomi/kun'yomi and to set its meaning.</span>
+          </div>
+          <table class="stats-table bank-table">
+            <thead>
+              <tr>
+                <th>Kanji</th>
+                <th>On'yomi</th>
+                <th>Kun'yomi</th>
+                <th>Meaning</th>
+                <th>Used in</th>
+              </tr>
+            </thead>
+            <tbody id="kanjiRows">
+              <tr><td colspan="5" class="cell-muted">Loading…</td></tr>
+            </tbody>
+          </table>
+          <p class="empty" id="kanjiEmptyState" style="display:none">No kanji yet — add some words first.</p>
+        </section>
+      </div><!-- #tab-kanji -->
+
+      <div class="modal-overlay" id="wordModalOverlay">
+        <div class="modal-card word-modal-card">
+          <button class="modal-close modal-close-abs" id="wordModalClose">&times;</button>
+
+          <!-- View mode: read-optimized, opened by default when clicking an existing word -->
+          <div class="word-view" id="wordView">
+            <div class="wv-furigana" id="wvFurigana"></div>
+            <div class="wv-kanji" id="wvKanji"></div>
+            <div class="wv-meaning" id="wvMeaning"></div>
+            <div class="wv-example" id="wvExample"></div>
+            <div class="wv-notes" id="wvNotes"></div>
+          </div>
+
+          <!-- Edit mode: the form. Default for "+ Add word"; reached from View via Edit. -->
+          <div class="word-form" id="wordForm" style="display:none">
             <h2 id="wordModalTitle">Add word</h2>
-            <button class="modal-close" id="wordModalClose">&times;</button>
+            <div class="form">
+              <label class="field-label">Kanji
+                <input id="wKanji" type="text" placeholder="食べる" />
+              </label>
+              <label class="field-label">Reading (furigana)
+                <input id="wHiragana" type="text" placeholder="たべる" />
+              </label>
+              <label class="field-label">Meaning
+                <input id="wArti" type="text" placeholder="to eat" />
+              </label>
+              <label class="field-label">Example sentence
+                <input id="wExample" type="text" placeholder="毎朝パンを食べる。" />
+              </label>
+              <label class="field-label">Notes
+                <textarea id="wNotes" rows="3" placeholder="optional"></textarea>
+              </label>
+              <label class="field-label" id="wGroupField">Collection
+                <select id="wGroupSelect"></select>
+              </label>
+              <input id="wNewGroupName" type="text" placeholder="New collection name" style="display:none" />
+              <div id="wKanjiChips" class="kanji-chips"></div>
+            </div>
+            <p id="wStatus" class="status"></p>
           </div>
-          <div class="form">
-            <label class="field-label">Kanji
-              <input id="wKanji" type="text" placeholder="食べる" />
-            </label>
-            <label class="field-label">Reading (hiragana)
-              <input id="wHiragana" type="text" placeholder="たべる" />
-            </label>
-            <label class="field-label">Meaning
-              <input id="wArti" type="text" placeholder="to eat" />
-            </label>
-            <label class="field-label">Notes
-              <textarea id="wNotes" rows="3" placeholder="optional"></textarea>
-            </label>
-            <label class="field-label" id="wGroupField">Collection
-              <select id="wGroupSelect"></select>
-            </label>
-            <input id="wNewGroupName" type="text" placeholder="New collection name" style="display:none" />
-            <div id="wKanjiChips" class="kanji-chips"></div>
-          </div>
-          <p id="wStatus" class="status"></p>
+
           <div class="btn-row-bank">
-            <button class="btn primary" id="wSaveBtn">Save</button>
-            <button class="btn" id="wDeleteBtn" style="display:none">Delete</button>
+            <button class="btn primary" id="wEditBtn">Edit</button>
+            <button class="btn primary" id="wSaveBtn" style="display:none">Save</button>
+            <button class="btn" id="wDeleteBtn">Delete</button>
           </div>
         </div>
       </div>
@@ -220,6 +267,10 @@
             <h2 id="kModalChar"></h2>
             <button class="modal-close" id="kModalClose">&times;</button>
           </div>
+          <label class="field-label">Meaning <span class="label-note">(your own — not from the dictionary)</span>
+            <input id="kMeaningInput" type="text" placeholder="e.g. to eat, food" />
+          </label>
+          <button class="btn primary" id="kMeaningSaveBtn" style="margin-top:8px">Save meaning</button>
           <div class="sub">On'yomi</div>
           <div id="kOn" class="reading-list"></div>
           <div class="sub">Kun'yomi</div>
@@ -271,6 +322,7 @@
     <script src="../core/kanji.js"></script>
     <script src="vocab-bank.js"></script>
     <script src="word-editor.js"></script>
+    <script src="kanji-tab.js"></script>
     <script src="graph.js"></script>
     <script src="options.js"></script>
   </body>

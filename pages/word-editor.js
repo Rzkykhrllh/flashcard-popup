@@ -1,12 +1,14 @@
 // word-editor.js — the "List" tab's add/edit word modal + kanji detail modal.
-// Loaded alongside db.js, kanji.js, vocab-bank.js, graph.js, options.js on the
-// same page — all classic <script> tags sharing one global scope, so
-// top-level names here must not collide with the others.
+// Loaded alongside db.js, kanji.js, vocab-bank.js, kanji-tab.js, graph.js,
+// options.js on the same page — all classic <script> tags sharing one global
+// scope, so top-level names here must not collide with the others.
 //
 // Kanji detail (on'yomi/kun'yomi) comes from data/kanjidic.json, a compact
 // derivative of KANJIDIC2 (Electronic Dictionary Research and Development
 // Group, CC BY-SA 4.0 — see README.md for attribution). Fetched lazily and
-// cached on first kanji card open, since not every session opens one.
+// cached on first kanji card open, since not every session opens one. Kanji
+// *meaning* is separate — user-entered only, stored in IndexedDB's
+// `kanjiMeta` store, never auto-filled from the dictionary.
 
 let kanjidicPromise = null;
 function loadKanjidic() {
@@ -18,28 +20,40 @@ function loadKanjidic() {
 
 const addWordBtn = document.getElementById("addWordBtn");
 const wordModalOverlay = document.getElementById("wordModalOverlay");
-const wordModalTitle = document.getElementById("wordModalTitle");
 const wordModalClose = document.getElementById("wordModalClose");
+const wordView = document.getElementById("wordView");
+const wvFurigana = document.getElementById("wvFurigana");
+const wvKanji = document.getElementById("wvKanji");
+const wvMeaning = document.getElementById("wvMeaning");
+const wvExample = document.getElementById("wvExample");
+const wvNotes = document.getElementById("wvNotes");
+const wordForm = document.getElementById("wordForm");
+const wordModalTitle = document.getElementById("wordModalTitle");
 const wKanji = document.getElementById("wKanji");
 const wHiragana = document.getElementById("wHiragana");
 const wArti = document.getElementById("wArti");
+const wExample = document.getElementById("wExample");
 const wNotes = document.getElementById("wNotes");
 const wGroupField = document.getElementById("wGroupField");
 const wGroupSelect = document.getElementById("wGroupSelect");
 const wNewGroupName = document.getElementById("wNewGroupName");
 const wKanjiChips = document.getElementById("wKanjiChips");
 const wStatus = document.getElementById("wStatus");
+const wEditBtn = document.getElementById("wEditBtn");
 const wSaveBtn = document.getElementById("wSaveBtn");
 const wDeleteBtn = document.getElementById("wDeleteBtn");
 
 const kanjiModalOverlay = document.getElementById("kanjiModalOverlay");
 const kModalChar = document.getElementById("kModalChar");
 const kModalClose = document.getElementById("kModalClose");
+const kMeaningInput = document.getElementById("kMeaningInput");
+const kMeaningSaveBtn = document.getElementById("kMeaningSaveBtn");
 const kOn = document.getElementById("kOn");
 const kKun = document.getElementById("kKun");
 const kRelated = document.getElementById("kRelated");
 
 let editingId = null;
+let currentKanjiChar = null;
 
 function renderKanjiChips(kanjiList) {
   if (!kanjiList.length) { wKanjiChips.innerHTML = ""; return; }
@@ -51,15 +65,54 @@ function renderKanjiChips(kanjiList) {
   });
 }
 
+// Renders `text` with each kanji character wrapped in a clickable span
+// (opens the kanji detail modal); non-kanji characters (okurigana etc.) are
+// plain text.
+function renderKanjiInline(el, text) {
+  el.innerHTML = [...(text || "")]
+    .map((ch) => (extractKanjiList(ch).length
+      ? `<span class="wv-k-char" data-k="${escapeHtml(ch)}">${escapeHtml(ch)}</span>`
+      : escapeHtml(ch)))
+    .join("");
+  el.querySelectorAll(".wv-k-char").forEach((span) => {
+    span.addEventListener("click", () => openKanjiModal(span.dataset.k));
+  });
+}
+
+function showWordView(word) {
+  wordView.style.display = "";
+  wordForm.style.display = "none";
+  wEditBtn.style.display = "";
+  wSaveBtn.style.display = "none";
+  wDeleteBtn.style.display = "";
+
+  wvFurigana.textContent = word.hiragana || "";
+  renderKanjiInline(wvKanji, word.kanji || "");
+  wvMeaning.textContent = word.arti || "";
+  wvExample.textContent = word.example || "";
+  wvExample.style.display = word.example ? "block" : "none";
+  wvNotes.textContent = word.notes || "";
+  wvNotes.style.display = word.notes ? "block" : "none";
+}
+
+function showWordForm() {
+  wordView.style.display = "none";
+  wordForm.style.display = "";
+  wEditBtn.style.display = "none";
+  wSaveBtn.style.display = "";
+  wDeleteBtn.style.display = editingId ? "" : "none";
+  wKanji.focus();
+}
+
 function openWordModal(word) {
   editingId = word ? word.id : null;
   wordModalTitle.textContent = word ? "Edit word" : "Add word";
   wKanji.value = word ? word.kanji || "" : "";
   wHiragana.value = word ? word.hiragana || "" : "";
   wArti.value = word ? word.arti || "" : "";
+  wExample.value = word ? word.example || "" : "";
   wNotes.value = word ? word.notes || "" : "";
   wStatus.textContent = "";
-  wDeleteBtn.style.display = word ? "" : "none";
 
   if (word) {
     // Editing an existing word doesn't touch collection membership here —
@@ -77,8 +130,11 @@ function openWordModal(word) {
   }
 
   renderKanjiChips(word ? (word.kanjiList || extractKanjiList(word.kanji)) : extractKanjiList(wKanji.value));
+
+  if (word) showWordView(word);
+  else showWordForm();
+
   wordModalOverlay.classList.add("open");
-  wKanji.focus();
 }
 
 function closeWordModal() {
@@ -93,6 +149,7 @@ wGroupSelect.addEventListener("change", () => {
 });
 
 addWordBtn.addEventListener("click", () => openWordModal(null));
+wEditBtn.addEventListener("click", showWordForm);
 wordModalClose.addEventListener("click", closeWordModal);
 wordModalOverlay.addEventListener("click", (e) => { if (e.target === wordModalOverlay) closeWordModal(); });
 
@@ -107,6 +164,7 @@ wSaveBtn.addEventListener("click", async () => {
   const kanji = wKanji.value.trim();
   const hiragana = wHiragana.value.trim();
   const arti = wArti.value.trim();
+  const example = wExample.value.trim();
   const notes = wNotes.value.trim();
 
   if (!kanji) { wStatus.textContent = "Kanji can't be empty."; return; }
@@ -118,7 +176,8 @@ wSaveBtn.addEventListener("click", async () => {
     if (!existing) { wStatus.textContent = "This word no longer exists."; return; }
 
     if (newId === editingId) {
-      existing.kanji = kanji; existing.hiragana = hiragana; existing.arti = arti; existing.notes = notes;
+      existing.kanji = kanji; existing.hiragana = hiragana; existing.arti = arti;
+      existing.example = example; existing.notes = notes;
       existing.kanjiList = extractKanjiList(kanji);
       await putWord(existing);
     } else {
@@ -142,7 +201,8 @@ wSaveBtn.addEventListener("click", async () => {
         target = { ...existing };
       }
       target.id = newId;
-      target.kanji = kanji; target.hiragana = hiragana; target.arti = arti; target.notes = notes;
+      target.kanji = kanji; target.hiragana = hiragana; target.arti = arti;
+      target.example = example; target.notes = notes;
       target.kanjiList = extractKanjiList(kanji);
       await deleteWord(editingId);
       await putWord(target);
@@ -161,13 +221,14 @@ wSaveBtn.addEventListener("click", async () => {
     if (existing) {
       const ok = confirm(`"${kanji}${hiragana ? " / " + hiragana : ""}" already exists. Update it and add to this collection?`);
       if (!ok) return;
-      existing.kanji = kanji; existing.hiragana = hiragana; existing.arti = arti; existing.notes = notes;
+      existing.kanji = kanji; existing.hiragana = hiragana; existing.arti = arti;
+      existing.example = example; existing.notes = notes;
       existing.kanjiList = extractKanjiList(kanji);
       existing.groupIds = [...new Set([...(existing.groupIds || []), groupId])];
       await putWord(existing);
     } else {
       await putWord({
-        id: newId, kanji, hiragana, arti, notes,
+        id: newId, kanji, hiragana, arti, example, notes,
         kanjiList: extractKanjiList(kanji),
         seen: 0, known: 0, hint: 0, forgot: 0, lastSeen: 0, createdAt: Date.now(),
         n: 0, easeFactor: 2.5, status: "new", statusOverride: false,
@@ -190,7 +251,9 @@ wDeleteBtn.addEventListener("click", async () => {
 });
 
 async function openKanjiModal(k) {
+  currentKanjiChar = k;
   kModalChar.textContent = k;
+  kMeaningInput.value = "";
   kOn.innerHTML = '<span class="reading-pill">Loading…</span>';
   kKun.innerHTML = "";
 
@@ -212,6 +275,9 @@ async function openKanjiModal(k) {
 
   kanjiModalOverlay.classList.add("open");
 
+  const meta = await getKanjiMeta(k);
+  kMeaningInput.value = meta ? meta.meaning || "" : "";
+
   const dict = await loadKanjidic();
   const entry = dict[k];
   kOn.innerHTML = entry && entry.on && entry.on.length
@@ -224,7 +290,16 @@ async function openKanjiModal(k) {
 
 function closeKanjiModal() {
   kanjiModalOverlay.classList.remove("open");
+  currentKanjiChar = null;
 }
+
+kMeaningSaveBtn.addEventListener("click", async () => {
+  if (!currentKanjiChar) return;
+  await putKanjiMeta({ char: currentKanjiChar, meaning: kMeaningInput.value.trim() });
+  kMeaningSaveBtn.textContent = "Saved";
+  setTimeout(() => { kMeaningSaveBtn.textContent = "Save meaning"; }, 1200);
+  if (typeof renderKanjiTab === "function") renderKanjiTab();
+});
 
 kModalClose.addEventListener("click", closeKanjiModal);
 kanjiModalOverlay.addEventListener("click", (e) => { if (e.target === kanjiModalOverlay) closeKanjiModal(); });

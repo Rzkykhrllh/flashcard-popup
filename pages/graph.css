@@ -30,8 +30,13 @@
   --gui:system-ui,-apple-system,"Segoe UI",sans-serif;
 }
 
+/* Shrink the page's own bottom padding while the Graph tab is showing, so
+   the canvas below can stretch closer to the viewport edge instead of
+   leaving the same big gap the scrolling tabs (Settings, List, ...) need. */
+body:has(#tab-graph.active) { padding-bottom: 20px; }
+
 #tab-graph .wrap {
-  display: flex; height: 640px; width: 100%; overflow: hidden;
+  display: flex; height: calc(100vh - 170px); min-height: 640px; width: 100%; overflow: hidden;
   border-radius: 16px; border: 1px solid var(--tile-edge);
   background:
     radial-gradient(circle at 1px 1px, var(--grid) 1px, transparent 0) 0 0/22px 22px,

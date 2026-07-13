@@ -66,6 +66,24 @@
   cursor: pointer; line-height: 1; padding: 2px 6px; border-radius: 6px; flex: none;
 }
 .modal-close:hover { background: var(--surface-2); color: var(--ink); }
+.modal-close-abs { position: absolute; top: 14px; right: 14px; }
+
+.word-modal-card { position: relative; }
+
+/* Word view — read-optimized card layout (furigana above kanji, kanji big and
+   centered, meaning/example/notes below), same visual language as the
+   flashcard popup itself (content.js). */
+.word-view { text-align: center; padding: 10px 4px 2px; }
+.wv-furigana { font-size: 14px; color: var(--muted); letter-spacing: .04em; min-height: 18px; }
+.wv-kanji { font-size: 42px; font-weight: 500; line-height: 1.25; margin: 2px 0 14px; word-break: break-word; }
+.wv-k-char { cursor: pointer; border-radius: 8px; padding: 0 3px; transition: background .12s, color .12s; }
+.wv-k-char:hover { background: var(--surface-2); color: var(--shu); }
+.wv-meaning { font-size: 19px; font-weight: 600; color: var(--shu); }
+.wv-example {
+  font-size: 14px; color: var(--ink); margin-top: 12px; padding-top: 12px;
+  border-top: 1px dashed var(--line); display: none;
+}
+.wv-notes { font-size: 13px; color: var(--muted); margin-top: 8px; line-height: 1.5; text-align: left; display: none; }
 
 .field-label { display: block; font-size: 12px; color: var(--muted); margin-top: 10px; }
 .field-label:first-child { margin-top: 0; }

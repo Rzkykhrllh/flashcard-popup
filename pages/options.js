@@ -253,6 +253,7 @@ function switchTab(tab) {
   if (tab === "stats") renderStats();
   if (tab === "study") renderStudy();
   if (tab === "list" && typeof reloadData === "function") reloadData(); // refresh in case Study just recorded grades
+  if (tab === "kanji" && typeof renderKanjiTab === "function") renderKanjiTab();
   if (tab === "graph" && typeof startGraph === "function") startGraph();
 }
 
@@ -260,9 +261,16 @@ tabBtns.forEach((btn) => {
   btn.addEventListener("click", () => switchTab(btn.dataset.tab));
 });
 
-// Open to a specific tab via URL hash (e.g. options.html#study)
+// Open to a specific tab via URL hash (e.g. options.html#study). #add-word is
+// a special case from the popup's "+ Add word" shortcut: land on List, then
+// pop the add-word modal open.
 const hashTab = window.location.hash.replace("#", "");
-if (hashTab) switchTab(hashTab);
+if (hashTab === "add-word") {
+  switchTab("list");
+  if (typeof openWordModal === "function") openWordModal(null);
+} else if (hashTab) {
+  switchTab(hashTab);
+}
 
 /* ---------------------------------- stats --------------------------------- */
 

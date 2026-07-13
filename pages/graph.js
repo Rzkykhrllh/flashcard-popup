@@ -68,16 +68,23 @@ svg.append(gE, gN);
 
 let view = new Map(), edges = [], edgeEls = [], focusK = null, trail = [], raf = 0, wsel = null;
 
-function setFocus(k) {
+function setFocus(k, resetTrail) {
   if (!KANJI_SET.has(k)) return;
   focusK = k; wsel = null;
-  // Always truncate-or-append, regardless of how we got here (kanji tile,
-  // crumb click, search, "center here" link, minimap dot). Jumping back to an
-  // already-visited node via its crumb must drop the now-stale forward
-  // entries, otherwise the trail shows dead branches and new navigation
-  // appends after them instead of after the node you actually clicked.
-  const i = trail.indexOf(k);
-  trail = i >= 0 ? trail.slice(0, i + 1) : [...trail, k];
+  if (resetTrail) {
+    // Minimap represents "jump anywhere on the map" — a fresh start, not a
+    // continuation of the current browse path, so the old trail is discarded
+    // rather than truncated/appended onto.
+    trail = [k];
+  } else {
+    // Always truncate-or-append, regardless of how we got here (kanji tile,
+    // crumb click, search, "center here" link). Jumping back to an
+    // already-visited node via its crumb must drop the now-stale forward
+    // entries, otherwise the trail shows dead branches and new navigation
+    // appends after them instead of after the node you actually clicked.
+    const i = trail.indexOf(k);
+    trail = i >= 0 ? trail.slice(0, i + 1) : [...trail, k];
+  }
   layout(); drawCrumbs(); showKanji(k); updateMap();
 }
 
@@ -289,7 +296,7 @@ function buildMap() {
     const c = document.createElementNS(NS, "circle"); c.setAttribute("class", "mm-dot");
     c.setAttribute("cx", mapPos[k].x); c.setAttribute("cy", mapPos[k].y); c.setAttribute("r", 3);
     const ti = document.createElementNS(NS, "title"); ti.textContent = k + " · " + (KANJI_GLOSS[k] || ""); c.appendChild(ti);
-    c.addEventListener("click", () => setFocus(k)); mapDot[k] = c; gd.appendChild(c);
+    c.addEventListener("click", () => setFocus(k, true)); mapDot[k] = c; gd.appendChild(c);
   });
 }
 function updateMap() {

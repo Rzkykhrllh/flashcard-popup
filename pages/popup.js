@@ -9,6 +9,7 @@ const menuToggle = document.getElementById("menuToggle");
 const submenu = document.getElementById("submenu");
 const studyBtn = document.getElementById("studyBtn");
 const bankBtn = document.getElementById("bankBtn");
+const addWordShortcut = document.getElementById("addWordShortcut");
 const syncBtn = document.getElementById("syncBtn");
 const optionsBtn = document.getElementById("optionsBtn");
 
@@ -82,6 +83,7 @@ menuToggle.addEventListener("click", () => {
 
 studyBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html#study") }));
 bankBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html#list") }));
+addWordShortcut.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html#add-word") }));
 optionsBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html#settings") }));
 
 refresh();

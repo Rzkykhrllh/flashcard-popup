@@ -4,7 +4,7 @@
 // rest of the extension is loaded.
 
 const DB_NAME = "kotobaPopupDB";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let _dbPromise = null;
 
@@ -22,6 +22,12 @@ function openDB() {
       }
       if (!db.objectStoreNames.contains("groups")) {
         db.createObjectStore("groups", { keyPath: "id" });
+      }
+      // v2: per-kanji user data (manual meaning) — separate from the
+      // auto-fetched on'yomi/kun'yomi in data/kanjidic.json, which isn't
+      // stored in IndexedDB at all.
+      if (!db.objectStoreNames.contains("kanjiMeta")) {
+        db.createObjectStore("kanjiMeta", { keyPath: "char" });
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -94,4 +100,18 @@ async function putGroups(groups) {
 
 async function deleteGroup(id) {
   return reqToPromise((await store("groups", "readwrite")).delete(id));
+}
+
+/* -------------------------------- kanjiMeta -------------------------------- */
+
+async function getAllKanjiMeta() {
+  return reqToPromise((await store("kanjiMeta", "readonly")).getAll());
+}
+
+async function getKanjiMeta(char) {
+  return reqToPromise((await store("kanjiMeta", "readonly")).get(char));
+}
+
+async function putKanjiMeta(meta) {
+  return reqToPromise((await store("kanjiMeta", "readwrite")).put(meta));
 }

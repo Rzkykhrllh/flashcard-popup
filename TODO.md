@@ -66,10 +66,11 @@ dicentang manual tiap sub-task kelar.
     beneran 2x: `STATUS_LABEL`, `render`). Kalau nambah top-level identifier baru
     di salah satu file ini, cek dulu gak collide sama yang lain.
   - Urutan `<script>` di `options.html` wajib: `db.js` → `kanji.js` →
-    `vocab-bank.js` → `word-editor.js` → `graph.js` →
+    `vocab-bank.js` → `word-editor.js` → `kanji-tab.js` → `graph.js` →
     **`options.js` paling akhir** (dia langsung manggil `switchTab()` dari
     hash URL di top-level-nya sendiri, butuh `reloadData`/`startGraph` udah
-    ke-define duluan).
+    ke-define duluan). Sekarang 7 script share 1 scope — selalu cek collision
+    kalau nambah top-level identifier baru.
 
 ### Manual add + word/kanji detail card
 
@@ -90,6 +91,20 @@ dicentang manual tiap sub-task kelar.
     4.0, attribution di README.md), cuma ambil field `on`/`kun` per kanji
     (12.356 kanji, ~640KB). Di-fetch lazy (sekali, di-cache) pas kanji card
     pertama kali dibuka — gak nge-block load halaman.
+- [x] Kanji card di-revamp: **meaning kanji manual** (bukan dari dict) —
+      store baru `kanjiMeta` di IndexedDB (`db.js` v2, keyPath `char`), field
+      `on`/`kun` tetap dari `data/kanjidic.json`, gak pernah ke-mix.
+- [x] Tab **"Kanji"** baru — browse semua kanji yang pernah muncul di kata-kata
+      (auto dari `kanjiList`), sortable by usage count, search by kanji/meaning.
+      Klik row → buka kanji card yang sama (reuse dari word editor).
+- [x] Word card di-revamp jadi 2 mode dalam 1 modal: **View** (default pas
+      klik kata existing — furigana kecil di atas, kanji besar di tengah
+      *(tiap kanji individual clickable → kanji card)*, meaning, contoh
+      kalimat, notes) dan **Edit** (form, default pas Add). Field baru:
+      **example** (contoh kalimat).
+- [x] Shortcut **"+ Add word"** di popup toolbar → `options.html#add-word`
+      (hash khusus, di-handle options.js: pindah ke tab List + langsung buka
+      modal Add).
 
 ## Housekeeping
 
@@ -104,7 +119,8 @@ dicentang manual tiap sub-task kelar.
 - [ ] UI assign/ubah group/collection kartu yang **udah ada** (sekarang cuma
       bisa di-set pas Add; edit mode gak bisa reassign collection)
 - [ ] Manual status override (tombol "mark as mastered" dkk, set `statusOverride: true`)
-- [ ] Kolom tambahan: `example`, `tags`, `partOfSpeech` — field sudah dialokasikan
-      di schema (next_feature.md §3), belum ada UI buat isi/edit
+- [ ] Kolom tambahan: `tags`, `partOfSpeech` — field udah dialokasikan di
+      schema (next_feature.md §3), belum ada UI buat isi/edit (`example` udah
+      kelar, lihat "Manual add + word/kanji detail card" di atas)
 - [ ] `manifest.json` — permission `unlimitedStorage` kalau ternyata dibutuhkan
       setelah data tumbuh
