@@ -313,18 +313,41 @@ if (hashTab) switchTab(hashTab);
 
 /* ---------------------------------- stats --------------------------------- */
 
+let statsState = { categoryId: "__all__" };
+
 async function renderStats() {
   const container = el("statsContent");
   const state     = await send({ type: "getState" });
 
-  if (!state.decks.length) {
+  if (!state.categories.length) {
     container.innerHTML = '<p class="empty" style="margin-top:12px">No decks yet.</p>';
     return;
   }
 
-  container.innerHTML = "";
+  const selectedId = statsState.categoryId || "__all__";
+  statsState.categoryId = selectedId;
+  const shownCategories = selectedId === "__all__"
+    ? state.categories
+    : state.categories.filter((c) => c.id === selectedId);
 
-  for (const deck of state.decks) {
+  let html = '<div class="study-toolbar"><label>Category</label><select id="statsCategorySelect" class="tab-select">';
+  html += `<option value="__all__"${selectedId === "__all__" ? " selected" : ""}>All categories</option>`;
+  for (const cat of state.categories) {
+    const sel = selectedId === cat.id ? " selected" : "";
+    html += `<option value="${cat.id}"${sel}>${cat.name}</option>`;
+  }
+  html += '</select></div>';
+  container.innerHTML = html;
+
+  document.getElementById("statsCategorySelect").addEventListener("change", (e) => {
+    statsState.categoryId = e.target.value;
+    renderStats();
+  });
+
+  const sectionsWrap = document.createElement("div");
+  container.appendChild(sectionsWrap);
+
+  for (const deck of shownCategories) {
     const cards   = state.cards[deck.id] || {};
     const entries = Object.entries(cards);
 
@@ -342,7 +365,7 @@ async function renderStats() {
       p.className = "empty";
       p.textContent = "This deck is empty.";
       section.appendChild(p);
-      container.appendChild(section);
+      sectionsWrap.appendChild(section);
       continue;
     }
 
@@ -394,7 +417,7 @@ async function renderStats() {
     }
 
     section.appendChild(table);
-    container.appendChild(section);
+    sectionsWrap.appendChild(section);
   }
 }
 
@@ -410,12 +433,13 @@ function shuffle(a) {
   return a;
 }
 
-// One entry per unique word. A word synced into more than one deck (shared
-// kanji|hiragana, see core/migrate.js's collision handling) collects every
-// deck it belongs to in deckIds instead of showing up as duplicate rows —
-// "All decks" would otherwise list it twice.
+// One entry per unique word. A word belonging to more than one category
+// (shared kanji|hiragana, see core/migrate.js's collision handling, or just
+// added to several collections) collects every category it belongs to in
+// deckIds instead of showing up as duplicate rows — "All categories" would
+// otherwise list it twice.
 function buildStudyEntries(state, deckId) {
-  const decks = deckId === "__all__" ? state.decks : state.decks.filter((d) => d.id === deckId);
+  const decks = deckId === "__all__" ? state.categories : state.categories.filter((d) => d.id === deckId);
   const seen = new Map(); // key -> { key, card, deckIds }
   for (const deck of decks) {
     for (const [key, c] of Object.entries(state.cards[deck.id] || {})) {
@@ -455,14 +479,14 @@ async function renderStudy() {
   const container = el("studyContent");
   const state     = await send({ type: "getState" });
 
-  if (!state.decks.length) {
+  if (!state.categories.length) {
     container.innerHTML = '<p class="empty" style="margin-top:12px">No decks yet. Add one in Settings.</p>';
     return;
   }
 
-  let html = '<div class="study-toolbar"><label>Deck</label><select id="studyDeckSelect" class="tab-select">';
-  html += `<option value="__all__"${studyState.deckId === "__all__" ? " selected" : ""}>All decks</option>`;
-  for (const deck of state.decks) {
+  let html = '<div class="study-toolbar"><label>Category</label><select id="studyDeckSelect" class="tab-select">';
+  html += `<option value="__all__"${studyState.deckId === "__all__" ? " selected" : ""}>All categories</option>`;
+  for (const deck of state.categories) {
     const sel = studyState.deckId === deck.id ? " selected" : "";
     html += `<option value="${deck.id}"${sel}>${deck.name}</option>`;
   }

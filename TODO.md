@@ -249,6 +249,46 @@ dicentang manual tiap sub-task kelar.
     muddy/gak jelas pas disimulasiin di ukuran 16px — jadi dicoba beberapa
     alternatif stroke rendah (単, 文, 和) dan 字 (6 stroke) menang paling
     jelas di toolbar-size.
+  - **Di-revert**: kanji ternyata gak enak diliat di icon beneran (bukan cuma
+    simulasi 16px). Dicoba 3 alternatif non-text (torii gate, tumpukan
+    flashcard, hiragana あ lebih ringan) — torii paling tahan banting di
+    ukuran 16px asli (murni bentuk geometris, gak ada garis tipis yang
+    ilang pas di-downscale), tapi user minta balik ke desain awal (kotak
+    biru rounded + tanda "+" putih) dulu buat sementara. Icon di-`git
+    checkout` balik ke commit sebelum redesign, bukan digenerate ulang —
+    exact pixel yang sama kayak awal.
+- [x] **Tab Study & Stats: unifikasi "category"** — sebelumnya "Deck" di
+      kedua tab itu cuma nunjuk ke `chrome.storage.local.decks` (deck sync
+      Google Sheet doang). Kata yang cuma ada di **manual collection**
+      (dibuat via "New collection" pas nambah kata manual) gak pernah
+      punya entry di situ, jadi:
+  - **Bug yang ketemu (bukan diminta, ditemuin pas investigasi)**: kata yang
+    cuma tergabung ke manual collection gak pernah muncul di Study, Stats,
+    ATAU popup flashcard di halaman web — `getState()` di `background.js`
+    cuma bikin `cards[deckId]` buat deck id yang ada di `decks`
+    (chrome.storage.local), jadi `groupId` manual collection gak pernah
+    cocok, kata-nya keresap diam-diam.
+  - **Fix**: `getState()` sekarang juga bikin `categories` = semua group di
+    IndexedDB (`getAllGroups()`) — gabungan deck sync + manual collection.
+    Group sync ke-merge sama data deck-nya (enabled/url/lastSynced dari
+    `chrome.storage.local`), group manual dapet default `enabled: true`.
+    `cards` sekarang dibangun dari `categories`, bukan `decks` doang.
+    `decks` sendiri **gak diubah** — tetep dipake apa adanya di Settings
+    tab "Your decks" (add/remove/toggle sync deck), supaya gak nyampur 2
+    konsep beda (manage sync config vs. filter tampilan).
+  - `srs.js`'s `pickCard()` di-update iterate `state.categories` (bukan
+    `state.decks`) — jadi kata dari manual collection sekarang beneran
+    bisa muncul di popup flashcard juga, gak cuma di Study/Stats.
+  - Tab **Study**: dropdown "Deck" di-relabel jadi **"Category"**, opsi
+    "All decks" jadi **"All categories"**, sumber datanya `state.categories`.
+  - Tab **Stats**: dulu selalu nampilin SEMUA deck ke-stack vertikal
+    sekaligus (list kepanjangan kalau kategorinya banyak) — sekarang ada
+    dropdown yang sama kayak Study (**Category**, default **All
+    categories**), milih 1 kategori nyaring ke section itu doang.
+  - Diverifikasi lewat Node test manual: `pickCard()` bisa ke-pick kata dari
+    kategori manual-only, `buildStudyEntries("__all__")` gabungin count dari
+    2 kategori dengan bener, `isWordEligible()` tetep default-eligible buat
+    seleksi yang belum disentuh.
 
 ## Next Version (post-MVP)
 

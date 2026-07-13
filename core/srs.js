@@ -13,13 +13,14 @@ function computeWeight(c) {
   return Math.max(1, Math.round((8 / (n + 1)) * (2.5 / ef)));
 }
 
-// Weighted-random pick across all enabled decks.
+// Weighted-random pick across all enabled categories (sync decks + manual
+// collections — see getState()'s `categories` in background.js).
 // lastShownKey ("deckId:cardKey") prevents an immediate back-to-back repeat.
 // Returns { deckId, key, card } or null if no cards exist.
 function pickCard(state, lastShownKey) {
   const sel = state.selection || {};
   const pool = [];
-  for (const deck of state.decks) {
+  for (const deck of state.categories) {
     if (deck.enabled === false) continue;
     const cards = state.cards[deck.id] || {};
     const deckSel = sel[deck.id];

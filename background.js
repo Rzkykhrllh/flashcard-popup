@@ -77,8 +77,23 @@ async function getState() {
   ]);
   const deckList = decks || [];
 
-  const cards = {}; // { [deckId]: { [cardKey]: card } } — derived from IndexedDB `words`
-  for (const deck of deckList) cards[deck.id] = {};
+  // `decks` (chrome.storage.local) only tracks Google-Sheet sync config
+  // (url/enabled/lastSynced) and is what Settings' "Your decks" panel and
+  // add/remove/toggleDeck manage — that stays deck-only, unchanged. But a
+  // word can also belong to a manual collection (a plain IndexedDB group,
+  // created via "New collection" when adding a word by hand) that never
+  // gets a `decks` entry. "categories" is the superset both kinds of
+  // grouping resolve into — every IndexedDB group, sync or manual — so
+  // Study/Stats/the flashcard popup can pull words from either. A synced
+  // group keeps its deck's enabled/url/etc.; a manual group just gets a
+  // default `enabled: true` (there's no pause switch for those yet).
+  const deckById = new Map(deckList.map((d) => [d.id, d]));
+  const categories = (await getAllGroups()).map(
+    (g) => deckById.get(g.id) || { id: g.id, name: g.name, enabled: true }
+  );
+
+  const cards = {}; // { [categoryId]: { [cardKey]: card } } — derived from IndexedDB `words`
+  for (const cat of categories) cards[cat.id] = {};
   for (const w of await getAllWords()) {
     for (const groupId of w.groupIds || []) {
       if (cards[groupId]) cards[groupId][w.id] = wordToCard(w);
@@ -88,8 +103,9 @@ async function getState() {
   return {
     settings: { ...DEFAULT_SETTINGS, ...(settings || {}) },
     decks: deckList,
+    categories,
     cards,
-    selection: selection || {}, // { [deckId]: { [cardKey]: true } }
+    selection: selection || {}, // { [categoryId]: { [cardKey]: true } }
   };
 }
 
