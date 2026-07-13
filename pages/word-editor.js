@@ -1,4 +1,5 @@
-// word-editor.js — the "List" tab's add/edit word modal + kanji detail modal.
+// word-editor.js — the "Words" tab's add/edit word modal + kanji detail modal
+// (internal id stays "list", only the displayed tab label changed to "Words").
 // Loaded alongside db.js, kanji.js, vocab-bank.js, kanji-tab.js, graph.js,
 // options.js on the same page — all classic <script> tags sharing one global
 // scope, so top-level names here must not collide with the others.

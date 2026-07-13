@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Nihongo Popup",
+  "name": "Nihongo Popup — Kotoba Bank",
   "version": "0.1.0",
-  "description": "Japanese flashcards from your Google Sheet, appearing while you work. Recall each word, then grade yourself.",
+  "description": "Japanese flashcards that pop up while you browse — plus a vocab bank, kanji graph, and dictionary to organize everything you learn.",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -13,7 +13,7 @@
   },
   "action": {
     "default_popup": "pages/popup.html",
-    "default_title": "Nihongo Popup",
+    "default_title": "Nihongo Popup — Kotoba Bank",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

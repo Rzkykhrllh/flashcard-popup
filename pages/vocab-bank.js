@@ -1,8 +1,11 @@
-// vocab-bank.js — the "List" tab in options.html: browse/filter view over the
-// IndexedDB `words`/`groups` store, plus export/import. Loaded alongside
-// options.js, core/db.js and graph.js on the same page — all classic <script>
-// tags sharing one global scope, so top-level names here must not collide
-// with the others (see the GRAPH_STATUS_LABEL / renderList naming).
+// vocab-bank.js — the "Words" tab in options.html (internal id stays "list"):
+// browse/filter view over the IndexedDB `words`/`groups` store. Also owns the
+// export/import handlers, even though that markup now lives in the Settings
+// tab's "Words" section — getElementById works across the whole page
+// regardless of which tab-pane an element is in. Loaded alongside options.js,
+// core/db.js and graph.js on the same page — all classic <script> tags
+// sharing one global scope, so top-level names here must not collide with
+// the others (see the GRAPH_STATUS_LABEL / renderList naming).
 
 const GENERAL_GROUP = { id: "", name: "All (General)" };
 const STATUS_LABEL = { new: "New", learning: "Learning", mastered: "Mastered" };

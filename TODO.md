@@ -182,6 +182,18 @@ dicentang manual tiap sub-task kelar.
     otomatis kejadian dari awal (`background.js` nulis `putGroup({id:
     deck.id, ...})` tiap sync), cuma belum eksplisit di UI. Ditambah hint
     di panel "Your decks" biar kelihatan.
+- [x] Beberapa polish kecil:
+  - Tab nav: label "List" → **"Words"** (id internal `data-tab="list"` /
+    `id="tab-list"` gak diubah, cuma display text).
+  - Urutan tab: **Study sebelum Stats** (dulu Stats duluan).
+  - Panel **Backup (Export/Import)** dipindah dari tab Words ke Settings,
+    section baru **"Words"** (di antara General & Flashcard popup) — JS-nya
+    (`vocab-bank.js`) gak perlu diubah, `getElementById` kerja lintas
+    tab-pane apapun.
+  - App title/description diganti: manifest.json `name`/`description`,
+    `default_title`, dan hero tag di `options.html` — sekarang jelasin app-nya
+    udah jadi vocab bank + kanji graph + dictionary, tapi tetep highlight
+    "flashcard pop up while you browse" sebagai keunggulan utama.
 
 ## Next Version (post-MVP)
 
