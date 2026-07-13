@@ -194,6 +194,18 @@ dicentang manual tiap sub-task kelar.
     `default_title`, dan hero tag di `options.html` — sekarang jelasin app-nya
     udah jadi vocab bank + kanji graph + dictionary, tapi tetep highlight
     "flashcard pop up while you browse" sebagai keunggulan utama.
+- [x] Urutan tab final: **Settings | Study | Words | Kanji | Stats | Graph**.
+- [x] **Klarifikasi checkbox seleksi di tab Study** — sebelumnya gak ada
+      penjelasan sama sekali kalau checklist di situ nentuin kata mana yang
+      eligible muncul di popup flashcard di halaman web. Ditambah hint teks
+      + header kolom "In popup" + summary di-rename jadi "Which words show
+      in the popup".
+  - **Nemu gotcha nyata** pas ngecek ini: tombol "Clear" (sekarang di-rename
+    "Deselect all") itu nyisain objek seleksi `{}` (bukan `undefined`) di
+    `chrome.storage.local`, dan `{}` itu truthy di JS — jadi `pickCard()` di
+    `srs.js` nge-skip SEMUA kartu di deck itu, bukan reset ke "semua
+    eligible" kayak yang biasanya diharapkan orang pas klik "Clear". Hint
+    teks-nya udah jelasin ini eksplisit biar gak jadi jebakan diam-diam.
 
 ## Next Version (post-MVP)
 

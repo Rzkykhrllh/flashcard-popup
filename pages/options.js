@@ -504,10 +504,14 @@ async function renderStudy() {
       <button class="btn" id="studyShuffle">Shuffle</button>
     </div>
     <details class="study-browse" id="studyBrowse" ${studyState.browseOpen ? 'open' : ''}>
-      <summary class="browse-summary">Vocabulary list${selectedCount ? ` (${selectedCount} selected)` : ''}</summary>
+      <summary class="browse-summary">Which words show in the popup${selectedCount ? ` (${selectedCount} selected)` : ''}</summary>
+      <p class="hint" style="margin-top:6px">These checkboxes control which words from this deck can show up in the
+        flashcard popup on web pages (same list is used here in Study). Leave everything untouched and the whole
+        deck is eligible by default. Checking a few switches this deck to "only these" — and "Deselect all" removes
+        the <em>entire deck</em> from the popup, it doesn't reset back to "everything."</p>
       <div style="margin:8px 0;display:flex;gap:8px">
         <button class="btn" id="selectAllBtn">Select all</button>
-        <button class="btn" id="clearSelBtn">Clear</button>
+        <button class="btn" id="clearSelBtn">Deselect all</button>
       </div>
       <div id="browseTable"></div>
     </details>
@@ -643,7 +647,7 @@ function renderStudyBrowse(container, entries) {
   const wrap = document.getElementById("browseTable");
   if (!wrap) return;
   const sel = studyState._selection || {};
-  let html = '<table class="stats-table"><thead><tr><th></th><th>Kanji</th><th>Reading</th><th>Meaning</th><th>Notes</th></tr></thead><tbody>';
+  let html = '<table class="stats-table"><thead><tr><th>In popup</th><th>Kanji</th><th>Reading</th><th>Meaning</th><th>Notes</th></tr></thead><tbody>';
   for (const [key, c] of entries) {
     const checked = sel[key] ? 'checked' : '';
     html += `<tr data-key="${key}"><td><input type="checkbox" class="card-cb" ${checked} /></td><td class="kanji-cell">${c.kanji}</td><td class="reading-cell">${c.hiragana || "—"}</td><td>${c.arti || "—"}</td><td class="cell-muted">${c.notes || ""}</td></tr>`;
