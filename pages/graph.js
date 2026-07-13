@@ -68,10 +68,16 @@ svg.append(gE, gN);
 
 let view = new Map(), edges = [], edgeEls = [], focusK = null, trail = [], raf = 0, wsel = null;
 
-function setFocus(k, fromCrumb) {
+function setFocus(k) {
   if (!KANJI_SET.has(k)) return;
   focusK = k; wsel = null;
-  if (!fromCrumb) { const i = trail.indexOf(k); trail = i >= 0 ? trail.slice(0, i + 1) : [...trail, k]; }
+  // Always truncate-or-append, regardless of how we got here (kanji tile,
+  // crumb click, search, "center here" link, minimap dot). Jumping back to an
+  // already-visited node via its crumb must drop the now-stale forward
+  // entries, otherwise the trail shows dead branches and new navigation
+  // appends after them instead of after the node you actually clicked.
+  const i = trail.indexOf(k);
+  trail = i >= 0 ? trail.slice(0, i + 1) : [...trail, k];
   layout(); drawCrumbs(); showKanji(k); updateMap();
 }
 
@@ -175,7 +181,7 @@ function drawCrumbs() {
   trail.forEach((k, i) => {
     if (i) c.insertAdjacentHTML("beforeend", `<span class="sep">›</span>`);
     const s = document.createElement("span"); s.className = "cb" + (k === focusK ? " now" : ""); s.textContent = k;
-    s.onclick = () => setFocus(k, true); c.appendChild(s);
+    s.onclick = () => setFocus(k); c.appendChild(s);
   });
 }
 
