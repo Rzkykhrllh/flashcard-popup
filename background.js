@@ -359,6 +359,21 @@ async function recordGrade(key, result) {
   await putWord(card);
 }
 
+/* --------------------------------- theming --------------------------------- */
+
+// Toolbar icon per "Color theme" setting — icons/{theme}/icon*.png, generated
+// from the base blue set (icons/icon*.png doubles as the "blue" variant).
+async function applyThemeIcon(theme) {
+  const dir = theme && theme !== "blue" ? `icons/${theme}` : "icons";
+  try {
+    await chrome.action.setIcon({
+      path: { 16: `${dir}/icon16.png`, 48: `${dir}/icon48.png`, 128: `${dir}/icon128.png` },
+    });
+  } catch (e) {
+    console.error("[theme] setIcon failed", e);
+  }
+}
+
 /* ------------------------------- scheduling ------------------------------- */
 
 async function rescheduleAlarm() {
@@ -382,6 +397,7 @@ chrome.runtime.onInstalled.addListener(async () => {
   const { settings } = await chrome.storage.local.get("settings");
   if (!settings) await chrome.storage.local.set({ settings: DEFAULT_SETTINGS });
   await rescheduleAlarm();
+  await applyThemeIcon((settings || DEFAULT_SETTINGS).theme);
   try {
     await runMigration();
     // One more catch-up before words/groups become the live source of truth,
@@ -393,8 +409,10 @@ chrome.runtime.onInstalled.addListener(async () => {
   }
 });
 
-chrome.runtime.onStartup.addListener(() => {
+chrome.runtime.onStartup.addListener(async () => {
   rescheduleAlarm();
+  const { settings } = await chrome.storage.local.get("settings");
+  await applyThemeIcon((settings || DEFAULT_SETTINGS).theme);
 });
 
 /* -------------------------------- messaging ------------------------------- */
@@ -497,6 +515,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       case "updateSettings": {
         const next = await saveSettings(msg.patch || {});
         if (msg.patch && "intervalMinutes" in msg.patch) await rescheduleAlarm();
+        if (msg.patch && "theme" in msg.patch) await applyThemeIcon(next.theme);
         sendResponse({ ok: true, settings: next });
         break;
       }

@@ -6,6 +6,14 @@
   --line: rgba(0, 0, 0, 0.09);
   --surface: #efefee;
 }
+
+/* Matches the "Color theme" picker in Settings and the flashcard overlay's
+   own ACCENT map (content.js) — kept in sync by hand, same 4 colors. */
+body.theme-blue   { --shu: #2563eb; }
+body.theme-red    { --shu: #d34533; }
+body.theme-purple { --shu: #7c3aed; }
+body.theme-green  { --shu: #16a34a; }
+
 @media (prefers-color-scheme: dark) {
   :root {
     --paper: #1e1e1e;
@@ -15,6 +23,10 @@
     --line: rgba(255, 255, 255, 0.09);
     --surface: #2a2a2a;
   }
+  body.theme-blue   { --shu: #3b82f6; }
+  body.theme-red    { --shu: #e06a55; }
+  body.theme-purple { --shu: #a78bfa; }
+  body.theme-green  { --shu: #4ade80; }
 }
 
 * { box-sizing: border-box; margin: 0; }

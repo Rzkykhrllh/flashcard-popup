@@ -22,8 +22,14 @@ function timeAgo(ts) {
   return `${Math.round(h / 24)} days ago`;
 }
 
+function applyTheme(theme) {
+  document.body.classList.remove("theme-blue", "theme-red", "theme-purple", "theme-green");
+  document.body.classList.add(`theme-${theme || "blue"}`);
+}
+
 async function refresh() {
   const state = await send({ type: "getState" });
+  applyTheme(state.settings.theme);
   const enabledDecks = state.decks.filter((d) => d.enabled !== false);
   const total = enabledDecks.reduce(
     (s, d) => s + Object.keys(state.cards[d.id] || {}).length,
