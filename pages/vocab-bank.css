@@ -11,6 +11,9 @@
 #wordModalActions { justify-content: space-between; margin-top: 24px; }
 .btn.ghost-danger { background: transparent; border-color: var(--line); color: var(--muted); }
 .btn.ghost-danger:hover { background: rgba(192, 57, 43, 0.1); border-color: #c0392b; color: #c0392b; }
+@media (prefers-color-scheme: dark) {
+  .btn.ghost-danger:hover { background: rgba(248, 113, 113, 0.15); border-color: #f87171; color: #f87171; }
+}
 
 .search-input {
   flex: 1 1 240px; min-width: 0; border: 1px solid var(--line); background: var(--paper); color: var(--ink);

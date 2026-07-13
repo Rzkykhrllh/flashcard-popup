@@ -1,10 +1,13 @@
+/* Same neutral scale as options.css (kept in sync by hand — see the comment
+   there for why --muted/--ink-2 are split and contrast-checked). */
 :root {
   --paper: #f7f7f6;
   --ink: #1c1c1c;
-  --muted: #888;
+  --ink-2: #4b4b4b;
+  --muted: #6b6b6b;
   --shu: #2563eb;
-  --line: rgba(0, 0, 0, 0.09);
-  --surface: #efefee;
+  --line: rgba(0, 0, 0, 0.10);
+  --surface: #eeeeec;
 }
 
 /* Matches the "Color theme" picker in Settings and the flashcard overlay's
@@ -17,11 +20,12 @@ body.theme-green  { --shu: #16a34a; }
 @media (prefers-color-scheme: dark) {
   :root {
     --paper: #1e1e1e;
-    --ink: #e8e8e8;
-    --muted: #777;
+    --ink: #ededed;
+    --ink-2: #c2c2c2;
+    --muted: #a6a6a6;
     --shu: #3b82f6;
-    --line: rgba(255, 255, 255, 0.09);
-    --surface: #2a2a2a;
+    --line: rgba(255, 255, 255, 0.12);
+    --surface: #363636;
   }
   body.theme-blue   { --shu: #3b82f6; }
   body.theme-red    { --shu: #e06a55; }

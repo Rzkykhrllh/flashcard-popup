@@ -86,7 +86,7 @@
       /* Neutral base. All accent-derived colors follow the selected theme. */
       :host {
         --bg:#f7f7f6; --fg:#1c1c1c;
-        --muted:#888; --reading:#444; --notes:#666;
+        --muted:#6b6b6b; --reading:#444; --notes:#666;
         --border:rgba(0,0,0,.09);
         --reveal-bg:#1c1c1c; --reveal-fg:#f7f7f6;
         --shadow:0 12px 40px rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.07);
@@ -97,7 +97,7 @@
       @media (prefers-color-scheme:dark) {
         :host {
           --bg:#1e1e1e; --fg:#e8e8e8;
-          --muted:#777; --reading:#b0b0b0; --notes:#888;
+          --muted:#a6a6a6; --reading:#b0b0b0; --notes:#888;
           --border:rgba(255,255,255,.09);
           --reveal-bg:#e8e8e8; --reveal-fg:#1e1e1e;
           --shadow:0 12px 40px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.2); --x:#666;

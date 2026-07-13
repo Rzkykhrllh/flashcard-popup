@@ -126,6 +126,27 @@ dicentang manual tiap sub-task kelar.
       `manifest.json`, `background.js`, `content.js`, `lib/` tetap di root.
       Semua path silang (manifest, importScripts, chrome.runtime.getURL, script/link
       src) sudah diupdate & diverifikasi resolve ke file yang benar.
+- [x] **Palette audit + fix (WCAG contrast, dihitung pakai formula resmi, bukan
+      nebak)** — `options.css`/`popup.css` sebelumnya punya `--muted` (#888/#777)
+      yang GAGAL AA (3.2-3.7:1) di kedua mode, dipakai luas ke mana-mana
+      (hint text, timestamp, furigana di flashcard `content.js`!). Ketemu +
+      dibenerin:
+  - Neutral scale sekarang 3 tier teks (`--ink`/`--ink-2`/`--muted`, bukan
+    cuma 2), semua tervalidasi >=4.5:1 di kedua mode. `--ink-2` dipakai di
+    `.reading-cell` (isi hiragana di tabel, sebelumnya `--muted` yang gagal).
+  - `.status.ok/.err`, `.cell-know/.cell-hint/.cell-lupa`, `.ratio-fill`,
+    `.deck .rm:hover`, `.btn.ghost-danger:hover` — semua dapet dark-mode
+    variant yang tervalidasi (sebelumnya cuma versi light, ~2.2-2.9:1 di dark).
+  - `content.js` (flashcard overlay) — `--muted` dibenerin juga (dipakai buat
+    `.furigana`, bukan sekadar hint).
+  - `graph.css` — `--gmuted` dibenerin (light-only, gak nambah dark mode ke
+    tab Graph — itu belum ada sama sekali di sana, lihat catatan di bawah).
+  - Kanji di tabel (`kanji-cell`) dibesarin 15px → 21px — kekecilan buat app
+    yang isinya kanji. Padding sel tabel ikut dilonggarin (8px → 10px).
+  - **Belum dikerjain**: tab Graph gak punya dark mode sama sekali (fixed
+    washi palette, ported apa adanya dari prototype asli). Kalau mau ini
+    juga di-dark-mode-in, itu kerjaan desain terpisah (bikin varian washi
+    gelap), bukan cuma fix kontras.
 
 ## Next Version (post-MVP)
 

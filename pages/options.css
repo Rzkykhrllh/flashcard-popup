@@ -1,23 +1,34 @@
+/* Neutral scale has 3 text tiers on purpose (ink / ink-2 / muted), not 2 —
+   --muted was previously overloaded for everything from body copy to
+   throwaway hints and fell below WCAG AA (3.2-3.5:1) doing it. Every value
+   here is contrast-checked against --surface/--surface-2/--paper in both
+   modes (>=4.5:1 for text, >=3:1 for large/UI-only). --shu stays whatever
+   the selected theme sets it to (see body.theme-*) — the neutrals below are
+   theme-independent. */
 :root {
   --paper: #f7f7f6;
   --ink: #1c1c1c;
-  --muted: #888;
+  --ink-2: #4b4b4b;
+  --muted: #6b6b6b;
   --shu: #2563eb;
   --shu-d: #1d4ed8;
-  --line: rgba(0, 0, 0, 0.09);
+  --line: rgba(0, 0, 0, 0.10);
+  --line-2: rgba(0, 0, 0, 0.16);
   --surface: #ffffff;
-  --surface-2: #efefee;
+  --surface-2: #eeeeec;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --paper: #1e1e1e;
-    --ink: #e8e8e8;
-    --muted: #777;
+    --ink: #ededed;
+    --ink-2: #c2c2c2;
+    --muted: #a6a6a6;
     --shu: #3b82f6;
     --shu-d: #60a5fa;
-    --line: rgba(255, 255, 255, 0.09);
+    --line: rgba(255, 255, 255, 0.12);
+    --line-2: rgba(255, 255, 255, 0.20);
     --surface: #2a2a2a;
-    --surface-2: #333;
+    --surface-2: #363636;
   }
 }
 
@@ -76,8 +87,12 @@ input[type="text"]:focus, input[type="number"]:focus { outline: 2px solid var(--
 .btn:disabled { opacity: 0.55; cursor: default; }
 
 .status { font-size: 13px; margin-top: 10px; min-height: 18px; }
-.status.ok { color: #2f7d4f; }
+.status.ok { color: #1f7a46; }
 .status.err { color: #c0392b; }
+@media (prefers-color-scheme: dark) {
+  .status.ok { color: #4ade80; }
+  .status.err { color: #f87171; }
+}
 
 .row-between { display: flex; align-items: center; justify-content: space-between; }
 .decks { list-style: none; margin-top: 12px; }
@@ -91,6 +106,9 @@ input[type="text"]:focus, input[type="number"]:focus { outline: 2px solid var(--
 .deck .sub { font-size: 12px; color: var(--muted); }
 .deck .rm { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; padding: 4px 8px; border-radius: 6px; }
 .deck .rm:hover { background: var(--surface-2); color: #c0392b; }
+@media (prefers-color-scheme: dark) {
+  .deck .rm:hover { color: #f87171; }
+}
 .empty { font-size: 13px; color: var(--muted); margin-top: 12px; }
 
 /* toggle switch */
@@ -207,18 +225,25 @@ input[type="text"]:focus, input[type="number"]:focus { outline: 2px solid var(--
   background: var(--surface-2);
 }
 .stats-table td {
-  padding: 8px 12px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
 }
 .stats-table tbody tr:last-child td { border-bottom: none; }
 .stats-table tbody tr:hover { background: var(--surface-2); }
-.stats-table .kanji-cell { font-size: 15px; }
-.stats-table .reading-cell { color: var(--muted); }
-.stats-table .cell-know { color: #2f7d4f; font-weight: 500; }
-.stats-table .cell-hint { color: #b45309; font-weight: 500; }
+/* Kanji is the whole point of this app — 15px read as an afterthought next
+   to its own reading/meaning. Bumped enough to actually be comfortable. */
+.stats-table .kanji-cell { font-size: 21px; line-height: 1.3; }
+.stats-table .reading-cell { color: var(--ink-2); font-size: 14px; }
+.stats-table .cell-know { color: #1f7a46; font-weight: 500; }
+.stats-table .cell-hint { color: #a6540a; font-weight: 500; }
 .stats-table .cell-lupa { color: #c0392b; font-weight: 500; }
 .stats-table .cell-muted { color: var(--muted); }
+@media (prefers-color-scheme: dark) {
+  .stats-table .cell-know { color: #4ade80; }
+  .stats-table .cell-hint { color: #fbbf24; }
+  .stats-table .cell-lupa { color: #f87171; }
+}
 
 .ratio-bar {
   width: 60px;
@@ -232,8 +257,11 @@ input[type="text"]:focus, input[type="number"]:focus { outline: 2px solid var(--
 }
 .ratio-fill {
   height: 100%;
-  background: #2f7d4f;
+  background: #1f7a46;
   border-radius: 99px;
+}
+@media (prefers-color-scheme: dark) {
+  .ratio-fill { background: #4ade80; }
 }
 
 /* Study tab */
