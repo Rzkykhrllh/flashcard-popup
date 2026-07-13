@@ -185,7 +185,7 @@
       <div id="tab-kanji" class="tab-pane">
         <section class="panel">
           <div class="bank-toolbar">
-            <input id="kanjiSearchInput" type="text" class="search-input" placeholder="Search kanji or meaning…" autocomplete="off" />
+            <input id="kanjiSearchInput" type="text" class="search-input" placeholder="Search kanji, meaning, or notes…" autocomplete="off" />
           </div>
         </section>
 
@@ -198,13 +198,15 @@
             <thead>
               <tr>
                 <th class="kt-col-kanji">Kanji</th>
-                <th class="kt-col-readings">Readings</th>
+                <th class="kt-col-reading">On'yomi</th>
+                <th class="kt-col-reading">Kun'yomi</th>
                 <th class="kt-col-meaning">Meaning</th>
+                <th class="kt-col-meaning">Notes</th>
                 <th class="kt-col-words">Words containing it</th>
               </tr>
             </thead>
             <tbody id="kanjiRows">
-              <tr><td colspan="4" class="cell-muted">Loading…</td></tr>
+              <tr><td colspan="6" class="cell-muted">Loading…</td></tr>
             </tbody>
           </table>
           <p class="empty" id="kanjiEmptyState" style="display:none">No kanji yet — add some words first.</p>
@@ -288,10 +290,10 @@
 
           <div class="kv-section">
             <div class="wv-label">Meaning <span class="label-note">(your own, not the dictionary)</span></div>
-            <div class="kv-meaning-row">
-              <input id="kMeaningInput" type="text" placeholder="e.g. to eat, food" />
-              <button class="btn primary" id="kMeaningSaveBtn">Save</button>
-            </div>
+            <input id="kMeaningInput" type="text" class="kv-input" placeholder="e.g. to eat, food" />
+            <div class="wv-label" style="margin-top:12px">Notes</div>
+            <textarea id="kNotesInput" rows="2" class="kv-input" placeholder="optional — mnemonics, mix-ups, whatever helps"></textarea>
+            <button class="btn primary" id="kMeaningSaveBtn" style="margin-top:10px">Save</button>
           </div>
 
           <div class="kv-divider"></div>

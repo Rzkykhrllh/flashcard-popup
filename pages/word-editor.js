@@ -50,6 +50,7 @@ const kanjiModalOverlay = document.getElementById("kanjiModalOverlay");
 const kModalChar = document.getElementById("kModalChar");
 const kModalClose = document.getElementById("kModalClose");
 const kMeaningInput = document.getElementById("kMeaningInput");
+const kNotesInput = document.getElementById("kNotesInput");
 const kMeaningSaveBtn = document.getElementById("kMeaningSaveBtn");
 const kOn = document.getElementById("kOn");
 const kKun = document.getElementById("kKun");
@@ -259,6 +260,7 @@ async function openKanjiModal(k) {
   currentKanjiChar = k;
   kModalChar.textContent = k;
   kMeaningInput.value = "";
+  kNotesInput.value = "";
   kOn.innerHTML = '<span class="reading-pill">Loading…</span>';
   kKun.innerHTML = "";
 
@@ -282,6 +284,7 @@ async function openKanjiModal(k) {
 
   const meta = await getKanjiMeta(k);
   kMeaningInput.value = meta ? meta.meaning || "" : "";
+  kNotesInput.value = meta ? meta.notes || "" : "";
 
   const dict = await loadKanjidic();
   const entry = dict[k];
@@ -300,9 +303,13 @@ function closeKanjiModal() {
 
 kMeaningSaveBtn.addEventListener("click", async () => {
   if (!currentKanjiChar) return;
-  await putKanjiMeta({ char: currentKanjiChar, meaning: kMeaningInput.value.trim() });
+  await putKanjiMeta({
+    char: currentKanjiChar,
+    meaning: kMeaningInput.value.trim(),
+    notes: kNotesInput.value.trim(),
+  });
   kMeaningSaveBtn.textContent = "Saved";
-  setTimeout(() => { kMeaningSaveBtn.textContent = "Save meaning"; }, 1200);
+  setTimeout(() => { kMeaningSaveBtn.textContent = "Save"; }, 1200);
   if (typeof renderKanjiTab === "function") renderKanjiTab();
 });
 

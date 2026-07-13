@@ -43,10 +43,11 @@
    use the kanji is what you scan for). */
 .kanji-table { table-layout: fixed; }
 .kt-col-kanji { width: 56px; }
-.kt-col-readings { width: 18%; }
-.kt-col-meaning { width: 20%; }
+.kt-col-reading { width: 11%; }
+.kt-col-meaning { width: 15%; }
 .kt-col-words { width: auto; }
 .kt-readings { font-size: 12px; color: var(--muted); }
+.kt-notes { color: var(--muted); }
 .kt-words { font-size: 13px; line-height: 1.6; word-break: break-word; }
 
 .status-badge {
@@ -115,13 +116,11 @@
 .kv-reading-group .reading-list { margin-top: 4px; }
 .kv-divider { height: 1px; background: var(--line); margin: 20px 0 16px; }
 .kv-section { text-align: left; }
-.kv-meaning-row { display: flex; gap: 8px; align-items: center; }
-.kv-meaning-row input {
-  flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--paper); color: var(--ink);
-  border-radius: 9px; padding: 9px 11px; font-size: 14px; font-family: inherit;
+.kv-input {
+  display: block; width: 100%; border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+  border-radius: 9px; padding: 9px 11px; font-size: 14px; font-family: inherit; resize: vertical;
 }
-.kv-meaning-row input:focus { outline: 2px solid var(--shu); outline-offset: -1px; }
-.kv-meaning-row .btn { flex: none; }
+.kv-input:focus { outline: 2px solid var(--shu); outline-offset: -1px; }
 
 .field-label { display: block; font-size: 12px; color: var(--muted); margin-top: 10px; }
 .field-label:first-child { margin-top: 0; }

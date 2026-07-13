@@ -28,16 +28,23 @@ async function renderKanjiTab() {
 
   const q = kanjiTabQuery.trim().toLowerCase();
   const chars = [...wordIndex.keys()]
-    .filter((c) => !q || c.includes(q) || (metaByChar.get(c)?.meaning || "").toLowerCase().includes(q))
+    .filter((c) => {
+      if (!q) return true;
+      const meta = metaByChar.get(c);
+      return c.includes(q)
+        || (meta?.meaning || "").toLowerCase().includes(q)
+        || (meta?.notes || "").toLowerCase().includes(q);
+    })
     .sort((a, b) => wordIndex.get(b).length - wordIndex.get(a).length);
 
   kanjiRowsEl.innerHTML = chars
     .map((c) => {
       const entry = dict[c];
-      const on = entry && entry.on && entry.on.length ? entry.on.join("、") : "";
-      const kun = entry && entry.kun && entry.kun.length ? entry.kun.join("、") : "";
-      const readings = [on, kun].filter(Boolean).join(" / ") || "—";
-      const meaning = metaByChar.get(c)?.meaning || "—";
+      const on = entry && entry.on && entry.on.length ? entry.on.join("、") : "—";
+      const kun = entry && entry.kun && entry.kun.length ? entry.kun.join("、") : "—";
+      const meta = metaByChar.get(c);
+      const meaning = meta?.meaning || "—";
+      const notes = meta?.notes || "—";
 
       const words = wordIndex.get(c);
       const shown = words.slice(0, KANJI_TABLE_WORD_PREVIEW).map((w) => escapeHtml(w.kanji)).join("、");
@@ -47,8 +54,10 @@ async function renderKanjiTab() {
       return `
         <tr data-k="${escapeHtml(c)}">
           <td class="kanji-cell">${escapeHtml(c)}</td>
-          <td class="reading-cell kt-readings">${escapeHtml(readings)}</td>
+          <td class="reading-cell kt-readings">${escapeHtml(on)}</td>
+          <td class="reading-cell kt-readings">${escapeHtml(kun)}</td>
           <td>${escapeHtml(meaning)}</td>
+          <td class="kt-notes">${escapeHtml(notes)}</td>
           <td class="kt-words">${wordsHtml}</td>
         </tr>`;
     })

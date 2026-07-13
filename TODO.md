@@ -91,15 +91,17 @@ dicentang manual tiap sub-task kelar.
     4.0, attribution di README.md), cuma ambil field `on`/`kun` per kanji
     (12.356 kanji, ~640KB). Di-fetch lazy (sekali, di-cache) pas kanji card
     pertama kali dibuka — gak nge-block load halaman.
-- [x] Kanji card di-revamp: **meaning kanji manual** (bukan dari dict) —
-      store baru `kanjiMeta` di IndexedDB (`db.js` v2, keyPath `char`), field
-      `on`/`kun` tetap dari `data/kanjidic.json`, gak pernah ke-mix.
+- [x] Kanji card di-revamp: **meaning + notes kanji manual** (bukan dari
+      dict) — store `kanjiMeta` di IndexedDB (`db.js` v2, keyPath `char`,
+      field `meaning` + `notes`), field `on`/`kun` tetap dari
+      `data/kanjidic.json`, gak pernah ke-mix.
   - Layout kanji card disamain sama word view card (kanji besar di tengah,
     section berlabel + divider) — sebelumnya cuma list `<h2>`+form polos.
 - [x] Tab **"Kanji"** baru — browse semua kanji yang pernah muncul di kata-kata
-      (auto dari `kanjiList`), sortable by usage count, search by kanji/meaning.
-      Klik row → buka kanji card yang sama (reuse dari word editor). Kolom:
-      Kanji | Readings (on/kun digabung compact, cuma referensi) | Meaning |
+      (auto dari `kanjiList`), sortable by usage count, search by
+      kanji/meaning/notes. Klik row → buka kanji card yang sama (reuse dari
+      word editor). Kolom: Kanji | On'yomi | Kun'yomi (masing-masing kolom
+      sendiri, tapi compact — cuma referensi) | Meaning | Notes |
       **Words containing it** (tampilin katanya langsung, bukan cuma angka
       "used in N" — di-cap 6 kata + "+N more", full list tetep ada di kanji card).
 - [x] Word card di-revamp jadi 2 mode dalam 1 modal: **View** (default pas
