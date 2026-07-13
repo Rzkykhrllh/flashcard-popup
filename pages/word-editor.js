@@ -25,7 +25,10 @@ const wordView = document.getElementById("wordView");
 const wvFurigana = document.getElementById("wvFurigana");
 const wvKanji = document.getElementById("wvKanji");
 const wvMeaning = document.getElementById("wvMeaning");
+const wvDivider = document.getElementById("wvDivider");
+const wvExampleSection = document.getElementById("wvExampleSection");
 const wvExample = document.getElementById("wvExample");
+const wvNotesSection = document.getElementById("wvNotesSection");
 const wvNotes = document.getElementById("wvNotes");
 const wordForm = document.getElementById("wordForm");
 const wordModalTitle = document.getElementById("wordModalTitle");
@@ -89,10 +92,12 @@ function showWordView(word) {
   wvFurigana.textContent = word.hiragana || "";
   renderKanjiInline(wvKanji, word.kanji || "");
   wvMeaning.textContent = word.arti || "";
+
   wvExample.textContent = word.example || "";
-  wvExample.style.display = word.example ? "block" : "none";
+  wvExampleSection.style.display = word.example ? "block" : "none";
   wvNotes.textContent = word.notes || "";
-  wvNotes.style.display = word.notes ? "block" : "none";
+  wvNotesSection.style.display = word.notes ? "block" : "none";
+  wvDivider.style.display = (word.example || word.notes) ? "block" : "none";
 }
 
 function showWordForm() {

@@ -261,16 +261,9 @@ tabBtns.forEach((btn) => {
   btn.addEventListener("click", () => switchTab(btn.dataset.tab));
 });
 
-// Open to a specific tab via URL hash (e.g. options.html#study). #add-word is
-// a special case from the popup's "+ Add word" shortcut: land on List, then
-// pop the add-word modal open.
+// Open to a specific tab via URL hash (e.g. options.html#study)
 const hashTab = window.location.hash.replace("#", "");
-if (hashTab === "add-word") {
-  switchTab("list");
-  if (typeof openWordModal === "function") openWordModal(null);
-} else if (hashTab) {
-  switchTab(hashTab);
-}
+if (hashTab) switchTab(hashTab);
 
 /* ---------------------------------- stats --------------------------------- */
 

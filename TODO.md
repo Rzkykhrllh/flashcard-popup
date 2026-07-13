@@ -99,12 +99,18 @@ dicentang manual tiap sub-task kelar.
       Klik row → buka kanji card yang sama (reuse dari word editor).
 - [x] Word card di-revamp jadi 2 mode dalam 1 modal: **View** (default pas
       klik kata existing — furigana kecil di atas, kanji besar di tengah
-      *(tiap kanji individual clickable → kanji card)*, meaning, contoh
-      kalimat, notes) dan **Edit** (form, default pas Add). Field baru:
-      **example** (contoh kalimat).
-- [x] Shortcut **"+ Add word"** di popup toolbar → `options.html#add-word`
-      (hash khusus, di-handle options.js: pindah ke tab List + langsung buka
-      modal Add).
+      *(tiap kanji individual clickable → kanji card)*, meaning, lalu section
+      Example/Notes yang jelas berlabel + divider, dipisah dari card utama)
+      dan **Edit** (form, default pas Add). Field baru: **example** (contoh
+      kalimat). Delete di-de-emphasize (ghost, misah jauh dari Edit/Save)
+      biar gak kepencet gak sengaja.
+- [x] **"+ Add word" di popup — inline, gak redirect.** Awalnya buka tab baru
+      ke `options.html#add-word`, sekarang jadi form kecil langsung di popup
+      (`popup.html` juga load `core/db.js`+`core/kanji.js`). Logic sama kayak
+      Add mode di `word-editor.js` (collision/merge rule sama), tapi
+      duplicated di `popup.js` sendiri karena popup & options.html gak pernah
+      share 1 halaman/scope. Hash `#add-word` di `options.js` udah dihapus
+      (gak dipakai lagi).
 
 ## Housekeeping
 

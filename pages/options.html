@@ -221,8 +221,15 @@
             <div class="wv-furigana" id="wvFurigana"></div>
             <div class="wv-kanji" id="wvKanji"></div>
             <div class="wv-meaning" id="wvMeaning"></div>
-            <div class="wv-example" id="wvExample"></div>
-            <div class="wv-notes" id="wvNotes"></div>
+            <div class="wv-divider" id="wvDivider"></div>
+            <div class="wv-section" id="wvExampleSection">
+              <div class="wv-label">Example</div>
+              <div class="wv-example" id="wvExample"></div>
+            </div>
+            <div class="wv-section" id="wvNotesSection">
+              <div class="wv-label">Notes</div>
+              <div class="wv-notes" id="wvNotes"></div>
+            </div>
           </div>
 
           <!-- Edit mode: the form. Default for "+ Add word"; reached from View via Edit. -->
@@ -253,10 +260,10 @@
             <p id="wStatus" class="status"></p>
           </div>
 
-          <div class="btn-row-bank">
+          <div class="btn-row-bank" id="wordModalActions">
             <button class="btn primary" id="wEditBtn">Edit</button>
             <button class="btn primary" id="wSaveBtn" style="display:none">Save</button>
-            <button class="btn" id="wDeleteBtn">Delete</button>
+            <button class="btn ghost-danger" id="wDeleteBtn">Delete</button>
           </div>
         </div>
       </div>

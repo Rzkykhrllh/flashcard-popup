@@ -13,6 +13,17 @@ const addWordShortcut = document.getElementById("addWordShortcut");
 const syncBtn = document.getElementById("syncBtn");
 const optionsBtn = document.getElementById("optionsBtn");
 
+const quickAdd = document.getElementById("quickAdd");
+const qaKanji = document.getElementById("qaKanji");
+const qaHiragana = document.getElementById("qaHiragana");
+const qaArti = document.getElementById("qaArti");
+const qaNotes = document.getElementById("qaNotes");
+const qaGroupSelect = document.getElementById("qaGroupSelect");
+const qaNewGroupName = document.getElementById("qaNewGroupName");
+const qaStatus = document.getElementById("qaStatus");
+const qaSaveBtn = document.getElementById("qaSaveBtn");
+const qaCancelBtn = document.getElementById("qaCancelBtn");
+
 function timeAgo(ts) {
   if (!ts) return "never";
   const m = Math.round((Date.now() - ts) / 60000);
@@ -83,7 +94,73 @@ menuToggle.addEventListener("click", () => {
 
 studyBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html#study") }));
 bankBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html#list") }));
-addWordShortcut.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html#add-word") }));
 optionsBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html#settings") }));
+
+// Quick-add: capture a word straight from the popup, no navigating away.
+// Mirrors word-editor.js's Add-mode logic (same collision/merge rule), kept
+// as its own copy since popup.js and word-editor.js never share a page.
+async function openQuickAdd() {
+  const groups = await getAllGroups();
+  qaGroupSelect.innerHTML = [
+    ...groups.map((g) => `<option value="${g.id}">${g.name}</option>`),
+    `<option value="__new__">+ New collection…</option>`,
+  ].join("");
+  qaNewGroupName.style.display = "none";
+  qaNewGroupName.value = "";
+  qaKanji.value = ""; qaHiragana.value = ""; qaArti.value = ""; qaNotes.value = "";
+  qaStatus.textContent = "";
+  quickAdd.classList.add("open");
+  qaKanji.focus();
+}
+
+function closeQuickAdd() {
+  quickAdd.classList.remove("open");
+}
+
+addWordShortcut.addEventListener("click", openQuickAdd);
+qaCancelBtn.addEventListener("click", closeQuickAdd);
+
+qaGroupSelect.addEventListener("change", () => {
+  qaNewGroupName.style.display = qaGroupSelect.value === "__new__" ? "" : "none";
+});
+
+qaSaveBtn.addEventListener("click", async () => {
+  const kanji = qaKanji.value.trim();
+  const hiragana = qaHiragana.value.trim();
+  const arti = qaArti.value.trim();
+  const notes = qaNotes.value.trim();
+  if (!kanji) { qaStatus.textContent = "Kanji can't be empty."; return; }
+
+  let groupId = qaGroupSelect.value;
+  if (groupId === "__new__") {
+    const name = qaNewGroupName.value.trim();
+    if (!name) { qaStatus.textContent = "Collection name can't be empty."; return; }
+    groupId = `manual_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    await putGroup({ id: groupId, name, type: "manual", sourceSheetUrl: null });
+  }
+  if (!groupId) { qaStatus.textContent = "Pick a collection."; return; }
+
+  const id = `${kanji}|${hiragana}`;
+  const existing = await getWord(id);
+  if (existing) {
+    const ok = confirm(`"${kanji}${hiragana ? " / " + hiragana : ""}" already exists. Update it and add to this collection?`);
+    if (!ok) return;
+    existing.kanji = kanji; existing.hiragana = hiragana; existing.arti = arti; existing.notes = notes;
+    existing.kanjiList = extractKanjiList(kanji);
+    existing.groupIds = [...new Set([...(existing.groupIds || []), groupId])];
+    await putWord(existing);
+  } else {
+    await putWord({
+      id, kanji, hiragana, arti, notes,
+      kanjiList: extractKanjiList(kanji),
+      seen: 0, known: 0, hint: 0, forgot: 0, lastSeen: 0, createdAt: Date.now(),
+      n: 0, easeFactor: 2.5, status: "new", statusOverride: false,
+      source: "manual", groupIds: [groupId],
+    });
+  }
+
+  qaStatus.textContent = "Saved!";
+  setTimeout(closeQuickAdd, 700);
+});
 
 refresh();

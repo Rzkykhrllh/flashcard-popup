@@ -74,6 +74,20 @@ body {
 .submenu.open { max-height: 220px; }
 .submenu .btn-row { margin-top: 8px; }
 
+/* Quick-add — inline, sits outside .submenu so it isn't clipped by its
+   max-height; opens independently when "+ Add word" is clicked. */
+.quick-add { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.quick-add.open { display: block; }
+.quick-add input, .quick-add select, .quick-add textarea {
+  display: block; width: 100%; border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+  border-radius: 8px; padding: 8px 10px; font-size: 13px; font-family: inherit;
+  margin-bottom: 6px; resize: vertical;
+}
+.quick-add input:focus, .quick-add select:focus, .quick-add textarea:focus {
+  outline: 2px solid var(--shu); outline-offset: -1px;
+}
+.qa-status { font-size: 11px; color: var(--muted); min-height: 14px; margin: 0 0 6px; }
+
 .state { font-size: 11px; color: var(--muted); text-align: center; margin-top: 6px; min-height: 14px; }
 
 .credit { font-size: 10px; color: var(--muted); text-align: center; margin-top: 10px; }

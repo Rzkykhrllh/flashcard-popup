@@ -30,9 +30,25 @@
       <button class="btn ghost" id="optionsBtn">Settings & decks</button>
     </div>
 
+    <div class="quick-add" id="quickAdd">
+      <input id="qaKanji" type="text" placeholder="Kanji" autocomplete="off" />
+      <input id="qaHiragana" type="text" placeholder="Reading (hiragana)" autocomplete="off" />
+      <input id="qaArti" type="text" placeholder="Meaning" autocomplete="off" />
+      <textarea id="qaNotes" rows="2" placeholder="Notes (optional)"></textarea>
+      <select id="qaGroupSelect"></select>
+      <input id="qaNewGroupName" type="text" placeholder="New collection name" autocomplete="off" style="display:none" />
+      <p id="qaStatus" class="qa-status"></p>
+      <div class="btn-row">
+        <button class="btn primary" id="qaSaveBtn">Save</button>
+        <button class="btn" id="qaCancelBtn">Cancel</button>
+      </div>
+    </div>
+
     <p class="state" id="enabledState"></p>
 
     <p class="credit">by <a href="https://dev.byairu.com" target="_blank">dev.byairu.com</a></p>
+    <script src="../core/db.js"></script>
+    <script src="../core/kanji.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

@@ -6,6 +6,12 @@
 .btn-row-bank { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
 .btn-row-bank .btn { width: auto; margin-bottom: 0; }
 
+/* Delete sits far from Edit/Save and reads as quiet-by-default so it can't
+   be mistaken for the primary action or mis-clicked. */
+#wordModalActions { justify-content: space-between; margin-top: 24px; }
+.btn.ghost-danger { background: transparent; border-color: var(--line); color: var(--muted); }
+.btn.ghost-danger:hover { background: rgba(192, 57, 43, 0.1); border-color: #c0392b; color: #c0392b; }
+
 .search-input {
   flex: 1 1 240px; min-width: 0; border: 1px solid var(--line); background: var(--paper); color: var(--ink);
   border-radius: 9px; padding: 10px 12px; font-size: 14px; font-family: inherit;
@@ -58,7 +64,7 @@
 #kanjiModalOverlay { z-index: 1100; } /* stacks above the word editor it's opened from */
 .modal-card {
   background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
-  padding: 22px 24px; width: 100%; max-width: 440px;
+  padding: 30px 26px 24px; width: 100%; max-width: 440px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.25);
 }
 .modal-close {
@@ -71,19 +77,25 @@
 .word-modal-card { position: relative; }
 
 /* Word view — read-optimized card layout (furigana above kanji, kanji big and
-   centered, meaning/example/notes below), same visual language as the
-   flashcard popup itself (content.js). */
-.word-view { text-align: center; padding: 10px 4px 2px; }
+   centered, meaning below, then a clearly labeled example/notes section),
+   same visual language as the flashcard popup itself (content.js). */
+.word-view { text-align: center; padding: 2px 2px 0; }
 .wv-furigana { font-size: 14px; color: var(--muted); letter-spacing: .04em; min-height: 18px; }
-.wv-kanji { font-size: 42px; font-weight: 500; line-height: 1.25; margin: 2px 0 14px; word-break: break-word; }
+.wv-kanji { font-size: 44px; font-weight: 500; line-height: 1.25; margin: 4px 0 20px; word-break: break-word; }
 .wv-k-char { cursor: pointer; border-radius: 8px; padding: 0 3px; transition: background .12s, color .12s; }
 .wv-k-char:hover { background: var(--surface-2); color: var(--shu); }
 .wv-meaning { font-size: 19px; font-weight: 600; color: var(--shu); }
-.wv-example {
-  font-size: 14px; color: var(--ink); margin-top: 12px; padding-top: 12px;
-  border-top: 1px dashed var(--line); display: none;
+
+.wv-divider { display: none; height: 1px; background: var(--line); margin: 20px 0 16px; }
+
+.wv-section { display: none; text-align: left; margin-bottom: 16px; }
+.wv-section:last-child { margin-bottom: 0; }
+.wv-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 5px;
 }
-.wv-notes { font-size: 13px; color: var(--muted); margin-top: 8px; line-height: 1.5; text-align: left; display: none; }
+.wv-example { font-size: 14px; color: var(--ink); line-height: 1.5; }
+.wv-notes { font-size: 13px; color: var(--muted); line-height: 1.55; }
 
 .field-label { display: block; font-size: 12px; color: var(--muted); margin-top: 10px; }
 .field-label:first-child { margin-top: 0; }
