@@ -64,7 +64,7 @@ function renderList() {
   wordRowsEl.innerHTML = filtered
     .map(
       (w) => `
-      <tr>
+      <tr data-id="${escapeHtml(w.id)}">
         <td class="kanji-cell">${escapeHtml(w.kanji || "")}</td>
         <td class="reading-cell">${escapeHtml(w.hiragana || "")}</td>
         <td>${escapeHtml(w.arti || "")}</td>

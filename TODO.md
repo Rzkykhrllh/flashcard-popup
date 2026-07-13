@@ -65,10 +65,31 @@ dicentang manual tiap sub-task kelar.
     jadi `SyntaxError` yang mematikan SELURUH script itu diam-diam (kejadian
     beneran 2x: `STATUS_LABEL`, `render`). Kalau nambah top-level identifier baru
     di salah satu file ini, cek dulu gak collide sama yang lain.
-  - Urutan `<script>` di `options.html` wajib: `db.js` → `vocab-bank.js` →
-    `graph.js` → **`options.js` paling akhir** (dia langsung manggil
-    `switchTab()` dari hash URL di top-level-nya sendiri, butuh
-    `reloadData`/`startGraph` udah ke-define duluan).
+  - Urutan `<script>` di `options.html` wajib: `db.js` → `kanji.js` →
+    `vocab-bank.js` → `word-editor.js` → `graph.js` →
+    **`options.js` paling akhir** (dia langsung manggil `switchTab()` dari
+    hash URL di top-level-nya sendiri, butuh `reloadData`/`startGraph` udah
+    ke-define duluan).
+
+### Manual add + word/kanji detail card
+
+- [x] `word-editor.js` — modal add/edit word (kanji, hiragana, meaning, notes)
+      dari tab List. Add mode: pilih collection existing atau bikin baru
+      (`type:"manual"`). Edit mode: gak bisa ubah collection dari sini (itu
+      backlog "UI assign group manual" di bawah) — fokus cuma edit teks.
+  - Kalau kanji+hiragana yang diketik udah ada (collision), user dikonfirmasi
+    dulu, terus di-merge — progress (`n`/`seen`) yang lebih maju yang menang,
+    aturan sama persis kayak collision handling di `core/migrate.js`.
+  - Ganti kanji/hiragana pas edit = ganti `id` (keyPath IndexedDB) → delete
+    lama + put baru, bukan update in-place.
+- [x] Kanji detail card — klik kanji-chip di dalam word editor → sub-modal
+      nampilin kanji, **on'yomi/kun'yomi** (otomatis dari `data/kanjidic.json`),
+      dan kata lain di bank yang pakai kanji itu (klik salah satu → lompat ke
+      word editor kata itu, chain-navigable).
+  - `data/kanjidic.json` — turunan kompak dari **KANJIDIC2** (EDRDG, CC BY-SA
+    4.0, attribution di README.md), cuma ambil field `on`/`kun` per kanji
+    (12.356 kanji, ~640KB). Di-fetch lazy (sekali, di-cache) pas kanji card
+    pertama kali dibuka — gak nge-block load halaman.
 
 ## Housekeeping
 
@@ -80,8 +101,8 @@ dicentang manual tiap sub-task kelar.
 
 ## Next Version (post-MVP)
 
-- [ ] Quick-add kartu manual di popup toolbar
-- [ ] UI assign/bikin group manual di vocab-bank (group manual, bukan cuma synced)
+- [ ] UI assign/ubah group/collection kartu yang **udah ada** (sekarang cuma
+      bisa di-set pas Add; edit mode gak bisa reassign collection)
 - [ ] Manual status override (tombol "mark as mastered" dkk, set `statusOverride: true`)
 - [ ] Kolom tambahan: `example`, `tags`, `partOfSpeech` — field sudah dialokasikan
       di schema (next_feature.md §3), belum ada UI buat isi/edit

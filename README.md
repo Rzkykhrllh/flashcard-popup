@@ -69,6 +69,13 @@ lib/papaparse.min.js parser CSV
 Sumber data sengaja dipisah dari penyimpanan kartu — jadi nanti gampang nambah
 "adapter" lain (upload CSV, dll) tanpa ngerombak.
 
+## Credits
+
+Data on'yomi/kun'yomi kanji (`data/kanjidic.json`) diturunkan dari **KANJIDIC2**,
+milik Electronic Dictionary Research and Development Group (EDRDG), dipakai
+sesuai lisensi grup tersebut ([CC BY-SA 4.0](https://www.edrdg.org/edrdg/licence.html)).
+Lihat [www.edrdg.org](https://www.edrdg.org/) untuk data aslinya.
+
 ## Roadmap v2 (kalau habit-nya nyangkut)
 
 - Mode ketik jawaban pakai **WanaKana** (romaji → otomatis jadi kana, tanpa ganti IME).

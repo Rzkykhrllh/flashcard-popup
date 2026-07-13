@@ -158,7 +158,10 @@
         <section class="panel">
           <div class="row-between">
             <h2>Words</h2>
-            <span class="hint" id="resultCount"></span>
+            <div style="display:flex; align-items:center; gap:12px">
+              <span class="hint" id="resultCount"></span>
+              <button class="btn primary" id="addWordBtn">+ Add word</button>
+            </div>
           </div>
           <table class="stats-table bank-table">
             <thead>
@@ -177,6 +180,54 @@
           <p class="empty" id="emptyState" style="display:none">No words here yet.</p>
         </section>
       </div><!-- #tab-list -->
+
+      <div class="modal-overlay" id="wordModalOverlay">
+        <div class="modal-card">
+          <div class="row-between">
+            <h2 id="wordModalTitle">Add word</h2>
+            <button class="modal-close" id="wordModalClose">&times;</button>
+          </div>
+          <div class="form">
+            <label class="field-label">Kanji
+              <input id="wKanji" type="text" placeholder="食べる" />
+            </label>
+            <label class="field-label">Reading (hiragana)
+              <input id="wHiragana" type="text" placeholder="たべる" />
+            </label>
+            <label class="field-label">Meaning
+              <input id="wArti" type="text" placeholder="to eat" />
+            </label>
+            <label class="field-label">Notes
+              <textarea id="wNotes" rows="3" placeholder="optional"></textarea>
+            </label>
+            <label class="field-label" id="wGroupField">Collection
+              <select id="wGroupSelect"></select>
+            </label>
+            <input id="wNewGroupName" type="text" placeholder="New collection name" style="display:none" />
+            <div id="wKanjiChips" class="kanji-chips"></div>
+          </div>
+          <p id="wStatus" class="status"></p>
+          <div class="btn-row-bank">
+            <button class="btn primary" id="wSaveBtn">Save</button>
+            <button class="btn" id="wDeleteBtn" style="display:none">Delete</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-overlay" id="kanjiModalOverlay">
+        <div class="modal-card">
+          <div class="row-between">
+            <h2 id="kModalChar"></h2>
+            <button class="modal-close" id="kModalClose">&times;</button>
+          </div>
+          <div class="sub">On'yomi</div>
+          <div id="kOn" class="reading-list"></div>
+          <div class="sub">Kun'yomi</div>
+          <div id="kKun" class="reading-list"></div>
+          <div class="sub">Related words</div>
+          <div id="kRelated" class="wlist-plain"></div>
+        </div>
+      </div>
 
       <div id="tab-stats" class="tab-pane">
         <div id="statsContent"></div>
@@ -217,7 +268,9 @@
     </main>
     <p class="credit">made by <a href="https://dev.byairu.com" target="_blank">dev.byairu.com</a></p>
     <script src="../core/db.js"></script>
+    <script src="../core/kanji.js"></script>
     <script src="vocab-bank.js"></script>
+    <script src="word-editor.js"></script>
     <script src="graph.js"></script>
     <script src="options.js"></script>
   </body>
