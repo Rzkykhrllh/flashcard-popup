@@ -133,6 +133,12 @@ html[data-theme="dark"] .status-badge.status-mastered { background: #14532d; col
 }
 #wNewGroupName { margin-top: 6px; }
 
+.field-check {
+  display: flex; align-items: center; gap: 8px; margin-top: 10px;
+  font-size: 13px; color: var(--ink-2); cursor: pointer;
+}
+.field-check input { width: auto; margin: 0; }
+
 .kanji-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
 .kanji-chip {
   border: 1.5px solid var(--line); background: var(--paper); color: var(--ink);

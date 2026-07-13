@@ -20,6 +20,7 @@ const qaArti = document.getElementById("qaArti");
 const qaNotes = document.getElementById("qaNotes");
 const qaGroupSelect = document.getElementById("qaGroupSelect");
 const qaNewGroupName = document.getElementById("qaNewGroupName");
+const qaIncludeInStudy = document.getElementById("qaIncludeInStudy");
 const qaStatus = document.getElementById("qaStatus");
 const qaSaveBtn = document.getElementById("qaSaveBtn");
 const qaCancelBtn = document.getElementById("qaCancelBtn");
@@ -126,6 +127,7 @@ async function openQuickAdd() {
   qaNewGroupName.style.display = "none";
   qaNewGroupName.value = "";
   qaKanji.value = ""; qaHiragana.value = ""; qaArti.value = ""; qaNotes.value = "";
+  qaIncludeInStudy.checked = true;
   qaStatus.textContent = "";
   quickAdd.classList.add("open");
   qaKanji.focus();
@@ -176,6 +178,7 @@ qaSaveBtn.addEventListener("click", async () => {
       source: "manual", groupIds: [groupId],
     });
   }
+  await send({ type: "setCardSelection", deckId: groupId, key: id, selected: qaIncludeInStudy.checked });
 
   qaStatus.textContent = "Saved!";
   setTimeout(closeQuickAdd, 700);

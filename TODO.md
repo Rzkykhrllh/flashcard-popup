@@ -312,6 +312,42 @@ dicentang manual tiap sub-task kelar.
   - Diverifikasi ulang: `buildStudyEntries("A")` sekarang tetep return 4
     kata biarpun `selection.A` udah ada isi 1 kata eksplisit — gak lagi
     ke-reduce jadi 1 kayak sebelum fix.
+- [x] **Fix beneran root cause-nya + redesign Study table** — fix sebelumnya
+      (yang mecah queue Study dari checkbox eligibility) ternyata cuma
+      mindahin masalahnya, bukan nyelesain akar masalahnya, dan bikin queue
+      Study jadi gak nyambung sama jumlah kata yang di-check. User report:
+      "study flashcard error, belum sesuai sama jumlah yang di check."
+  - **Akar masalah yang sebenernya**: `selection[deckId][key]` makenya
+    "key ada = eligible", jadi begitu 1 kata eksplisit di-centang, seluruh
+    kata LAIN yang belum disentuh di kategori itu ikut ke-anggep excluded
+    (karena objek selection-nya udah "ada isinya"). Ini bug yang sama yang
+    udah 3x muncul dalam bentuk beda-beda (bug "Clear" lama, bug
+    `isWordEligible` gua sendiri, dan bug "reset pas pindah dropdown").
+  - **Fix final**: `setCardSelection` (background.js) sekarang nyimpen
+    `true`/`false` eksplisit, bukan "ada key = true, gak ada = false".
+    `pickCard` (srs.js) dan `isWordEligible` (options.js, di-hidupin lagi)
+    aturannya jadi: **eligible KECUALI eksplisit `false`** — key yang gak
+    ada di objek selection artinya "belum ada keputusan, tetep eligible",
+    BUKAN "excluded". Centang 1 kata sekarang gak lagi nyenggol kata lain
+    sama sekali.
+  - **Queue Study** balik nyambung ke eligibility (bukan ke dropdown
+    kategori lagi) — jumlah kartu di sesi Study sekarang PERSIS jumlah kata
+    yang eligible/checked, sesuai yang diminta.
+  - **Redesign tabel checklist** ("Which words show in the popup"): sekarang
+    punya search bar (`#browseSearch`) + filter kategori sendiri
+    (`#browseCategorySelect`, default "All categories") yang MURNI buat
+    narrow-down tampilan tabel doang — gak nyentuh queue Study atau
+    selection sama sekali. Dropdown "Category" yang dulu ada di atas
+    (buat scope queue Study) dihapus total, diganti sepenuhnya sama
+    eligibility checkbox.
+  - **Tambahan (saran user)**: form Add Word (modal di tab Words, dan
+    quick-add di popup toolbar) sekarang punya checkbox **"Include in
+    current learning (Study & popup)"**, default tercentang — biar bisa
+    nambah kata ke bank tanpa langsung masuk rotasi Study/popup kalau mau.
+  - Diverifikasi lewat Node test: cek 1 kata di kategori A gak ngurangin
+    9 kata total jadi kurang dari 9 (tetep 9), exclude eksplisit 1 kata baru
+    beneran ngurangin jadi 8 dan kata yang excluded itu yang bener. `pickCard`
+    (popup asli) diverifikasi pake aturan yang sama.
 
 ## Next Version (post-MVP)
 

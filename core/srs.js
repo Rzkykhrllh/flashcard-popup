@@ -25,8 +25,13 @@ function pickCard(state, lastShownKey) {
     const cards = state.cards[deck.id] || {};
     const deckSel = sel[deck.id];
     for (const [key, c] of Object.entries(cards)) {
-      // If a selection set exists for this deck, only include selected cards
-      if (deckSel && !deckSel[key]) continue;
+      // Eligible unless explicitly excluded (selection[deckId][key] === false).
+      // A missing key — whether the whole deckSel object is untouched, or
+      // just this one word within it — is NOT exclusion, it's "no opinion
+      // yet, still eligible." This is the one rule the whole selection
+      // model hinges on: checking a word to explicitly include it must
+      // never, as a side effect, exclude its untouched siblings.
+      if (deckSel && deckSel[key] === false) continue;
       pool.push({ deckId: deck.id, key, card: c, weight: computeWeight(c) });
     }
   }

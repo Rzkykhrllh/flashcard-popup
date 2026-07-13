@@ -41,6 +41,8 @@ const wNotes = document.getElementById("wNotes");
 const wGroupField = document.getElementById("wGroupField");
 const wGroupSelect = document.getElementById("wGroupSelect");
 const wNewGroupName = document.getElementById("wNewGroupName");
+const wIncludeField = document.getElementById("wIncludeField");
+const wIncludeInStudy = document.getElementById("wIncludeInStudy");
 const wKanjiChips = document.getElementById("wKanjiChips");
 const wStatus = document.getElementById("wStatus");
 const wEditBtn = document.getElementById("wEditBtn");
@@ -126,6 +128,7 @@ function openWordModal(word) {
     // that's a bigger feature (reassigning groups) not in scope yet.
     wGroupField.style.display = "none";
     wNewGroupName.style.display = "none";
+    wIncludeField.style.display = "none";
   } else {
     wGroupField.style.display = "";
     wGroupSelect.innerHTML = [
@@ -134,6 +137,8 @@ function openWordModal(word) {
     ].join("");
     wNewGroupName.style.display = "none";
     wNewGroupName.value = "";
+    wIncludeField.style.display = "";
+    wIncludeInStudy.checked = true;
   }
 
   renderKanjiChips(word ? (word.kanjiList || extractKanjiList(word.kanji)) : extractKanjiList(wKanji.value));
@@ -242,6 +247,7 @@ wSaveBtn.addEventListener("click", async () => {
         source: "manual", groupIds: [groupId],
       });
     }
+    await send({ type: "setCardSelection", deckId: groupId, key: newId, selected: wIncludeInStudy.checked });
   }
 
   closeWordModal();

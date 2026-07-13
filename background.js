@@ -542,11 +542,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         break;
       }
       case "setCardSelection": {
+        // Explicit true/false, always recorded — see srs.js's pickCard for
+        // why (a missing key must mean "still eligible", not "excluded",
+        // so checking one word can never silently drop its untouched
+        // siblings out of the pool).
         const { selection } = await chrome.storage.local.get("selection");
         const sel = selection || {};
         if (!sel[msg.deckId]) sel[msg.deckId] = {};
-        if (msg.selected) sel[msg.deckId][msg.key] = true;
-        else delete sel[msg.deckId][msg.key];
+        sel[msg.deckId][msg.key] = !!msg.selected;
         await chrome.storage.local.set({ selection: sel });
         sendResponse({ ok: true });
         break;
