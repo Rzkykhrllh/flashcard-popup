@@ -1,5 +1,7 @@
 /* Same neutral scale as options.css (kept in sync by hand — see the comment
-   there for why --muted/--ink-2 are split and contrast-checked). */
+   there for why --muted/--ink-2 are split and contrast-checked). Theme is
+   picked by JS via [data-theme] on <html> — no @media(prefers-color-scheme)
+   here, matching options.css's architecture (see that file's top comment). */
 :root {
   --paper: #f7f7f6;
   --ink: #1c1c1c;
@@ -9,6 +11,15 @@
   --line: rgba(0, 0, 0, 0.10);
   --surface: #eeeeec;
 }
+html[data-theme="dark"] {
+  --paper: #1e1e1e;
+  --ink: #ededed;
+  --ink-2: #c2c2c2;
+  --muted: #a6a6a6;
+  --shu: #3b82f6;
+  --line: rgba(255, 255, 255, 0.12);
+  --surface: #363636;
+}
 
 /* Matches the "Color theme" picker in Settings and the flashcard overlay's
    own ACCENT map (content.js) — kept in sync by hand, same 4 colors. */
@@ -16,22 +27,10 @@ body.theme-blue   { --shu: #2563eb; }
 body.theme-red    { --shu: #d34533; }
 body.theme-purple { --shu: #7c3aed; }
 body.theme-green  { --shu: #16a34a; }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #1e1e1e;
-    --ink: #ededed;
-    --ink-2: #c2c2c2;
-    --muted: #a6a6a6;
-    --shu: #3b82f6;
-    --line: rgba(255, 255, 255, 0.12);
-    --surface: #363636;
-  }
-  body.theme-blue   { --shu: #3b82f6; }
-  body.theme-red    { --shu: #e06a55; }
-  body.theme-purple { --shu: #a78bfa; }
-  body.theme-green  { --shu: #4ade80; }
-}
+html[data-theme="dark"] body.theme-blue   { --shu: #3b82f6; }
+html[data-theme="dark"] body.theme-red    { --shu: #e06a55; }
+html[data-theme="dark"] body.theme-purple { --shu: #a78bfa; }
+html[data-theme="dark"] body.theme-green  { --shu: #4ade80; }
 
 * { box-sizing: border-box; margin: 0; }
 body {

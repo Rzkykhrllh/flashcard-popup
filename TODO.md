@@ -147,6 +147,31 @@ dicentang manual tiap sub-task kelar.
     washi palette, ported apa adanya dari prototype asli). Kalau mau ini
     juga di-dark-mode-in, itu kerjaan desain terpisah (bikin varian washi
     gelap), bukan cuma fix kontras.
+- [x] **Manual Light/Dark/System toggle** (Settings → Appearance) — sebelumnya
+      cuma ngikutin `prefers-color-scheme` OS, gak ada override di app.
+      `settings.colorMode`: `"system"` (default) | `"light"` | `"dark"`.
+  - **Restructure arsitektur**: `options.css`/`popup.css`/`vocab-bank.css`
+    sebelumnya pakai `@media (prefers-color-scheme: dark)` tersebar di 11
+    tempat. Diganti total jadi `html[data-theme="dark"]` — JS (options.js/
+    popup.js) SELALU nentuin `data-theme` eksplisit (resolve "system" via
+    `matchMedia` sekali, listen buat perubahan live), gak pernah dibiarin
+    kosong. Satu sumber kebenaran, gak ada dua mekanisme (media query +
+    attribute) yang bisa balapan spesifisitas.
+  - **Nemu bug kepisah pas ngerjain ini**: `applyActiveTheme()` di
+    `options.js` nge-set `--shu` lewat **inline style**, yang otomatis
+    menang atas media query CSS apapun — jadi accent color di options.html
+    dark mode selama ini diam-diam make warna versi LIGHT (`#2563eb`, cuma
+    2.78:1 di dark surface, gagal AA) alih-alih versi dark yang bener
+    (`#3b82f6`, 3.90:1). `THEME_COLORS` ditambah field `dk` (dark-mode
+    accent, disamain sama `content.js`'s `ACCENT.dk`/popup.css), dipilih
+    lewat `isDarkActive()`.
+  - `content.js` (flashcard) di-restructure serupa — `isDark` dihitung sekali
+    di awal `render()` (baca `settings.colorMode`), neutral+accent colors
+    dipilih langsung di JS, `@media` dihapus (toh style-nya di-generate ulang
+    tiap kartu muncul).
+  - Tab Graph gak kesentuh (gak butuh — dia fixed-light, gak baca token
+    `--ink`/`--muted`/dst app-wide sama sekali, jadi `data-theme` gak
+    ngaruh ke situ).
 
 ## Next Version (post-MVP)
 

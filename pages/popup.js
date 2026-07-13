@@ -34,14 +34,32 @@ function timeAgo(ts) {
   return `${Math.round(h / 24)} days ago`;
 }
 
-function applyTheme(theme) {
+// colorMode: "system" | "light" | "dark" (settings.colorMode). Sets an
+// explicit data-theme on <html> — popup.css has no @media(prefers-color-
+// scheme) fallback (see its top comment), so this must always run, even
+// for "system".
+let currentColorMode = "system";
+
+function isDarkActive() {
+  if (currentColorMode === "dark") return true;
+  if (currentColorMode === "light") return false;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+function applyTheme(theme, colorMode) {
+  currentColorMode = colorMode || "system";
   document.body.classList.remove("theme-blue", "theme-red", "theme-purple", "theme-green");
   document.body.classList.add(`theme-${theme || "blue"}`);
+  document.documentElement.setAttribute("data-theme", isDarkActive() ? "dark" : "light");
 }
+
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  if (currentColorMode === "system") document.documentElement.setAttribute("data-theme", isDarkActive() ? "dark" : "light");
+});
 
 async function refresh() {
   const state = await send({ type: "getState" });
-  applyTheme(state.settings.theme);
+  applyTheme(state.settings.theme, state.settings.colorMode);
   const enabledDecks = state.decks.filter((d) => d.enabled !== false);
   const total = enabledDecks.reduce(
     (s, d) => s + Object.keys(state.cards[d.id] || {}).length,

@@ -2,9 +2,15 @@
    --muted was previously overloaded for everything from body copy to
    throwaway hints and fell below WCAG AA (3.2-3.5:1) doing it. Every value
    here is contrast-checked against --surface/--surface-2/--paper in both
-   modes (>=4.5:1 for text, >=3:1 for large/UI-only). --shu stays whatever
-   the selected theme sets it to (see body.theme-*) — the neutrals below are
-   theme-independent. */
+   modes (>=4.5:1 for text, >=3:1 for large/UI-only).
+
+   Theme is picked entirely by JS (options.js) via [data-theme] on <html> —
+   no @media (prefers-color-scheme) anywhere in this file. options.js
+   resolves "system" to light/dark once via matchMedia and keeps it live
+   (listens for OS changes), so data-theme is always explicitly "light" or
+   "dark", never absent. One source of truth instead of a media query and an
+   attribute fighting over specificity. --shu is set the same way (see
+   applyActiveTheme in options.js), not here. */
 :root {
   --paper: #f7f7f6;
   --ink: #1c1c1c;
@@ -17,19 +23,15 @@
   --surface: #ffffff;
   --surface-2: #eeeeec;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #1e1e1e;
-    --ink: #ededed;
-    --ink-2: #c2c2c2;
-    --muted: #a6a6a6;
-    --shu: #3b82f6;
-    --shu-d: #60a5fa;
-    --line: rgba(255, 255, 255, 0.12);
-    --line-2: rgba(255, 255, 255, 0.20);
-    --surface: #2a2a2a;
-    --surface-2: #363636;
-  }
+html[data-theme="dark"] {
+  --paper: #1e1e1e;
+  --ink: #ededed;
+  --ink-2: #c2c2c2;
+  --muted: #a6a6a6;
+  --line: rgba(255, 255, 255, 0.12);
+  --line-2: rgba(255, 255, 255, 0.20);
+  --surface: #2a2a2a;
+  --surface-2: #363636;
 }
 
 * { box-sizing: border-box; margin: 0; }
@@ -89,10 +91,8 @@ input[type="text"]:focus, input[type="number"]:focus { outline: 2px solid var(--
 .status { font-size: 13px; margin-top: 10px; min-height: 18px; }
 .status.ok { color: #1f7a46; }
 .status.err { color: #c0392b; }
-@media (prefers-color-scheme: dark) {
-  .status.ok { color: #4ade80; }
-  .status.err { color: #f87171; }
-}
+html[data-theme="dark"] .status.ok { color: #4ade80; }
+html[data-theme="dark"] .status.err { color: #f87171; }
 
 .row-between { display: flex; align-items: center; justify-content: space-between; }
 .decks { list-style: none; margin-top: 12px; }
@@ -106,9 +106,7 @@ input[type="text"]:focus, input[type="number"]:focus { outline: 2px solid var(--
 .deck .sub { font-size: 12px; color: var(--muted); }
 .deck .rm { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; padding: 4px 8px; border-radius: 6px; }
 .deck .rm:hover { background: var(--surface-2); color: #c0392b; }
-@media (prefers-color-scheme: dark) {
-  .deck .rm:hover { color: #f87171; }
-}
+html[data-theme="dark"] .deck .rm:hover { color: #f87171; }
 .empty { font-size: 13px; color: var(--muted); margin-top: 12px; }
 
 /* toggle switch */
@@ -151,6 +149,16 @@ input[type="text"]:focus, input[type="number"]:focus { outline: 2px solid var(--
 }
 .pos-btn:hover:not(.active) { background: var(--surface-2); border-color: var(--shu); }
 .pos-btn.active { background: var(--shu); color: #fff; border-color: var(--shu); }
+
+.appearance-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.appearance-btn {
+  padding: 10px; border: 1.5px solid var(--line); border-radius: 10px;
+  background: var(--paper); color: var(--ink);
+  font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit;
+  text-align: center; transition: background .12s, border-color .12s, color .12s;
+}
+.appearance-btn:hover:not(.active) { background: var(--surface-2); border-color: var(--shu); }
+.appearance-btn.active { background: var(--shu); color: #fff; border-color: var(--shu); }
 
 /* Study mode selector */
 .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -239,11 +247,9 @@ input[type="text"]:focus, input[type="number"]:focus { outline: 2px solid var(--
 .stats-table .cell-hint { color: #a6540a; font-weight: 500; }
 .stats-table .cell-lupa { color: #c0392b; font-weight: 500; }
 .stats-table .cell-muted { color: var(--muted); }
-@media (prefers-color-scheme: dark) {
-  .stats-table .cell-know { color: #4ade80; }
-  .stats-table .cell-hint { color: #fbbf24; }
-  .stats-table .cell-lupa { color: #f87171; }
-}
+html[data-theme="dark"] .stats-table .cell-know { color: #4ade80; }
+html[data-theme="dark"] .stats-table .cell-hint { color: #fbbf24; }
+html[data-theme="dark"] .stats-table .cell-lupa { color: #f87171; }
 
 .ratio-bar {
   width: 60px;
@@ -260,9 +266,7 @@ input[type="text"]:focus, input[type="number"]:focus { outline: 2px solid var(--
   background: #1f7a46;
   border-radius: 99px;
 }
-@media (prefers-color-scheme: dark) {
-  .ratio-fill { background: #4ade80; }
-}
+html[data-theme="dark"] .ratio-fill { background: #4ade80; }
 
 /* Study tab */
 .study-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }

@@ -19,6 +19,7 @@ const showFurigana   = el("showFurigana");
 const swatches       = document.querySelectorAll(".swatch");
 const posButtons     = document.querySelectorAll(".pos-btn");
 const modeBtns       = document.querySelectorAll(".mode-btn");
+const appearanceBtns = document.querySelectorAll(".appearance-btn");
 
 function timeAgo(ts) {
   if (!ts) return "not synced yet";
@@ -35,19 +36,56 @@ function setStatus(node, text, kind) {
   node.className   = "status" + (kind ? " " + kind : "");
 }
 
+// l = light-mode accent, dk = dark-mode accent (must stay legible on the
+// dark surface — see the contrast audit in TODO.md), d = darker shade of
+// the light accent (feeds --shu-d, a hover/emphasis shade, not mode-related).
 const THEME_COLORS = {
-  blue:   { l: "#2563eb", d: "#1d4ed8" },
-  red:    { l: "#d34533", d: "#b23a26" },
-  purple: { l: "#7c3aed", d: "#6d28d9" },
-  green:  { l: "#16a34a", d: "#15803d" },
+  blue:   { l: "#2563eb", dk: "#3b82f6", d: "#1d4ed8" },
+  red:    { l: "#d34533", dk: "#e06a55", d: "#b23a26" },
+  purple: { l: "#7c3aed", dk: "#a78bfa", d: "#6d28d9" },
+  green:  { l: "#16a34a", dk: "#4ade80", d: "#15803d" },
 };
 
+let currentTheme = "blue";
+let currentColorMode = "system"; // "system" | "light" | "dark" — settings.colorMode
+
+// Resolves "system" against the OS preference right now. Not cached: called
+// fresh each time so a live OS theme change (see the matchMedia listener
+// below) is picked up correctly.
+function isDarkActive() {
+  if (currentColorMode === "dark") return true;
+  if (currentColorMode === "light") return false;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+// Sets --shu via inline style (not CSS), so it must be told explicitly which
+// mode is active — unlike the plain [data-theme] neutrals in options.css,
+// this can't fall back to a stylesheet rule automatically.
 function applyActiveTheme(theme) {
+  currentTheme = theme;
   swatches.forEach((b) => b.classList.toggle("active", b.dataset.theme === theme));
   const t = THEME_COLORS[theme] || THEME_COLORS.blue;
-  document.documentElement.style.setProperty("--shu", t.l);
+  document.documentElement.style.setProperty("--shu", isDarkActive() ? t.dk : t.l);
   document.documentElement.style.setProperty("--shu-d", t.d);
 }
+
+// Single source of truth for light vs dark: always sets an explicit
+// data-theme (never left absent), resolving "system" once via matchMedia.
+// options.css/vocab-bank.css key every dark-mode rule off [data-theme="dark"]
+// — no @media(prefers-color-scheme) left anywhere, so there's nothing else
+// to keep in sync.
+function applyColorMode(mode) {
+  currentColorMode = mode;
+  document.documentElement.setAttribute("data-theme", isDarkActive() ? "dark" : "light");
+  appearanceBtns.forEach((b) => b.classList.toggle("active", b.dataset.mode === mode));
+  applyActiveTheme(currentTheme); // --shu depends on the mode too, re-sync it
+}
+
+// Live-update if colorMode is "system" and the OS theme changes while this
+// page is open.
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  if (currentColorMode === "system") applyColorMode("system");
+});
 
 function applyActiveMode(mode) {
   modeBtns.forEach((b) => b.classList.toggle("active", b.dataset.mode === mode));
@@ -71,7 +109,8 @@ async function render() {
   enabledInput.checked   = !!state.settings.enabled;
   showHiragana.checked   = state.settings.showHiragana !== false;
   showFurigana.checked   = !!state.settings.showFurigana;
-  applyActiveTheme(state.settings.theme || "blue");
+  currentTheme = state.settings.theme || "blue";
+  applyColorMode(state.settings.colorMode || "system"); // also applies the accent (currentTheme)
   applyActivePos(cardPosition);
   applyActiveMode(state.settings.cardMode || "classic");
 
@@ -224,6 +263,13 @@ swatches.forEach((btn) => {
   btn.addEventListener("click", async () => {
     await send({ type: "updateSettings", patch: { theme: btn.dataset.theme } });
     applyActiveTheme(btn.dataset.theme);
+  });
+});
+
+appearanceBtns.forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    await send({ type: "updateSettings", patch: { colorMode: btn.dataset.mode } });
+    applyColorMode(btn.dataset.mode);
   });
 });
 

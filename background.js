@@ -39,6 +39,7 @@ const DEFAULT_SETTINGS = {
   showHiragana: true,
   showFurigana: false,
   theme: "blue",
+  colorMode: "system", // "system" | "light" | "dark" — manual override of prefers-color-scheme
   cardMode: "classic",
 };
 

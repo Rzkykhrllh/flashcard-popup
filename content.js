@@ -76,6 +76,23 @@
     };
     const ac = ACCENT[settings.theme] || ACCENT.blue;
 
+    // colorMode: "system" | "light" | "dark" (settings.colorMode) — manual
+    // override of the OS preference, same as options.html/popup.html. No
+    // @media(prefers-color-scheme) below: picked once here instead, since
+    // this style block is rebuilt fresh on every card render anyway.
+    const isDark = settings.colorMode === "dark"
+      || (settings.colorMode !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+    const neutral = isDark
+      ? { bg:"#1e1e1e", fg:"#e8e8e8", muted:"#a6a6a6", reading:"#b0b0b0", notes:"#888",
+          border:"rgba(255,255,255,.09)", revealBg:"#e8e8e8", revealFg:"#1e1e1e",
+          shadow:"0 12px 40px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.2)", x:"#666" }
+      : { bg:"#f7f7f6", fg:"#1c1c1c", muted:"#6b6b6b", reading:"#444", notes:"#666",
+          border:"rgba(0,0,0,.09)", revealBg:"#1c1c1c", revealFg:"#f7f7f6",
+          shadow:"0 12px 40px rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.07)", x:"#aaa" };
+    const accent = isDark
+      ? { c: ac.dk, arti: ac.artiDk, fBg: ac.fBgDk, fFg: ac.fFgDk }
+      : { c: ac.l, arti: ac.arti, fBg: ac.fBg, fFg: ac.fFg };
+
     host = document.createElement("div");
     host.id = "nihongo-popup-host";
     host.style.all = "initial";
@@ -85,25 +102,14 @@
     style.textContent = `
       /* Neutral base. All accent-derived colors follow the selected theme. */
       :host {
-        --bg:#f7f7f6; --fg:#1c1c1c;
-        --muted:#6b6b6b; --reading:#444; --notes:#666;
-        --border:rgba(0,0,0,.09);
-        --reveal-bg:#1c1c1c; --reveal-fg:#f7f7f6;
-        --shadow:0 12px 40px rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.07);
-        --x:#aaa;
-        --accent:${ac.l}; --arti:${ac.arti};
-        --forgot-bg:${ac.fBg}; --forgot-fg:${ac.fFg}; --known-bg:${ac.l};
-      }
-      @media (prefers-color-scheme:dark) {
-        :host {
-          --bg:#1e1e1e; --fg:#e8e8e8;
-          --muted:#a6a6a6; --reading:#b0b0b0; --notes:#888;
-          --border:rgba(255,255,255,.09);
-          --reveal-bg:#e8e8e8; --reveal-fg:#1e1e1e;
-          --shadow:0 12px 40px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.2); --x:#666;
-          --accent:${ac.dk}; --arti:${ac.artiDk};
-          --forgot-bg:${ac.fBgDk}; --forgot-fg:${ac.fFgDk}; --known-bg:${ac.l};
-        }
+        --bg:${neutral.bg}; --fg:${neutral.fg};
+        --muted:${neutral.muted}; --reading:${neutral.reading}; --notes:${neutral.notes};
+        --border:${neutral.border};
+        --reveal-bg:${neutral.revealBg}; --reveal-fg:${neutral.revealFg};
+        --shadow:${neutral.shadow};
+        --x:${neutral.x};
+        --accent:${accent.c}; --arti:${accent.arti};
+        --forgot-bg:${accent.fBg}; --forgot-fg:${accent.fFg}; --known-bg:${ac.l};
       }
 
       /* ── layout ── */
