@@ -121,7 +121,7 @@ async function openQuickAdd() {
   const groups = await getAllGroups();
   qaGroupSelect.innerHTML = [
     ...groups.map((g) => `<option value="${g.id}">${g.name}</option>`),
-    `<option value="__new__">+ New collection…</option>`,
+    `<option value="__new__">加 New collection…</option>`,
   ].join("");
   qaNewGroupName.style.display = "none";
   qaNewGroupName.value = "";

@@ -129,7 +129,7 @@ function openWordModal(word) {
     wGroupField.style.display = "";
     wGroupSelect.innerHTML = [
       ...allGroups.map((g) => `<option value="${escapeHtml(g.id)}">${escapeHtml(g.name)}</option>`),
-      `<option value="__new__">+ New collection…</option>`,
+      `<option value="__new__">加 New collection…</option>`,
     ].join("");
     wNewGroupName.style.display = "none";
     wNewGroupName.value = "";
