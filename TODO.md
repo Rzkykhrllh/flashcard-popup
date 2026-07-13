@@ -206,6 +206,18 @@ dicentang manual tiap sub-task kelar.
     `srs.js` nge-skip SEMUA kartu di deck itu, bukan reset ke "semua
     eligible" kayak yang biasanya diharapkan orang pas klik "Clear". Hint
     teks-nya udah jelasin ini eksplisit biar gak jadi jebakan diam-diam.
+- [x] Urutan tab final v2: **Study | Words | Kanji | Stats | Graph | Settings**
+      (Study tetap pertama/default, Settings pindah ke paling akhir).
+- [x] Panel **Backup (Export/Import)** balik lagi ke tab Words (batalin
+      pemindahan ke Settings sebelumnya) — final: Backup tetap di tab Words.
+- [ ] **Diskusi, belum dieksekusi**: pindahin "Add deck" + "Your decks" dari
+      Settings ke tab Study — biar semua kontrol "kata mana yang muncul di
+      popup" (level-deck via toggle enable/disable, level-kata via checkbox)
+      jadi satu tempat, bukan kepencar Settings vs Study. Ketauan juga toggle
+      enable/disable deck di "Your decks" sekarang **overlap** sama
+      "Deselect all" di Study (dua-duanya bikin nol kartu dari deck itu
+      eligible di popup) — bukan alasan buat dihapus (toggle lebih cepat
+      buat pause 1 deck penuh), tapi kuat alasan buat digabung satu tempat.
 
 ## Next Version (post-MVP)
 

@@ -19,15 +19,15 @@
       </header>
 
       <nav class="tab-nav">
-        <button class="tab-btn active" data-tab="settings">Settings</button>
-        <button class="tab-btn" data-tab="study">Study</button>
+        <button class="tab-btn active" data-tab="study">Study</button>
         <button class="tab-btn" data-tab="list">Words</button>
         <button class="tab-btn" data-tab="kanji">Kanji</button>
         <button class="tab-btn" data-tab="stats">Stats</button>
         <button class="tab-btn" data-tab="graph">Graph</button>
+        <button class="tab-btn" data-tab="settings">Settings</button>
       </nav>
 
-      <div id="tab-settings" class="tab-pane active">
+      <div id="tab-settings" class="tab-pane">
       <div class="settings-section-label">General</div>
 
       <section class="panel">
@@ -81,23 +81,6 @@
         <p class="hint">Each deck also shows up as a collection in Kotoba Bank → Words, same words, same
           progress — "deck" here just means "synced from a Google Sheet." All data stays local to this
           browser; nothing is sent to a server.</p>
-      </section>
-
-      <div class="settings-section-label">Words</div>
-
-      <section class="panel">
-        <div class="row-between">
-          <h2>Backup</h2>
-          <span class="hint" id="backupStatus"></span>
-        </div>
-        <div class="btn-row-bank">
-          <button class="btn" id="exportBtn">Export JSON</button>
-          <button class="btn" id="importBtn">Import JSON</button>
-          <input type="file" id="importFile" accept="application/json" style="display:none" />
-        </div>
-        <p class="hint">All words & groups live only in this browser (IndexedDB) — nothing syncs across
-          devices. Export regularly as a safety net in case the extension gets uninstalled or browser
-          data gets cleared.</p>
       </section>
 
       <div class="settings-section-label">Flashcard popup</div>
@@ -163,6 +146,21 @@
       </div><!-- #tab-settings -->
 
       <div id="tab-list" class="tab-pane">
+        <section class="panel">
+          <div class="row-between">
+            <h2>Backup</h2>
+            <span class="hint" id="backupStatus"></span>
+          </div>
+          <div class="btn-row-bank">
+            <button class="btn" id="exportBtn">Export JSON</button>
+            <button class="btn" id="importBtn">Import JSON</button>
+            <input type="file" id="importFile" accept="application/json" style="display:none" />
+          </div>
+          <p class="hint">All words & groups live only in this browser (IndexedDB) — nothing syncs across
+            devices. Export regularly as a safety net in case the extension gets uninstalled or browser
+            data gets cleared.</p>
+        </section>
+
         <section class="panel">
           <div class="bank-toolbar">
             <div class="status-tabs" id="statusTabs">
@@ -327,7 +325,7 @@
         </div>
       </div>
 
-      <div id="tab-study" class="tab-pane">
+      <div id="tab-study" class="tab-pane active">
         <div id="studyContent"></div>
       </div>
 
