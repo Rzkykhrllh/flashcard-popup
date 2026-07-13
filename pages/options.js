@@ -400,7 +400,7 @@ async function renderStats() {
 
 /* -------------------------------- study tab ------------------------------- */
 
-let studyState = { deckId: null, cards: [], index: 0, revealed: false, browseOpen: true, done: false, _selectionChanged: false };
+let studyState = { deckId: "__all__", cards: [], index: 0, revealed: false, browseOpen: true, done: false, _selectionChanged: false };
 
 function shuffle(a) {
   for (let i = a.length - 1; i > 0; i--) {
@@ -408,6 +408,47 @@ function shuffle(a) {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+// One entry per unique word. A word synced into more than one deck (shared
+// kanji|hiragana, see core/migrate.js's collision handling) collects every
+// deck it belongs to in deckIds instead of showing up as duplicate rows —
+// "All decks" would otherwise list it twice.
+function buildStudyEntries(state, deckId) {
+  const decks = deckId === "__all__" ? state.decks : state.decks.filter((d) => d.id === deckId);
+  const seen = new Map(); // key -> { key, card, deckIds }
+  for (const deck of decks) {
+    for (const [key, c] of Object.entries(state.cards[deck.id] || {})) {
+      if (seen.has(key)) seen.get(key).deckIds.push(deck.id);
+      else seen.set(key, { key, card: c, deckIds: [deck.id] });
+    }
+  }
+  return [...seen.values()];
+}
+
+// Matches pickCard's own rule in srs.js: eligible if ANY of the word's decks
+// either has no restrictive selection (untouched = whole deck eligible) or
+// explicitly includes this key.
+function isWordEligible(state, entry) {
+  // Must match srs.js's pickCard exactly: `deckSel && !deckSel[key]` skips a
+  // card. An UNTOUCHED deck (sel === undefined) means everything is
+  // eligible; an EXPLICITLY EMPTY selection ({} after "Deselect all") is
+  // truthy in JS and means nothing is, even though Object.keys(sel).length
+  // is 0 either way — the two states aren't distinguishable by key count,
+  // only by undefined vs. defined.
+  return entry.deckIds.some((deckId) => {
+    const sel = state.selection[deckId];
+    return sel === undefined || !!sel[entry.key];
+  });
+}
+
+// A word shared across decks needs its selection toggled in every one of
+// them, or "eligible via any deck" would make the checkbox unable to ever
+// turn a shared word off.
+async function setWordSelection(entry, selected) {
+  for (const deckId of entry.deckIds) {
+    await send({ type: "setCardSelection", deckId, key: entry.key, selected });
+  }
 }
 
 async function renderStudy() {
@@ -420,34 +461,35 @@ async function renderStudy() {
   }
 
   let html = '<div class="study-toolbar"><label>Deck</label><select id="studyDeckSelect" class="tab-select">';
+  html += `<option value="__all__"${studyState.deckId === "__all__" ? " selected" : ""}>All decks</option>`;
   for (const deck of state.decks) {
     const sel = studyState.deckId === deck.id ? " selected" : "";
     html += `<option value="${deck.id}"${sel}>${deck.name}</option>`;
   }
   html += '</select></div>';
 
-  const selectedId = studyState.deckId || state.decks[0].id;
+  const selectedId = studyState.deckId || "__all__";
   studyState.deckId = selectedId;
-  const cards = state.cards[selectedId] || {};
-  const entries = Object.entries(cards);
-  const selection = state.selection[selectedId] || {};
+  const entries = buildStudyEntries(state, selectedId);
 
   if (!entries.length) {
-    container.innerHTML = html + '<p class="empty" style="margin-top:12px">This deck is empty.</p>';
+    const emptyMsg = selectedId === "__all__" ? "No words yet." : "This deck is empty.";
+    container.innerHTML = html + `<p class="empty" style="margin-top:12px">${emptyMsg}</p>`;
     return;
   }
 
   if (!studyState.cards.length || studyState._selectionChanged) {
     studyState._selectionChanged = false;
-    const filtered = entries.filter(([key]) => !Object.keys(selection).length || selection[key]);
+    const filtered = entries.filter((entry) => isWordEligible(state, entry));
     const prevKey = studyState.cards[studyState.index]?.key;
-    studyState.cards = filtered.map(([key, c]) => ({ key, ...c }));
+    studyState.cards = filtered.map((entry) => ({ key: entry.key, deckIds: entry.deckIds, ...entry.card }));
     const newIdx = prevKey ? studyState.cards.findIndex((c) => c.key === prevKey) : -1;
     studyState.index = newIdx >= 0 ? newIdx : 0;
   }
 
-  studyState._selection = selection;
-  const selectedCount = Object.keys(selection).length;
+  const selectedCount = entries.filter((entry) =>
+    entry.deckIds.some((deckId) => (state.selection[deckId] || {})[entry.key])
+  ).length;
 
   // Session complete screen
   if (studyState.done) {
@@ -459,7 +501,7 @@ async function renderStudy() {
         <button class="btn primary" id="restudyBtn" style="min-width:160px">Study again</button>
       </div>`;
     container.innerHTML = html;
-    renderStudyBrowse(container, entries);
+    renderStudyBrowse(container, entries, state);
     document.getElementById("restudyBtn").addEventListener("click", () => {
       studyState.done = false;
       shuffle(studyState.cards);
@@ -473,7 +515,7 @@ async function renderStudy() {
   if (!studyState.cards.length) {
     html += '<p class="empty" style="margin-top:12px">No cards selected. Check some cards in the vocabulary list below.</p>';
     container.innerHTML = html;
-    renderStudyBrowse(container, entries);
+    renderStudyBrowse(container, entries, state);
     return;
   }
 
@@ -505,10 +547,10 @@ async function renderStudy() {
     </div>
     <details class="study-browse" id="studyBrowse" ${studyState.browseOpen ? 'open' : ''}>
       <summary class="browse-summary">Which words show in the popup${selectedCount ? ` (${selectedCount} selected)` : ''}</summary>
-      <p class="hint" style="margin-top:6px">These checkboxes control which words from this deck can show up in the
-        flashcard popup on web pages (same list is used here in Study). Leave everything untouched and the whole
-        deck is eligible by default. Checking a few switches this deck to "only these" — and "Deselect all" removes
-        the <em>entire deck</em> from the popup, it doesn't reset back to "everything."</p>
+      <p class="hint" style="margin-top:6px">These checkboxes control which words can show up in the flashcard popup
+        on web pages (same list is used here in Study). Leave a deck's words untouched and that whole deck is
+        eligible by default. Checking a few switches it to "only these" — and "Deselect all" removes
+        <em>every word currently listed here</em> from the popup, it doesn't reset back to "everything."</p>
       <div style="margin:8px 0;display:flex;gap:8px">
         <button class="btn" id="selectAllBtn">Select all</button>
         <button class="btn" id="clearSelBtn">Deselect all</button>
@@ -519,7 +561,7 @@ async function renderStudy() {
 
   container.innerHTML = html;
 
-  renderStudyBrowse(container, entries);
+  renderStudyBrowse(container, entries, state);
 
   document.getElementById("studyBrowse").addEventListener("toggle", (e) => {
     studyState.browseOpen = e.target.open;
@@ -533,17 +575,17 @@ async function renderStudy() {
   });
 
   document.getElementById("studyKnow").addEventListener("click", async () => {
-    await send({ type: "grade", deckId: studyState.deckId, key: current.key, result: "known" });
+    await send({ type: "grade", deckId: current.deckIds[0], key: current.key, result: "known" });
     advanceStudy();
   });
 
   document.getElementById("studyHint").addEventListener("click", async () => {
-    await send({ type: "grade", deckId: studyState.deckId, key: current.key, result: "hint" });
+    await send({ type: "grade", deckId: current.deckIds[0], key: current.key, result: "hint" });
     advanceStudy();
   });
 
   document.getElementById("studyForgot").addEventListener("click", async () => {
-    await send({ type: "grade", deckId: studyState.deckId, key: current.key, result: "forgot" });
+    await send({ type: "grade", deckId: current.deckIds[0], key: current.key, result: "forgot" });
     advanceStudy();
   });
 
@@ -572,18 +614,14 @@ async function renderStudy() {
   const clearSelBtn = document.getElementById("clearSelBtn");
   if (selectAllBtn) {
     selectAllBtn.addEventListener("click", async () => {
-      for (const [key] of entries) {
-        await send({ type: "setCardSelection", deckId: selectedId, key, selected: true });
-      }
+      for (const entry of entries) await setWordSelection(entry, true);
       studyState._selectionChanged = true;
       renderStudy();
     });
   }
   if (clearSelBtn) {
     clearSelBtn.addEventListener("click", async () => {
-      for (const [key] of entries) {
-        await send({ type: "setCardSelection", deckId: selectedId, key, selected: false });
-      }
+      for (const entry of entries) await setWordSelection(entry, false);
       studyState._selectionChanged = true;
       renderStudy();
     });
@@ -643,13 +681,17 @@ function studyKeyHandler(e) {
   }
 }
 
-function renderStudyBrowse(container, entries) {
+function renderStudyBrowse(container, entries, state) {
   const wrap = document.getElementById("browseTable");
   if (!wrap) return;
-  const sel = studyState._selection || {};
+  // Reflects explicit "checked" state per word, not overall eligibility — a
+  // word from an untouched (default-all-eligible) deck shows unchecked here
+  // even though it IS currently eligible for the popup. Matches the
+  // pre-existing single-deck behavior, just extended to multi-deck entries.
   let html = '<table class="stats-table"><thead><tr><th>In popup</th><th>Kanji</th><th>Reading</th><th>Meaning</th><th>Notes</th></tr></thead><tbody>';
-  for (const [key, c] of entries) {
-    const checked = sel[key] ? 'checked' : '';
+  for (const entry of entries) {
+    const { key, card: c } = entry;
+    const checked = entry.deckIds.some((deckId) => (state.selection[deckId] || {})[key]) ? 'checked' : '';
     html += `<tr data-key="${key}"><td><input type="checkbox" class="card-cb" ${checked} /></td><td class="kanji-cell">${c.kanji}</td><td class="reading-cell">${c.hiragana || "—"}</td><td>${c.arti || "—"}</td><td class="cell-muted">${c.notes || ""}</td></tr>`;
   }
   html += '</tbody></table>';
@@ -659,7 +701,8 @@ function renderStudyBrowse(container, entries) {
     cb.addEventListener("change", async () => {
       const tr = cb.closest("tr");
       const key = tr.dataset.key;
-      await send({ type: "setCardSelection", deckId: studyState.deckId, key, selected: cb.checked });
+      const entry = entries.find((e) => e.key === key);
+      if (entry) await setWordSelection(entry, cb.checked);
       studyState._selectionChanged = true;
       renderStudy();
     });

@@ -219,6 +219,37 @@ dicentang manual tiap sub-task kelar.
       eligible di popup) — bukan alasan buat dihapus (toggle lebih cepat
       buat pause 1 deck penuh), tapi kuat alasan buat digabung satu tempat.
 
+- [x] **Tab Study: opsi "All decks"** — dulu cuma bisa pilih 1 deck di dropdown,
+      sekarang ada opsi `All decks` (default) yang gabungin kata dari semua
+      deck jadi satu list buat di-review/di-select.
+  - Kata yang sama bisa nyangkut di lebih dari 1 deck (`groupIds`), jadi
+    `buildStudyEntries()` dedup per `key` dan numpuk `deckIds`-nya biar gak
+    dobel muncul pas mode "All decks".
+  - Eligibility & toggle checkbox jalan OR-across-decks: `isWordEligible()`
+    ngecek `.some()` ke semua `deckIds` punya entry, toggle nulis ke seleksi
+    tiap deck yang relevan — konsisten sama cara `srs.js` beneran nge-pool
+    kartu buat popup (bukan aturan baru).
+  - **Gotcha yang sama kayak bug "Clear" lama** kejadian lagi pas nulis
+    `isWordEligible()` versi pertama: sempet nge-treat objek seleksi kosong
+    `{}` sama kayak `undefined` (untouched), padahal keduanya beda makna.
+    Ketauan dari test Node manual sebelum dianggap kelar, bukan dari user
+    report — fix-nya cek `sel === undefined` eksplisit.
+- [x] **Hapus kanji "加" dari tombol Add word** — di `options.html`
+      (`#addWordBtn`) dan `popup.html` (`#addWordShortcut`), balik jadi plain
+      "Add word". Teks "加 New collection…" di form add-word gak diubah
+      (gak diminta).
+- [x] **Icon extension diganti jadi kanji 字** ("karakter/huruf" — nyambung ke
+      漢字/文字, cocok buat app belajar kanji). Diganti dari desain lama
+      (kotak biru rounded + tanda "+" putih) jadi kotak rounded warna tema +
+      字 putih di tengah, generate ulang buat semua size (16/48/128) dan
+      semua varian tema (root=blue, red, purple, green) via script PIL,
+      font PingFang TC Semibold (index 7 di `PingFang.ttc`) abis dibandingin
+      sama Hiragino Sans GB dan AquaKana.
+  - Kenapa 字 dan bukan kanji lain: awalnya coba 語 (14 stroke) tapi udah
+    muddy/gak jelas pas disimulasiin di ukuran 16px — jadi dicoba beberapa
+    alternatif stroke rendah (単, 文, 和) dan 字 (6 stroke) menang paling
+    jelas di toolbar-size.
+
 ## Next Version (post-MVP)
 
 - [ ] UI assign/ubah group/collection kartu yang **udah ada** (sekarang cuma
