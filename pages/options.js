@@ -423,7 +423,7 @@ async function renderStats() {
 
 /* -------------------------------- study tab ------------------------------- */
 
-let studyState = { deckId: "__all__", cards: [], index: 0, revealed: false, browseOpen: true, done: false, _selectionChanged: false };
+let studyState = { deckId: "__all__", cards: [], index: 0, revealed: false, browseOpen: true, done: false };
 
 function shuffle(a) {
   for (let i = a.length - 1; i > 0; i--) {
@@ -448,22 +448,6 @@ function buildStudyEntries(state, deckId) {
     }
   }
   return [...seen.values()];
-}
-
-// Matches pickCard's own rule in srs.js: eligible if ANY of the word's decks
-// either has no restrictive selection (untouched = whole deck eligible) or
-// explicitly includes this key.
-function isWordEligible(state, entry) {
-  // Must match srs.js's pickCard exactly: `deckSel && !deckSel[key]` skips a
-  // card. An UNTOUCHED deck (sel === undefined) means everything is
-  // eligible; an EXPLICITLY EMPTY selection ({} after "Deselect all") is
-  // truthy in JS and means nothing is, even though Object.keys(sel).length
-  // is 0 either way — the two states aren't distinguishable by key count,
-  // only by undefined vs. defined.
-  return entry.deckIds.some((deckId) => {
-    const sel = state.selection[deckId];
-    return sel === undefined || !!sel[entry.key];
-  });
 }
 
 // A word shared across decks needs its selection toggled in every one of
@@ -502,13 +486,16 @@ async function renderStudy() {
     return;
   }
 
-  if (!studyState.cards.length || studyState._selectionChanged) {
-    studyState._selectionChanged = false;
-    const filtered = entries.filter((entry) => isWordEligible(state, entry));
-    const prevKey = studyState.cards[studyState.index]?.key;
-    studyState.cards = filtered.map((entry) => ({ key: entry.key, deckIds: entry.deckIds, ...entry.card }));
-    const newIdx = prevKey ? studyState.cards.findIndex((c) => c.key === prevKey) : -1;
-    studyState.index = newIdx >= 0 ? newIdx : 0;
+  // The Study queue is every word in the currently selected category — full
+  // stop. The category dropdown is the only narrowing control here; the
+  // "which words show in the popup" checkboxes below are a separate concern
+  // (they only gate the flashcard popup on web pages, via state.selection —
+  // see srs.js's pickCard). They used to also gate this queue, which meant
+  // checking even one box flipped that whole category from "everything
+  // eligible" to "only checked items" and silently dropped the rest from
+  // Study — surprising, and not what the category filter is for.
+  if (!studyState.cards.length) {
+    studyState.cards = entries.map((entry) => ({ key: entry.key, deckIds: entry.deckIds, ...entry.card }));
   }
 
   const selectedCount = entries.filter((entry) =>
@@ -533,13 +520,6 @@ async function renderStudy() {
       studyState.revealed = false;
       renderStudy();
     });
-    return;
-  }
-
-  if (!studyState.cards.length) {
-    html += '<p class="empty" style="margin-top:12px">No cards selected. Check some cards in the vocabulary list below.</p>';
-    container.innerHTML = html;
-    renderStudyBrowse(container, entries, state);
     return;
   }
 
@@ -572,9 +552,10 @@ async function renderStudy() {
     <details class="study-browse" id="studyBrowse" ${studyState.browseOpen ? 'open' : ''}>
       <summary class="browse-summary">Which words show in the popup${selectedCount ? ` (${selectedCount} selected)` : ''}</summary>
       <p class="hint" style="margin-top:6px">These checkboxes control which words can show up in the flashcard popup
-        on web pages (same list is used here in Study). Leave a deck's words untouched and that whole deck is
-        eligible by default. Checking a few switches it to "only these" — and "Deselect all" removes
-        <em>every word currently listed here</em> from the popup, it doesn't reset back to "everything."</p>
+        on web pages — they don't affect what's in the Study queue above (that's controlled by the Category
+        dropdown only). Leave a deck's words untouched and that whole deck is eligible by default. Checking a few
+        switches it to "only these" — and "Deselect all" removes <em>every word currently listed here</em> from
+        the popup, it doesn't reset back to "everything."</p>
       <div style="margin:8px 0;display:flex;gap:8px">
         <button class="btn" id="selectAllBtn">Select all</button>
         <button class="btn" id="clearSelBtn">Deselect all</button>
@@ -639,14 +620,12 @@ async function renderStudy() {
   if (selectAllBtn) {
     selectAllBtn.addEventListener("click", async () => {
       for (const entry of entries) await setWordSelection(entry, true);
-      studyState._selectionChanged = true;
       renderStudy();
     });
   }
   if (clearSelBtn) {
     clearSelBtn.addEventListener("click", async () => {
       for (const entry of entries) await setWordSelection(entry, false);
-      studyState._selectionChanged = true;
       renderStudy();
     });
   }
@@ -727,7 +706,6 @@ function renderStudyBrowse(container, entries, state) {
       const key = tr.dataset.key;
       const entry = entries.find((e) => e.key === key);
       if (entry) await setWordSelection(entry, cb.checked);
-      studyState._selectionChanged = true;
       renderStudy();
     });
   });

@@ -289,6 +289,29 @@ dicentang manual tiap sub-task kelar.
     kategori manual-only, `buildStudyEntries("__all__")` gabungin count dari
     2 kategori dengan bener, `isWordEligible()` tetep default-eligible buat
     seleksi yang belum disentuh.
+- [x] **Fix bug: checklist "popup eligibility" nge-reset queue Study** —
+      abis rilis fitur Category di atas, ke-report kata2 yang mau dipelajari
+      auto "ke-reset" pas checkbox di-centang/dropdown pindah.
+  - **Root cause**: `studyState.cards` (queue Study) di-filter pake
+    `isWordEligible()` — fungsi yang sama yang nentuin eligibility buat
+    popup flashcard di halaman web. Begitu user centang SATU checkbox aja
+    di kategori manapun, `selection[categoryId]` jadi objek yang ke-define
+    (gak lagi `undefined`), dan per aturan `pickCard`, itu bikin SEMUA kata
+    lain di kategori itu yang belum eksplisit dicentang jadi ineligible —
+    otomatis ilang dari queue Study meskipun user cuma niat nambahin 1 kata,
+    bukan ngurangin yang lain.
+  - **Fix**: queue Study sekarang murni dari kategori yang dipilih dropdown
+    doang (`entries`), gak difilter `isWordEligible()` lagi sama sekali —
+    checkbox "which words show in the popup" balik jadi kontrol yang
+    beneran terpisah, cuma ngaruh ke popup flashcard di web (state.selection
+    dibaca `srs.js`'s `pickCard()`), gak nyentuh apa yang ditampilin di
+    Study. Text hint di bawah checklist diupdate biar jelas ini 2 hal beda.
+  - `isWordEligible()` jadi gak kepake lagi di manapun makanya dihapus
+    (dead code) — begitu juga flag `_selectionChanged` yang sebelumnya
+    dipake buat trigger rebuild queue tiap checkbox di-toggle.
+  - Diverifikasi ulang: `buildStudyEntries("A")` sekarang tetep return 4
+    kata biarpun `selection.A` udah ada isi 1 kata eksplisit — gak lagi
+    ke-reduce jadi 1 kayak sebelum fix.
 
 ## Next Version (post-MVP)
 
