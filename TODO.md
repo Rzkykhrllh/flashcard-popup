@@ -172,6 +172,16 @@ dicentang manual tiap sub-task kelar.
   - Tab Graph gak kesentuh (gak butuh — dia fixed-light, gak baca token
     `--ink`/`--muted`/dst app-wide sama sekali, jadi `data-theme` gak
     ngaruh ke situ).
+- [x] **Settings tab di-reorganize** jadi 2 section dengan label eksplisit:
+      **General** (Appearance+Color theme — app-wide, dipake Kotoba Bank
+      juga; Add deck; Your decks) vs **Flashcard popup** (Study mode;
+      Frequency & behavior; Flashcard appearance — furigana/reveal/posisi).
+      "Popup" di sini = overlay flashcard di halaman web (`content.js`),
+      BUKAN toolbar popup extension.
+  - Klarifikasi konsep: **deck = group dengan `type:"synced"`** — udah
+    otomatis kejadian dari awal (`background.js` nulis `putGroup({id:
+    deck.id, ...})` tiap sync), cuma belum eksplisit di UI. Ditambah hint
+    di panel "Your decks" biar kelihatan.
 
 ## Next Version (post-MVP)
 
