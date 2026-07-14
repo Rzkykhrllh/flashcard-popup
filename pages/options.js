@@ -745,7 +745,7 @@ function renderStudyBrowse(container, entries, state) {
       : `Which words show in the popup (${eligibleCount} of ${visible.length} selected in this view)`;
   }
 
-  let html = '<table class="stats-table"><thead><tr><th>In popup</th><th>Kanji</th><th>Reading</th><th>Meaning</th><th>Notes</th></tr></thead><tbody>';
+  let html = '<table class="stats-table bank-table"><thead><tr><th>In popup</th><th>Kanji</th><th>Reading</th><th>Meaning</th><th>Notes</th></tr></thead><tbody>';
   if (!visible.length) {
     html += '<tr><td colspan="5" class="empty">No words match.</td></tr>';
   }
@@ -765,6 +765,17 @@ function renderStudyBrowse(container, entries, state) {
       if (entry) await setWordSelection(entry, cb.checked);
       studyState._eligibilityChanged = true;
       renderStudy();
+    });
+  });
+
+  // Row click (anywhere but the checkbox) opens the same word detail modal
+  // as the Words tab — lets you see the full word and click through to
+  // kanji detail without leaving Study to go find it in the bank.
+  wrap.querySelectorAll("tr[data-key]").forEach((tr) => {
+    tr.addEventListener("click", (e) => {
+      if (e.target.closest(".card-cb")) return;
+      const word = allWords.find((w) => w.id === tr.dataset.key);
+      if (word) openWordModal(word);
     });
   });
 }

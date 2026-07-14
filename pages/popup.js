@@ -18,12 +18,19 @@ const qaKanji = document.getElementById("qaKanji");
 const qaHiragana = document.getElementById("qaHiragana");
 const qaArti = document.getElementById("qaArti");
 const qaNotes = document.getElementById("qaNotes");
-const qaGroupSelect = document.getElementById("qaGroupSelect");
+const qaGroupChecklist = document.getElementById("qaGroupChecklist");
 const qaNewGroupName = document.getElementById("qaNewGroupName");
+const qaAddGroupBtn = document.getElementById("qaAddGroupBtn");
 const qaIncludeInStudy = document.getElementById("qaIncludeInStudy");
 const qaStatus = document.getElementById("qaStatus");
 const qaSaveBtn = document.getElementById("qaSaveBtn");
 const qaCancelBtn = document.getElementById("qaCancelBtn");
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
+}
 
 function timeAgo(ts) {
   if (!ts) return "never";
@@ -116,15 +123,65 @@ bankBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime
 optionsBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html#settings") }));
 
 // Quick-add: capture a word straight from the popup, no navigating away.
-// Mirrors word-editor.js's Add-mode logic (same collision/merge rule), kept
-// as its own copy since popup.js and word-editor.js never share a page.
+// Mirrors word-editor.js's Add-mode logic (same collision/merge rule, same
+// multi-collection checklist), kept as its own copy since popup.js and
+// word-editor.js never share a page.
+let qaGroups = [];
+let qaEditingGroupId = null;
+
+function renderQaGroupChecklist(selectedIds) {
+  qaGroupChecklist.innerHTML = qaGroups.length
+    ? qaGroups.map((g) => {
+        const checked = selectedIds.includes(g.id) ? "checked" : "";
+        const nameCell = g.id === qaEditingGroupId
+          ? `<input type="text" class="group-rename-input" value="${escapeHtml(g.name)}" />
+             <button type="button" class="group-rename-save" title="Save">&#10003;</button>
+             <button type="button" class="group-rename-cancel" title="Cancel">&#10005;</button>`
+          : `<label for="qagc-${escapeHtml(g.id)}" class="group-check-label">${escapeHtml(g.name)}</label>
+             <button type="button" class="group-rename-btn" title="Rename">&#9998;</button>`;
+        return `
+          <div class="group-check-row" data-id="${escapeHtml(g.id)}">
+            <input type="checkbox" class="group-check" id="qagc-${escapeHtml(g.id)}" value="${escapeHtml(g.id)}" ${checked} />
+            ${nameCell}
+          </div>`;
+      }).join("")
+    : '<p class="empty" style="margin:2px 0">No collections yet — add one below.</p>';
+
+  qaGroupChecklist.querySelectorAll(".group-rename-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      qaEditingGroupId = btn.closest(".group-check-row").dataset.id;
+      renderQaGroupChecklist(qaSelectedGroupIds());
+    });
+  });
+  qaGroupChecklist.querySelectorAll(".group-rename-cancel").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      qaEditingGroupId = null;
+      renderQaGroupChecklist(qaSelectedGroupIds());
+    });
+  });
+  qaGroupChecklist.querySelectorAll(".group-rename-save").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const row = btn.closest(".group-check-row");
+      const id = row.dataset.id;
+      const name = row.querySelector(".group-rename-input").value.trim();
+      if (!name) return;
+      await send({ type: "renameGroup", groupId: id, name });
+      const g = qaGroups.find((x) => x.id === id);
+      if (g) g.name = name;
+      qaEditingGroupId = null;
+      renderQaGroupChecklist(qaSelectedGroupIds());
+    });
+  });
+}
+
+function qaSelectedGroupIds() {
+  return [...qaGroupChecklist.querySelectorAll(".group-check:checked")].map((cb) => cb.value);
+}
+
 async function openQuickAdd() {
-  const groups = await getAllGroups();
-  qaGroupSelect.innerHTML = [
-    ...groups.map((g) => `<option value="${g.id}">${g.name}</option>`),
-    `<option value="__new__">加 New collection…</option>`,
-  ].join("");
-  qaNewGroupName.style.display = "none";
+  qaGroups = await getAllGroups();
+  qaEditingGroupId = null;
+  renderQaGroupChecklist([]);
   qaNewGroupName.value = "";
   qaKanji.value = ""; qaHiragana.value = ""; qaArti.value = ""; qaNotes.value = "";
   qaIncludeInStudy.checked = true;
@@ -140,8 +197,15 @@ function closeQuickAdd() {
 addWordShortcut.addEventListener("click", openQuickAdd);
 qaCancelBtn.addEventListener("click", closeQuickAdd);
 
-qaGroupSelect.addEventListener("change", () => {
-  qaNewGroupName.style.display = qaGroupSelect.value === "__new__" ? "" : "none";
+qaAddGroupBtn.addEventListener("click", async () => {
+  const name = qaNewGroupName.value.trim();
+  if (!name) return;
+  const groupId = `manual_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const group = { id: groupId, name, type: "manual", sourceSheetUrl: null };
+  await putGroup(group);
+  qaGroups.push(group);
+  qaNewGroupName.value = "";
+  renderQaGroupChecklist([...qaSelectedGroupIds(), groupId]);
 });
 
 qaSaveBtn.addEventListener("click", async () => {
@@ -151,23 +215,17 @@ qaSaveBtn.addEventListener("click", async () => {
   const notes = qaNotes.value.trim();
   if (!kanji) { qaStatus.textContent = "Kanji can't be empty."; return; }
 
-  let groupId = qaGroupSelect.value;
-  if (groupId === "__new__") {
-    const name = qaNewGroupName.value.trim();
-    if (!name) { qaStatus.textContent = "Collection name can't be empty."; return; }
-    groupId = `manual_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    await putGroup({ id: groupId, name, type: "manual", sourceSheetUrl: null });
-  }
-  if (!groupId) { qaStatus.textContent = "Pick a collection."; return; }
+  const groupIds = qaSelectedGroupIds();
+  if (!groupIds.length) { qaStatus.textContent = "Pick at least one collection."; return; }
 
   const id = `${kanji}|${hiragana}`;
   const existing = await getWord(id);
   if (existing) {
-    const ok = confirm(`"${kanji}${hiragana ? " / " + hiragana : ""}" already exists. Update it and add to this collection?`);
+    const ok = confirm(`"${kanji}${hiragana ? " / " + hiragana : ""}" already exists. Update it and add to these collections?`);
     if (!ok) return;
     existing.kanji = kanji; existing.hiragana = hiragana; existing.arti = arti; existing.notes = notes;
     existing.kanjiList = extractKanjiList(kanji);
-    existing.groupIds = [...new Set([...(existing.groupIds || []), groupId])];
+    existing.groupIds = [...new Set([...(existing.groupIds || []), ...groupIds])];
     await putWord(existing);
   } else {
     await putWord({
@@ -175,10 +233,12 @@ qaSaveBtn.addEventListener("click", async () => {
       kanjiList: extractKanjiList(kanji),
       seen: 0, known: 0, hint: 0, forgot: 0, lastSeen: 0, createdAt: Date.now(),
       n: 0, easeFactor: 2.5, status: "new", statusOverride: false,
-      source: "manual", groupIds: [groupId],
+      source: "manual", groupIds,
     });
   }
-  await send({ type: "setCardSelection", deckId: groupId, key: id, selected: qaIncludeInStudy.checked });
+  for (const groupId of groupIds) {
+    await send({ type: "setCardSelection", deckId: groupId, key: id, selected: qaIncludeInStudy.checked });
+  }
 
   qaStatus.textContent = "Saved!";
   setTimeout(closeQuickAdd, 700);

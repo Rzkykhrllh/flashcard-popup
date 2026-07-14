@@ -349,10 +349,63 @@ dicentang manual tiap sub-task kelar.
     beneran ngurangin jadi 8 dan kata yang excluded itu yang bener. `pickCard`
     (popup asli) diverifikasi pake aturan yang sama.
 
+- [x] **Klik row di tabel checklist Study buka detail kata** — sebelumnya
+      row di tabel "Which words show in the popup" cuma bisa di-toggle
+      checkbox-nya, gak ada cara liat detail kata dari situ tanpa pindah ke
+      tab Words dulu. Sekarang klik row (di luar area checkbox) buka modal
+      detail kata yang sama kayak di tab Words, termasuk bisa klik kanji di
+      dalemnya buat lanjut ke kanji modal (detail + navigasi, bukan cuma
+      pilih doang). Diverifikasi end-to-end pake Playwright (extension asli
+      di-load, bukan cuma baca kode): klik checkbox gak buka modal, klik row
+      buka modal, klik kanji di modal buka kanji modal.
+- [x] **UI assign/reassign collection kartu yang udah ada, dan 1 kata bisa
+      masuk banyak collection sekaligus** — sebelumnya cuma bisa pilih 1
+      collection, dan cuma pas Add (edit mode gak bisa sentuh groupIds sama
+      sekali).
+  - Form Add/Edit Word (`#wGroupField` di tab Words, `#qaGroupChecklist` di
+    quick-add popup) sekarang checklist (bukan `<select>` single-value) —
+    bisa centang berapa aja collection, dan "+ Add" bikin collection baru
+    inline lalu auto-tercentang, tanpa nutup form.
+  - Edit mode sekarang nampilin checklist ini juga (sebelumnya disembunyiin
+    total — "belum in scope"), pre-checked ke `groupIds` kata itu. Save akan
+    REPLACE `groupIds` kata itu persis sama apa yang dicentang (termasuk
+    ngurangin, bukan cuma nambah).
+  - Rename (kanji/hiragana berubah, id ikut berubah) yang collide sama kata
+    LAIN tetep union groupIds-nya (gak nyabut collection kata yang di-merge
+    itu), tapi kalau gak collide, groupIds-nya langsung diganti sesuai
+    checklist (gak di-union sama yang lama).
+  - Checkbox "Include in current learning" tetep cuma di mode Add (gak
+    diubah scope-nya) — di-apply rata ke SEMUA collection yang baru
+    dicentang. Eligibility per-collection buat kata yang UDAH ada tetep
+    diatur lewat checklist "Which words show in the popup" di tab Study
+    (lebih tepat buat itu, granular per-kategori).
+  - Diverifikasi end-to-end pake Playwright: bikin kata + assign ke 2
+    collection baru sekaligus → tersimpan bener di IndexedDB (`groupIds`
+    berisi keduanya); buka lagi → checklist ke-precheck bener; uncheck 1 +
+    tambah collection baru + save → `groupIds` akhir sesuai (union/replace
+    jalan sesuai desain). Dites juga versi popup quick-add-nya sama caranya.
+- [x] **Rename collection/deck** — tombol pensil (✎) di tiap row checklist
+      collection (tab Words & quick-add popup), klik buka inline text input
+      + Save/Cancel, gak perlu pindah halaman.
+  - Checkbox row TETAP ada di DOM pas lagi mode edit nama (cuma nama-nya aja
+    yang diganti jadi `<input>`) — sengaja gitu biar `selectedGroupIds()`
+    gak pernah kehilangan state "yang dicentang" pas satu row lagi di-edit.
+    Awalnya desain pertama nyembunyiin checkbox pas edit-mode dan itu jadi
+    bug (centang ke-reset abis rename) — ketauan pas nulis draft-nya sendiri
+    sebelum sempet nge-test, jadi di-redesign biar checkbox-nya persist.
+  - Message baru `renameGroup` di background.js: kalau id-nya cocok sama
+    salah satu deck sync (`chrome.storage.local.decks`), update nama di
+    KEDUA tempat (deck config + mirror-nya di IndexedDB `groups`) — biar
+    panel "Your decks" di Settings tetep sinkron. Kalau manual-only, cuma
+    update IndexedDB group-nya.
+  - Diverifikasi lewat Playwright: rename collection manual → nama
+    ke-update langsung di checklist, checkbox tetap kecentang, dropdown
+    filter collection di tab Words ikut ke-update (`reloadData()`), dan
+    persist bener di IndexedDB abis reload. Tombol Cancel dites juga —
+    dipastikan gak nyimpen perubahan yang belum di-Save.
+
 ## Next Version (post-MVP)
 
-- [ ] UI assign/ubah group/collection kartu yang **udah ada** (sekarang cuma
-      bisa di-set pas Add; edit mode gak bisa reassign collection)
 - [ ] Manual status override (tombol "mark as mastered" dkk, set `statusOverride: true`)
 - [ ] Kolom tambahan: `tags`, `partOfSpeech` — field udah dialokasikan di
       schema (next_feature.md §3), belum ada UI buat isi/edit (`example` udah

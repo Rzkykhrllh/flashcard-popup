@@ -35,8 +35,11 @@
       <input id="qaHiragana" type="text" placeholder="Reading (hiragana)" autocomplete="off" />
       <input id="qaArti" type="text" placeholder="Meaning" autocomplete="off" />
       <textarea id="qaNotes" rows="2" placeholder="Notes (optional)"></textarea>
-      <select id="qaGroupSelect"></select>
-      <input id="qaNewGroupName" type="text" placeholder="New collection name" autocomplete="off" style="display:none" />
+      <div id="qaGroupChecklist" class="group-checklist"></div>
+      <div class="group-new-row">
+        <input id="qaNewGroupName" type="text" placeholder="New collection name" autocomplete="off" />
+        <button type="button" class="btn" id="qaAddGroupBtn">Add</button>
+      </div>
       <label class="field-check">
         <input id="qaIncludeInStudy" type="checkbox" checked />
         Include in current learning (Study &amp; popup)

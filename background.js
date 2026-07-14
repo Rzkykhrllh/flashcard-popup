@@ -504,6 +504,25 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         sendResponse({ ok: true });
         break;
       }
+      case "renameGroup": {
+        // A group is either a synced deck's mirror (name lives in both
+        // chrome.storage.local `decks` and the IndexedDB group — see
+        // syncDeck()) or a manual-only collection (IndexedDB group only).
+        // Keep both in sync for the synced case so Settings' "Your decks"
+        // panel and every other category picker agree on the name.
+        const name = (msg.name || "").trim();
+        if (!name) { sendResponse({ ok: false, error: "Name can't be empty." }); break; }
+        const state = await getState();
+        const isDeck = state.decks.some((d) => d.id === msg.groupId);
+        if (isDeck) {
+          const decks = state.decks.map((d) => (d.id === msg.groupId ? { ...d, name } : d));
+          await chrome.storage.local.set({ decks });
+        }
+        const group = await getGroup(msg.groupId);
+        if (group) await putGroup({ ...group, name });
+        sendResponse({ ok: true });
+        break;
+      }
       case "syncAll": {
         sendResponse({ ok: true, results: await syncAllDecks() });
         break;
