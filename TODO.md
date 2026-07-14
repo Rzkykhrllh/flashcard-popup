@@ -403,6 +403,55 @@ dicentang manual tiap sub-task kelar.
     filter collection di tab Words ikut ke-update (`reloadData()`), dan
     persist bener di IndexedDB abis reload. Tombol Cancel dites juga —
     dipastikan gak nyimpen perubahan yang belum di-Save.
+- [x] **Diskusi**: tab Study & Words kerasa redundant (dua-duanya jadi
+      tabel kata yang bisa di-search/filter/klik-buka-detail). Kesimpulan
+      setelah diskusi (bukan merge tab): checklist di Study TETAP dipertahanin
+      apa adanya — mindahin kata mana yang mau di-review itu perlu bisa
+      langsung lanjut belajar tanpa pindah tab, jadi worth duplikasinya.
+      Yang beneran kurang: eligibility ("In Study/popup") cuma bisa
+      diliat/diubah dari tab Study, gak ada di tab Words sama sekali.
+  - **Fix**: tab Words dapet kolom baru **"In Study"** (checkbox) di tabel
+    kata-nya, reuse `isWordEligible()`/`setWordSelection()` yang udah ada
+    di options.js (bukan re-implement aturan "explicit false excludes"-nya
+    lagi, biar gak ada versi ketiga yang bisa beda bug). Toggle dari tab
+    Words langsung kelihatan sinkron di tab Study juga (satu sumber data:
+    `state.selection`).
+  - **Isu ordering yang dicek**: `vocab-bank.js` (tab Words) manggil
+    `isWordEligible`/`setWordSelection`/`send` yang didefinisiin di
+    `options.js`, padahal `<script>` tag options.js dimuat BELAKANGAN di
+    `options.html`. Aman karena semua pemanggilannya ada di dalem callback
+    async (`reloadData()`/event listener), yang baru jalan setelah SEMUA
+    `<script>` tag lain kelar dieksekusi duluan (browser jalanin script tag
+    berurutan secara sinkron, baru abis itu microtask/promise continuation
+    jalan) — diverifikasi gak ada console error sama sekali pas load.
+    Tabel Words sekarang punya 6 kolom (nambah "In Study"), `colspan`
+    loading-placeholder-nya di-update dari 5 ke 6.
+  - Diverifikasi end-to-end pake Playwright: checkbox default state bener
+    (untouched = eligible = tercentang), klik row (bukan checkbox) tetep
+    buka word modal, klik checkbox gak ikut buka modal & beneran nge-toggle
+    eligibility yang persist ke storage, dan tab Study nunjukin state yang
+    sama abis toggle dari tab Words (satu sumber data, bukan dua yang bisa
+    ketuker).
+- [x] **Rapihin tombol popup toolbar** — dari 7 tombol (Show card now, Menu
+      toggle, Study, Kotoba Bank, Add word, Sync from Google Sheet, Settings
+      & decks) jadi 3 tombol flat: **Show card now**, **Add word**, **Open
+      Kotoba Bank**.
+  - **Study/Kotoba Bank/Settings & decks** — ketiganya cuma buka
+    `options.html` dengan hash tab awal beda-beda (`#study`/`#list`/
+    `#settings`). Digabung jadi 1 tombol **Open Kotoba Bank** (buka
+    `options.html` tanpa hash, default landing di tab Study) — tab bar-nya
+    udah keliatan begitu halamannya kebuka, jadi gak butuh 3 pintu masuk
+    beda buat halaman yang sama.
+  - **Sync from Google Sheet** dihapus dari popup — tab Settings udah punya
+    tombol "Sync all" sendiri, jadi ini murni dobel. Sync sekarang cuma
+    bisa lewat Settings (1 klik ekstra lewat "Open Kotoba Bank").
+  - **Menu ▾ collapsible dihapus** — cuma worth dipertahanin kalau tombolnya
+    banyak; abis dikurangin jadi 3, tampilin flat langsung lebih sedikit
+    klik buat sampe ke aksi manapun.
+  - `.menu-toggle`/`.submenu` CSS yang jadi gak kepake dihapus juga.
+  - Diverifikasi lewat Playwright + screenshot: 3 tombol keliatan flat,
+    "Add word" masih buka quick-add form dengan bener, gak ada console
+    error.
 
 ## Next Version (post-MVP)
 

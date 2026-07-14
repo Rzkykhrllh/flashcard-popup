@@ -221,6 +221,7 @@ wordModalClose.addEventListener("click", closeWordModal);
 wordModalOverlay.addEventListener("click", (e) => { if (e.target === wordModalOverlay) closeWordModal(); });
 
 wordRowsEl.addEventListener("click", (e) => {
+  if (e.target.closest(".word-eligible-cb")) return;
   const tr = e.target.closest("tr[data-id]");
   if (!tr) return;
   const word = allWords.find((w) => w.id === tr.dataset.id);

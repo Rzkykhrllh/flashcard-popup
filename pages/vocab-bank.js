@@ -27,6 +27,18 @@ let activeStatus = "";
 let activeGroupId = "";
 let activeQuery = "";
 
+// Eligibility ("show in Study/popup") isn't stored on the word itself — it
+// lives in background.js's getState().selection, keyed by category id (see
+// options.js's isWordEligible/setWordSelection, reused here as-is rather
+// than re-implementing the "explicit false excludes" rule a third time).
+// Cached instead of fetched per-render so typing in the search box doesn't
+// round-trip to the background page on every keystroke.
+let stateCache = null;
+
+async function refreshStateCache() {
+  stateCache = await send({ type: "getState" });
+}
+
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => (
     { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
@@ -65,22 +77,36 @@ function renderList() {
   });
 
   wordRowsEl.innerHTML = filtered
-    .map(
-      (w) => `
+    .map((w) => {
+      const entry = { key: w.id, deckIds: w.groupIds || [] };
+      const checked = stateCache && entry.deckIds.length ? isWordEligible(stateCache, entry) : false;
+      return `
       <tr data-id="${escapeHtml(w.id)}">
         <td class="kanji-cell">${escapeHtml(w.kanji || "")}</td>
         <td class="reading-cell">${escapeHtml(w.hiragana || "")}</td>
         <td>${escapeHtml(w.arti || "")}</td>
         <td>${statusBadge(w.status)}</td>
         <td class="cell-muted">${escapeHtml(groupNames(w))}</td>
-      </tr>`
-    )
+        <td><input type="checkbox" class="word-eligible-cb" ${checked ? "checked" : ""} /></td>
+      </tr>`;
+    })
     .join("");
 
   emptyStateEl.style.display = filtered.length ? "none" : "block";
   emptyStateEl.textContent = allWords.length ? "No words match." : "No words here yet.";
   resultCountEl.textContent = allWords.length ? `${filtered.length} of ${allWords.length}` : "";
 }
+
+wordRowsEl.addEventListener("change", async (e) => {
+  const cb = e.target.closest(".word-eligible-cb");
+  if (!cb) return;
+  const tr = cb.closest("tr[data-id]");
+  const word = allWords.find((w) => w.id === tr.dataset.id);
+  if (!word) return;
+  await setWordSelection({ key: word.id, deckIds: word.groupIds || [] }, cb.checked);
+  await refreshStateCache();
+  renderList();
+});
 
 statusTabsEl.addEventListener("click", (e) => {
   const btn = e.target.closest(".status-tab");
@@ -107,6 +133,7 @@ searchInputEl.addEventListener("input", () => {
 async function reloadData() {
   allWords = await getAllWords();
   allGroups = await getAllGroups();
+  await refreshStateCache();
 
   groupSelectEl.innerHTML = [GENERAL_GROUP, ...allGroups]
     .map((g) => `<option value="${escapeHtml(g.id)}">${escapeHtml(g.name)}</option>`)

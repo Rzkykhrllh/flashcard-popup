@@ -69,16 +69,7 @@ body {
 .btn-row { display: flex; gap: 8px; margin-bottom: 8px; }
 .btn-row .btn { margin-bottom: 0; }
 
-.menu-toggle { display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--muted); }
-.menu-toggle .chev { font-size: 9px; transition: transform .15s ease; }
-.menu-toggle.open .chev { transform: rotate(180deg); }
-
-.submenu { max-height: 0; overflow: hidden; transition: max-height .18s ease; }
-.submenu.open { max-height: 220px; }
-.submenu .btn-row { margin-top: 8px; }
-
-/* Quick-add — inline, sits outside .submenu so it isn't clipped by its
-   max-height; opens independently when "+ Add word" is clicked. */
+/* Quick-add — inline, opens independently when "Add word" is clicked. */
 .quick-add { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
 .quick-add.open { display: block; }
 .quick-add input, .quick-add select, .quick-add textarea {

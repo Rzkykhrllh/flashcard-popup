@@ -5,13 +5,8 @@ const deckCountEl = document.getElementById("deckCount");
 const syncStatusEl = document.getElementById("syncStatus");
 const enabledStateEl = document.getElementById("enabledState");
 const quizBtn = document.getElementById("quizBtn");
-const menuToggle = document.getElementById("menuToggle");
-const submenu = document.getElementById("submenu");
-const studyBtn = document.getElementById("studyBtn");
-const bankBtn = document.getElementById("bankBtn");
 const addWordShortcut = document.getElementById("addWordShortcut");
-const syncBtn = document.getElementById("syncBtn");
-const optionsBtn = document.getElementById("optionsBtn");
+const openBankBtn = document.getElementById("openBankBtn");
 
 const quickAdd = document.getElementById("quickAdd");
 const qaKanji = document.getElementById("qaKanji");
@@ -95,32 +90,11 @@ quizBtn.addEventListener("click", async () => {
   window.close(); // get out of the way so the card on the page is visible
 });
 
-syncBtn.addEventListener("click", async () => {
-  syncBtn.disabled = true;
-  syncBtn.textContent = "Syncing…";
-  const { results } = await send({ type: "syncAll" });
-  const failed = (results || []).filter((r) => !r.ok);
-  const added = (results || []).reduce((s, r) => s + (r.added || 0), 0);
-  syncBtn.disabled = false;
-  syncBtn.textContent = "Sync from Google Sheet";
-  if (!results || !results.length) {
-    enabledStateEl.textContent = "No decks to sync.";
-  } else if (failed.length) {
-    enabledStateEl.textContent = `${failed.length} deck(s) failed — check settings.`;
-  } else {
-    enabledStateEl.textContent = added ? `+${added} new cards.` : "Up to date.";
-  }
-  refresh();
-});
-
-menuToggle.addEventListener("click", () => {
-  menuToggle.classList.toggle("open");
-  submenu.classList.toggle("open");
-});
-
-studyBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html#study") }));
-bankBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html#list") }));
-optionsBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html#settings") }));
+// Study, Words, Kanji, Stats, Graph, and Settings are all tabs inside
+// options.html itself — one button here is enough, the tab bar takes over
+// from there. Syncing also moved fully into Settings' own "Sync all"
+// button, so there's no sync action left in the popup to duplicate it.
+openBankBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html") }));
 
 // Quick-add: capture a word straight from the popup, no navigating away.
 // Mirrors word-editor.js's Add-mode logic (same collision/merge rule, same
