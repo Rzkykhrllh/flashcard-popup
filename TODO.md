@@ -452,6 +452,52 @@ dicentang manual tiap sub-task kelar.
   - Diverifikasi lewat Playwright + screenshot: 3 tombol keliatan flat,
     "Add word" masih buka quick-add form dengan bener, gak ada console
     error.
+- [x] **Rename collection makin gak kelihatan tempatnya** — user komplain
+      "masih gak gitu keliatan harus dimana", padahal fitur rename-nya udah
+      ada (ikon pensil). Root cause: satu-satunya tempat ikon itu muncul
+      adalah checklist collection di modal Add/Edit Word (word-editor.js) &
+      quick-add popup — gak ada yang bakal mikir "buat rename collection,
+      buka form tambah kata dulu". Semua tempat lain yang nampilin nama
+      collection (dropdown filter Study/Stats/Words, kolom "Groups" di tabel
+      Words, panel "Your decks" di Settings) read-only, gak ada rename.
+  - **Fix**: panel "Your decks" di Settings di-generalize jadi **"Your
+    collections"** — sekarang loop dari `state.categories` (superset semua
+    grup, bukan cuma `state.decks` yang sync doang), jadi collection manual
+    (dibikin lewat "New collection" pas nambah kata) ikut muncul di sini,
+    bukan cuma deck sync. Tiap row dikasih ikon pensil (reuse
+    `.group-rename-*` CSS class yang sama persis dari word-editor.js/
+    vocab-bank.css, biar konsisten & gak dobel style) yang buka inline
+    text input + Save/Cancel, kirim message `renameGroup` yang sama.
+  - Toggle enable/disable (`.switch`) cuma ditampilin buat collection yang
+    sync (ada di `state.decks`) — collection manual emang belum punya
+    pause-switch (lihat catetan di `background.js`'s `getState()`). Baris
+    "cards" juga dibedain: `"N cards · synced Xtime ago"` buat deck sync,
+    `"N cards · manual"` buat collection manual (biar gak nampilin "not
+    synced yet" yang nyesatin buat collection yang emang gak pernah sync).
+    Tombol Delete tetep jalan buat kedua jenis — handler `removeDeck` di
+    background.js ternyata udah generic (unlink kata + `deleteGroup`),
+    gak butuh `msg.deckId` ada di `state.decks`.
+  - **Bug lain yang ke-nemu pas testing**: `switchTab()` cuma manggil
+    `render()` (yang ngebangun list ini) SEKALI pas page pertama kali
+    dimuat — klik tab Settings belakangan gak pernah refresh list-nya sama
+    sekali (beda sama tab lain yang semua punya re-render on-switch: Stats,
+    Study, Words, Kanji, Graph). Jadi kalo user nambah collection dari tab
+    Words dulu baru pindah ke Settings, panelnya nunjukin data BASI dari
+    page-load, bukan collection yang baru dibikin. Ketauan pas Playwright
+    test nunjukin `collection rows: []` padahal collection udah kesimpen di
+    IndexedDB. Fix: tambah `if (tab === "settings") render();` di
+    `switchTab()`, sama polanya kayak tab lain.
+  - Sempet ada CSS layout bug juga: pensil awalnya ke-dorong jauh ke kanan
+    (deket tombol Delete) bukan nempel di sebelah nama, gara-gara reuse class
+    `.group-check-label` (`flex:1`) di dalem wrapper `display:flex` yang
+    lebar penuh — jadinya nama div nge-grow ngisi semua ruang kosong. Fix:
+    wrapper diganti `display:inline-flex` (nge-shrink ngikutin konten) +
+    class `.group-check-label`-nya dilepas dari nama div.
+  - Diverifikasi lewat Playwright: bikin collection manual baru lewat tab
+    Words → pindah ke Settings → collection-nya muncul dengan bener (bukti
+    fix bug `switchTab`) → klik pensil → input muncul → ganti nama → Save →
+    nama ke-update di list, persist abis reload. Dicek juga tampilan dark
+    mode-nya lewat screenshot, gak ada console error di semua langkah.
 
 ## Next Version (post-MVP)
 

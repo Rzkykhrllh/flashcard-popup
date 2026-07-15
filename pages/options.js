@@ -99,6 +99,11 @@ function applyActivePos(cardPosition) {
   posButtons.forEach(b => b.classList.toggle("active", b.dataset.pos === preset));
 }
 
+// Which collection row (if any) is mid-rename in the Settings panel —
+// mirrors word-editor.js's wEditingGroupId pattern (checkbox/switch stays
+// put, only the name label swaps to an input) so re-render never loses state.
+let settingsEditingGroupId = null;
+
 async function render() {
   const [state, { cardPosition }] = await Promise.all([
     send({ type: "getState" }),
@@ -115,30 +120,63 @@ async function render() {
   applyActiveMode(state.settings.cardMode || "classic");
 
   deckList.innerHTML = "";
-  emptyDecks.style.display = state.decks.length ? "none" : "block";
+  emptyDecks.style.display = state.categories.length ? "none" : "block";
 
-  for (const deck of state.decks) {
-    const count = Object.keys(state.cards[deck.id] || {}).length;
+  for (const cat of state.categories) {
+    const isSynced = state.decks.some((d) => d.id === cat.id);
+    const count = Object.keys(state.cards[cat.id] || {}).length;
     const li = document.createElement("li");
     li.className = "deck";
+
+    const switchHtml = isSynced
+      ? `<label class="switch">
+           <input type="checkbox" ${cat.enabled !== false ? "checked" : ""} />
+           <span class="slider"></span>
+         </label>`
+      : "";
+    const sub = isSynced ? `${count} cards · synced ${timeAgo(cat.lastSynced)}` : `${count} cards · manual`;
+    const nameCell = cat.id === settingsEditingGroupId
+      ? `<input type="text" class="group-rename-input" value="${escapeHtml(cat.name)}" style="flex:1" />
+         <button type="button" class="group-rename-save" title="Save">&#10003;</button>
+         <button type="button" class="group-rename-cancel" title="Cancel">&#10005;</button>`
+      : `<div class="name">${escapeHtml(cat.name)}</div>
+         <button type="button" class="group-rename-btn" title="Rename">&#9998;</button>`;
+
     li.innerHTML = `
-      <label class="switch">
-        <input type="checkbox" ${deck.enabled !== false ? "checked" : ""} />
-        <span class="slider"></span>
-      </label>
+      ${switchHtml}
       <div class="meta">
-        <div class="name"></div>
-        <div class="sub">${count} cards · ${timeAgo(deck.lastSynced)}</div>
+        <div class="name-row" style="display:inline-flex;align-items:center;gap:4px;max-width:100%">${nameCell}</div>
+        <div class="sub">${sub}</div>
       </div>
       <button class="rm">Delete</button>
     `;
-    li.querySelector(".name").textContent = deck.name;
-    li.querySelector("input").addEventListener("change", async (e) => {
-      await send({ type: "toggleDeck", deckId: deck.id, enabled: e.target.checked });
+
+    if (isSynced) {
+      li.querySelector("input[type=checkbox]").addEventListener("change", async (e) => {
+        await send({ type: "toggleDeck", deckId: cat.id, enabled: e.target.checked });
+      });
+    }
+    const renameBtn = li.querySelector(".group-rename-btn");
+    if (renameBtn) renameBtn.addEventListener("click", () => {
+      settingsEditingGroupId = cat.id;
+      render();
+    });
+    const cancelBtn = li.querySelector(".group-rename-cancel");
+    if (cancelBtn) cancelBtn.addEventListener("click", () => {
+      settingsEditingGroupId = null;
+      render();
+    });
+    const saveBtn = li.querySelector(".group-rename-save");
+    if (saveBtn) saveBtn.addEventListener("click", async () => {
+      const name = li.querySelector(".group-rename-input").value.trim();
+      if (!name) return;
+      await send({ type: "renameGroup", groupId: cat.id, name });
+      settingsEditingGroupId = null;
+      render();
     });
     li.querySelector(".rm").addEventListener("click", async () => {
-      if (!confirm(`Delete deck "${deck.name}"? Card progress will be lost.`)) return;
-      await send({ type: "removeDeck", deckId: deck.id });
+      if (!confirm(`Delete collection "${cat.name}"? Card progress will be lost.`)) return;
+      await send({ type: "removeDeck", deckId: cat.id });
       render();
     });
     deckList.appendChild(li);
@@ -301,6 +339,7 @@ function switchTab(tab) {
   if (tab === "list" && typeof reloadData === "function") reloadData(); // refresh in case Study just recorded grades
   if (tab === "kanji" && typeof renderKanjiTab === "function") renderKanjiTab();
   if (tab === "graph" && typeof startGraph === "function") startGraph();
+  if (tab === "settings") render(); // refresh "Your collections" — a word/collection may have been added elsewhere
 }
 
 tabBtns.forEach((btn) => {
