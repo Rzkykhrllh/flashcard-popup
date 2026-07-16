@@ -573,6 +573,29 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         sendResponse({ ok: true });
         break;
       }
+      case "getKanjiInfo": {
+        // Powers the flashcard popup's inline kanji card (content.js) — same
+        // data pages/word-editor.js's kanji modal shows, just reachable
+        // without leaving the web page you're browsing.
+        const [words, meta] = await Promise.all([
+          getWordsByKanji(msg.char),
+          getKanjiMeta(msg.char),
+        ]);
+        sendResponse({
+          words: words.map((w) => ({ id: w.id, kanji: w.kanji, hiragana: w.hiragana, arti: w.arti })),
+          meta: meta || null,
+        });
+        break;
+      }
+      case "saveKanjiMeta": {
+        await putKanjiMeta({
+          char: msg.char,
+          meaning: (msg.meaning || "").trim(),
+          notes: (msg.notes || "").trim(),
+        });
+        sendResponse({ ok: true });
+        break;
+      }
       default:
         sendResponse({ ok: false, error: "unknown message" });
     }

@@ -5,8 +5,35 @@
   let host = null;
   let dragState = null; // shared across renders, registered once
 
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => (
+      { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+    ));
+  }
+
   function send(message) {
     try { chrome.runtime.sendMessage(message); } catch (_) {}
+  }
+
+  function sendAsync(message) {
+    return new Promise((resolve) => {
+      try {
+        chrome.runtime.sendMessage(message, (response) => resolve(response));
+      } catch (_) {
+        resolve(null);
+      }
+    });
+  }
+
+  // Lazy, cached per page-load — same pattern as pages/word-editor.js's
+  // loadKanjidic(), just fetched from the content-script world instead of
+  // an extension page. Only loaded the first time a kanji card is opened.
+  let kanjidicPromise = null;
+  function loadKanjidic() {
+    if (!kanjidicPromise) {
+      kanjidicPromise = fetch(chrome.runtime.getURL("data/kanjidic.json")).then((r) => r.json());
+    }
+    return kanjidicPromise;
   }
 
   function close() {
@@ -145,6 +172,8 @@
       .x:hover { background:rgba(0,0,0,.06); color:#444; }
       .kanji { font-size:46px; font-weight:500; line-height:1.15; text-align:center; padding:10px 0 14px; word-break:break-word; display:flex; flex-direction:column; align-items:center; gap:4px; }
       .furigana { font-size:0.38em; font-weight:400; color:var(--muted); letter-spacing:0.06em; line-height:1; }
+      .k-char { cursor:pointer; border-radius:6px; }
+      .k-char:hover { background:rgba(128,128,128,.16); }
       .answer { display:none; border-top:1px dashed var(--border); padding-top:12px; text-align:center; }
       .answer.show { display:block; }
       .reading { font-size:18px; color:var(--reading); }
@@ -168,6 +197,29 @@
       button.hint-btn:hover { background:rgba(128,128,128,.08); color:var(--fg); }
       .snooze { display:block; width:100%; text-align:center; background:transparent; border:0; color:var(--muted); font-size:12px; margin-top:12px; cursor:pointer; font-family:inherit; }
       .snooze:hover { color:#444; text-decoration:underline; }
+
+      /* ── inline kanji view (swaps in over the flashcard, same card) ── */
+      .kv-back { border:0; background:transparent; color:var(--muted); font-size:11px; letter-spacing:.02em; cursor:pointer; padding:2px 0; font-family:inherit; }
+      .kv-back:hover { color:var(--fg); }
+      .kv-char { font-size:40px; font-weight:500; text-align:center; padding:8px 0 12px; }
+      .kv-label { font-size:11px; color:var(--muted); margin:10px 0 4px; text-transform:uppercase; letter-spacing:.06em; }
+      .kv-readings-row { display:flex; flex-wrap:wrap; gap:5px; min-height:22px; }
+      .kv-pill { display:inline-block; background:rgba(128,128,128,.14); color:var(--fg); font-size:12px; padding:3px 9px; border-radius:99px; }
+      .kv-empty { font-size:12px; color:var(--muted); }
+      .kv-meaning, .kv-notes {
+        display:block; width:100%; border:1px solid var(--border); background:transparent; color:var(--fg);
+        border-radius:8px; padding:7px 9px; font-size:13px; font-family:inherit; margin-top:4px; resize:vertical;
+      }
+      .kv-meaning:focus, .kv-notes:focus { outline:2px solid var(--accent); outline-offset:-1px; }
+      .kv-save { width:auto; margin-top:8px; background:var(--accent); color:#fff; border:0; border-radius:8px; padding:7px 14px; font-size:13px; font-weight:500; cursor:pointer; font-family:inherit; }
+      .kv-save:hover { opacity:.9; }
+      .kv-saved { font-size:11px; color:var(--muted); margin-left:8px; }
+      .kv-related { display:flex; flex-direction:column; gap:2px; margin-top:6px; max-height:120px; overflow-y:auto; }
+      .kv-row { display:flex; align-items:baseline; gap:6px; padding:5px 4px; border-radius:6px; font-size:13px; }
+      .kv-row .kv-k { font-weight:500; }
+      .kv-row .kv-r { color:var(--reading); font-size:11px; }
+      .kv-row .kv-m { color:var(--notes); margin-left:auto; text-align:right; font-size:12px; }
+      .kview-loading { font-size:12px; color:var(--muted); text-align:center; padding:20px 0; }
     `;
 
     const wrap = document.createElement("div");
@@ -180,22 +232,38 @@
           <span class="eyebrow"><span class="seal"></span>思い出して · what does it mean?</span>
           <button class="x" aria-label="Close">×</button>
         </div>
-        <div class="kanji"></div>
-        ${tiered ? '<div class="hint-row"><button class="act hint-btn">Show hiragana</button></div>' : ""}
-        <div class="answer">
-          <div class="reading"></div>
-          <div class="arti"></div>
-          <div class="notes"></div>
-        </div>
-        <div class="actions">
-          <button class="act reveal">Reveal answer</button>
-          <div class="grade ${tiered ? "grade-tiered" : ""}">
-            <button class="act forgot">Forgot</button>
-            ${tiered ? '<button class="act hint-known">Know after hint</button>' : ""}
-            <button class="act known">${tiered ? "Know kanji!" : "Known!"}</button>
+        <div class="fc">
+          <div class="kanji"></div>
+          ${tiered ? '<div class="hint-row"><button class="act hint-btn">Show hiragana</button></div>' : ""}
+          <div class="answer">
+            <div class="reading"></div>
+            <div class="arti"></div>
+            <div class="notes"></div>
           </div>
+          <div class="actions">
+            <button class="act reveal">Reveal answer</button>
+            <div class="grade ${tiered ? "grade-tiered" : ""}">
+              <button class="act forgot">Forgot</button>
+              ${tiered ? '<button class="act hint-known">Know after hint</button>' : ""}
+              <button class="act known">${tiered ? "Know kanji!" : "Known!"}</button>
+            </div>
+          </div>
+          <button class="snooze">Snooze 30 min</button>
         </div>
-        <button class="snooze">Snooze 30 min</button>
+        <div class="kview" style="display:none">
+          <button class="kv-back">‹ Back to card</button>
+          <div class="kv-char"></div>
+          <div class="kv-label">On'yomi</div>
+          <div class="kv-readings-row kv-on"></div>
+          <div class="kv-label">Kun'yomi</div>
+          <div class="kv-readings-row kv-kun"></div>
+          <div class="kv-label">Your notes</div>
+          <input class="kv-meaning" type="text" placeholder="Meaning / mnemonic" />
+          <textarea class="kv-notes" rows="2" placeholder="Notes"></textarea>
+          <button class="kv-save">Save<span class="kv-saved"></span></button>
+          <div class="kv-label">Other words with this kanji</div>
+          <div class="kv-related"></div>
+        </div>
       </div>
     `;
 
@@ -204,16 +272,101 @@
 
     const $ = (s) => shadow.querySelector(s);
 
+    // Wraps each kanji character (not kana/okurigana) in a clickable span so
+    // tapping it opens the inline kanji view below — lets you look up an
+    // unfamiliar kanji the moment you see it, without leaving the page.
+    function appendKanjiText(container, text) {
+      for (const ch of String(text || "")) {
+        if (extractKanjiList(ch).length) {
+          const span = document.createElement("span");
+          span.className = "k-char";
+          span.dataset.k = ch;
+          span.textContent = ch;
+          container.appendChild(span);
+        } else {
+          container.appendChild(document.createTextNode(ch));
+        }
+      }
+    }
+
     const kanjiEl = $(".kanji");
     if (!tiered && showFurigana && card.hiragana) {
       const furi = document.createElement("span");
       furi.className = "furigana";
       furi.textContent = card.hiragana;
       kanjiEl.appendChild(furi);
-      kanjiEl.appendChild(document.createTextNode(card.kanji || ""));
+      appendKanjiText(kanjiEl, card.kanji);
     } else {
-      kanjiEl.textContent = card.kanji || "";
+      appendKanjiText(kanjiEl, card.kanji);
     }
+    kanjiEl.addEventListener("click", (e) => {
+      const k = e.target.closest(".k-char");
+      if (k) openKanjiView(k.dataset.k);
+    });
+
+    // Inline kanji view — swaps in over the flashcard within the same card
+    // instead of opening a separate window, so grading state (revealed?
+    // drag position, etc.) isn't disturbed by a quick lookup.
+    const fcEl = $(".fc");
+    const kviewEl = $(".kview");
+    const kvMeaning = $(".kv-meaning");
+
+    async function openKanjiView(k) {
+      fcEl.style.display = "none";
+      kviewEl.style.display = "block";
+      kvMeaning.dataset.char = k;
+      $(".kv-char").textContent = k;
+      $(".kv-on").innerHTML = '<span class="kv-empty">Loading…</span>';
+      $(".kv-kun").innerHTML = "";
+      $(".kv-related").innerHTML = '<div class="kview-loading">Loading…</div>';
+      kvMeaning.value = "";
+      $(".kv-notes").value = "";
+      $(".kv-saved").textContent = "";
+
+      const [dict, info] = await Promise.all([
+        loadKanjidic(),
+        sendAsync({ type: "getKanjiInfo", char: k }),
+      ]);
+
+      // Bail if the user backed out (or opened a different kanji) while this
+      // was in flight — dataset.char only ever reflects the latest request.
+      if (kvMeaning.dataset.char !== k) return;
+
+      const entry = dict[k];
+      $(".kv-on").innerHTML = entry && entry.on && entry.on.length
+        ? entry.on.map((r) => `<span class="kv-pill">${escapeHtml(r)}</span>`).join("")
+        : '<span class="kv-empty">—</span>';
+      $(".kv-kun").innerHTML = entry && entry.kun && entry.kun.length
+        ? entry.kun.map((r) => `<span class="kv-pill">${escapeHtml(r)}</span>`).join("")
+        : '<span class="kv-empty">—</span>';
+
+      const meta = info && info.meta;
+      kvMeaning.value = meta ? meta.meaning || "" : "";
+      $(".kv-notes").value = meta ? meta.notes || "" : "";
+
+      const words = (info && info.words) || [];
+      $(".kv-related").innerHTML = words.length
+        ? words.map((w) => `
+            <div class="kv-row">
+              <span class="kv-k">${escapeHtml(w.kanji)}</span>
+              <span class="kv-r">${escapeHtml(w.hiragana || "")}</span>
+              <span class="kv-m">${escapeHtml(w.arti || "")}</span>
+            </div>`).join("")
+        : '<p class="kv-empty">No other words yet.</p>';
+    }
+
+    $(".kv-back").addEventListener("click", () => {
+      kviewEl.style.display = "none";
+      fcEl.style.display = "block";
+    });
+
+    $(".kv-save").addEventListener("click", async () => {
+      const k = kvMeaning.dataset.char;
+      if (!k) return;
+      await sendAsync({ type: "saveKanjiMeta", char: k, meaning: kvMeaning.value, notes: $(".kv-notes").value });
+      $(".kv-saved").textContent = "Saved";
+      setTimeout(() => { $(".kv-saved").textContent = ""; }, 1200);
+    });
 
     const readingEl = $(".reading");
     readingEl.textContent = card.hiragana || "";

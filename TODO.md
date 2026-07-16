@@ -515,6 +515,52 @@ dicentang manual tiap sub-task kelar.
     kanji sama (食べる & 食事) → buka 食べる di view mode → klik karakter 食
     → card kanji-nya nampilin KEDUANYA (termasuk 食べる, si kata asal) →
     gak ada console error.
+- [x] **Kanji card bisa dibuka langsung dari flashcard popup** — sebelumnya
+      kanji detail (on'yomi/kun'yomi, meaning/notes, kata lain yang pake
+      kanji itu) cuma bisa diakses dari tab Words (options.html). User mau
+      pas ketemu kanji asing di popup on-page, bisa langsung liat/kasih
+      catetan tanpa pindah ke Kotoba Bank dulu.
+  - Setiap karakter kanji di `.kanji` (word yang lagi ditampilin) sekarang
+    dibungkus `<span class="k-char">` yang clickable (`content.js`,
+    `appendKanjiText()` — reuse `extractKanjiList()` dari `core/kanji.js`
+    persis kayak `renderKanjiInline()` di word-editor.js, cuma versi DOM
+    manual karena appendFurigana juga manual appendChild, bukan innerHTML).
+  - Klik kanji nge-swap isi card (bukan buka window/modal baru) — `.fc`
+    (flashcard content) disembunyiin, `.kview` (kanji view) ditampilin,
+    di dalem shadow DOM yang sama. Sengaja gak destroy state flashcard-nya
+    (reveal/drag position/dll) karena cuma toggle `display`, bukan re-render
+    dari awal — tombol "‹ Back to card" balikin tanpa reset apapun.
+  - **Message baru** di background.js: `getKanjiInfo` (return kata-kata lain
+    yang pake kanji itu + `kanjiMeta` yang udah kesimpen, reuse
+    `getWordsByKanji`/`getKanjiMeta` yang udah ada di db.js) dan
+    `saveKanjiMeta` (reuse `putKanjiMeta`). Content script gak bisa akses
+    IndexedDB langsung (beda origin — kalo dibuka di sembarang web page,
+    `indexedDB.open()` bakal ngebuka DB punya page itu, bukan punya
+    extension), jadi emang harus lewat message ke background.js kayak
+    semua akses data lain di content.js.
+  - `core/kanji.js` ditambahin ke `content_scripts` di manifest.json (biar
+    `extractKanjiList` bisa dipake content.js juga, bukan cuma
+    background.js/migrate.js/halaman options).
+  - `data/kanjidic.json` (readings on'yomi/kun'yomi, ~640KB) di-fetch lazy
+    pas kanji pertama diklik (cached per page-load, sama pattern kayak
+    `loadKanjidic()` di word-editor.js). **Gotcha yang ke-nemu pas testing**:
+    fetch dari content script ke `chrome-extension://.../data/kanjidic.json`
+    awalnya gagal ("Failed to fetch") — beda sama fetch dari halaman
+    options.html (extension page) yang emang boleh akses resource extension
+    bebas. Content script yang jalan di ORIGIN web page butuh entry
+    `web_accessible_resources` di manifest.json biar boleh fetch file
+    extension; ditambahin `{ "resources": ["data/kanjidic.json"], "matches":
+    ["<all_urls>"] }`.
+  - Related-words list-nya SENGAJA gak exclude kata asal (beda kasus sama
+    bug yang barusan dibenerin di atas) — di sini emang dari awal query-nya
+    `getWordsByKanji()` polos, gak ada `editingId` buat di-exclude.
+  - Diverifikasi lewat Playwright: trigger card lewat `showNow`, klik
+    karakter kanji-nya → view kanji kebuka nampilin on'yomi/kun'yomi bener
+    + related words (termasuk kata asalnya sendiri) → isi meaning/notes →
+    Save → indikator "Saved" muncul → Back → balik ke flashcard tanpa reset.
+    Dicek juga di mode Tiered sama dark mode (screenshot), gak ada console
+    error di semua langkah, dan data notes-nya persist ke test run berikutnya
+    (bukti beneran kesimpen di IndexedDB, bukan cuma di memory).
 
 ## Next Version (post-MVP)
 
