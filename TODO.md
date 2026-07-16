@@ -680,6 +680,41 @@ dicentang manual tiap sub-task kelar.
   - Diverifikasi lewat Playwright: fire 2x `showNow` bareng-bareng
     (`Promise.all`) ke tab yang sama → cuma ADA 1 card host di DOM (bukan
     2), isinya bener ("選定"), bisa di-close normal, 0 console error.
+- [x] **Blank card MASIH kejadian abis refresh tab** — user tetep dapet
+      card kosong, kali ini bukan gara-gara tab ke-racun (kemungkinan
+      besar). Gali lebih dalem ke arah "emang datanya null?" sesuai dugaan
+      user sendiri.
+  - Ke-nemu gap di fix blank-kanji sebelumnya: `!c.kanji.trim()` dipake
+    buat deteksi "kanji kosong", tapi `String.prototype.trim()` di
+    JavaScript **GAK** nyapu zero-width character (ZWSP U+200B, ZWNJ
+    U+200C, ZWJ U+200D, ZWNBSP/BOM U+FEFF) — cuma nyapu whitespace/line-
+    terminator standar. Kalo field `kanji` suatu kata isinya CUMA karakter
+    zero-width (masuk akal banget dari sisa import TSV/copy-paste
+    spreadsheet yang suka nyelipin karakter gituan), `.trim().length` tetep
+    > 0, jadi LOLOS dari filter sebelumnya — tapi pas dirender, karakter
+    zero-width itu emang beneran gak keliatan sama sekali di layar. Diverif
+    manual lewat Node: `"​".trim().length` (ZWSP doang) = **1**, bukan 0 —
+    kebukti gap-nya.
+  - **Fix**: helper baru `hasVisibleText()` di `core/kanji.js` (satu tempat
+    yang udah ke-load di background.js/options.js/content.js — biar gampang
+    dipake dari mana aja), pake regex `/[\s​-‍﻿]/g` yang
+    nyapu whitespace SEKALIGUS karakter zero-width, baru cek sisanya ada isi
+    apa kagak. `pickCard()` (srs.js) & `buildStudyEntries()` (options.js)
+    di-switch dari `!c.kanji.trim()` ke `!hasVisibleText(c.kanji)`.
+  - Diverifikasi lewat Playwright: bikin kata dummy `kanji: "​"`
+    (ZWSP doang, PERSIS skenario yang lolos dari fix lama) + 1 kata normal
+    di collection yang sama → tab Words tetep nampilin keduanya (2 rows,
+    kata hantunya masih bisa ditemuin) → tab Study cuma ngitung 1 (kata
+    hantu ke-exclude) → `showNow` 6x berturut-turut SELALU nampilin kata
+    yang valid, gak pernah muncul yang invisible. 0 console error.
+  - **Catetan buat user**: kalo masih ketemu kasus kayak gini abis fix ini,
+    kemungkinan besar itu kata LAIN lagi dengan pola data rusak yang beda
+    (bukan whitespace, bukan zero-width). Cara paling cepet nemuin: buka
+    DevTools console di halaman Kotoba Bank, jalanin
+    `(await getAllWords()).filter(w => !hasVisibleText(w.kanji))` — bakal
+    ngelist SEMUA kata yang bakal di-skip sama fix ini (kosong ATAU
+    invisible-only), which is exactly kata-kata yang harus dicek/dibenerin/
+    dihapus manual di tab Words.
 
 ## Next Version (post-MVP)
 

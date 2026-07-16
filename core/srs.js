@@ -32,11 +32,13 @@ function pickCard(state, lastShownKey) {
       // model hinges on: checking a word to explicitly include it must
       // never, as a side effect, exclude its untouched siblings.
       if (deckSel && deckSel[key] === false) continue;
-      // A word with no kanji text renders as a blank card (nothing to show
-      // in the .kanji slot) — most likely bad data from a JSON import that
-      // bypassed the Add/Edit form's "Kanji can't be empty" check. Skip it
-      // rather than surface an empty popup.
-      if (!c.kanji || !c.kanji.trim()) continue;
+      // A word with no visible kanji text renders as a blank card (nothing
+      // to show in the .kanji slot) — most likely bad data from a JSON
+      // import that bypassed the Add/Edit form's "Kanji can't be empty"
+      // check, sometimes just invisible characters (zero-width space etc.
+      // from a copy-pasted spreadsheet) rather than a true empty string.
+      // Skip it rather than surface an empty popup.
+      if (!hasVisibleText(c.kanji)) continue;
       pool.push({ deckId: deck.id, key, card: c, weight: computeWeight(c) });
     }
   }

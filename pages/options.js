@@ -484,11 +484,12 @@ function buildStudyEntries(state) {
   const seen = new Map(); // key -> { key, card, deckIds }
   for (const deck of state.categories) {
     for (const [key, c] of Object.entries(state.cards[deck.id] || {})) {
-      // Same guard as srs.js's pickCard — a word with no kanji text has
-      // nothing to show on a flashcard, so it shouldn't be queueable here
-      // either (this table is exactly where you'd go to fix/delete it,
-      // via the Words tab, once you notice it's blank).
-      if (!c.kanji || !c.kanji.trim()) continue;
+      // Same guard as srs.js's pickCard (see hasVisibleText in core/kanji.js
+      // — .trim() alone misses zero-width-only kanji fields) — a word with
+      // no visible kanji text has nothing to show on a flashcard, so it
+      // shouldn't be queueable here either (the Words tab is where you'd go
+      // to fix/delete it, once you notice it's blank).
+      if (!hasVisibleText(c.kanji)) continue;
       if (seen.has(key)) seen.get(key).deckIds.push(deck.id);
       else seen.set(key, { key, card: c, deckIds: [deck.id] });
     }
