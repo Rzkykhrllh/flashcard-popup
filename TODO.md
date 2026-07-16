@@ -561,6 +561,21 @@ dicentang manual tiap sub-task kelar.
     Dicek juga di mode Tiered sama dark mode (screenshot), gak ada console
     error di semua langkah, dan data notes-nya persist ke test run berikutnya
     (bukti beneran kesimpen di IndexedDB, bukan cuma di memory).
+  - **Regresi ke-nemu user abis dipake beneran** (screenshot): kata 2+ kanji
+    (選定, 屋上) tampil KE-STACK vertikal per karakter, masing-masing dalem
+    kotak — bukan satu baris. Root cause: `.kanji` itu flex container
+    `flex-direction:column` (buat nyusun furigana di atas kata), dan
+    `appendKanjiText()` nge-append tiap karakter (span `.k-char` + text node
+    kana) LANGSUNG jadi anak `.kanji` — jadi tiap karakter itu sendiri-
+    sendiri jadi flex item, masing-masing baris sendiri. Sebelum ada fitur
+    klik-kanji, seluruh kata itu SATU text node (satu flex item), makanya
+    dulu aman. Fix: bungkus seluruh output `appendKanjiText()` ke dalem satu
+    `<span class="kanji-text">` (jadi cuma SATU flex item), baru span itu
+    yang di-append ke `.kanji` — karakter kanji di dalemnya tetep inline
+    normal, ngalir sebaris. Diverifikasi lewat Playwright: 2 karakter kanji
+    (屋上) sekarang punya `top` yang sama persis (satu baris), `.kanji` cuma
+    punya 1 child, klik kanji-nya tetep jalan normal abis restructure. Dicek
+    juga mode furigana tetep bener (furigana tetep row terpisah di atas kata).
 
 ## Next Version (post-MVP)
 

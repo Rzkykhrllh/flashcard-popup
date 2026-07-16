@@ -289,16 +289,21 @@
       }
     }
 
+    // .kanji is a column flex container (furigana stacks above the word), so
+    // every direct child becomes its own row — the word itself must go in as
+    // ONE child, not one child per character, or each kanji character ends
+    // up on its own line instead of flowing as a single line of text.
     const kanjiEl = $(".kanji");
+    const kanjiTextEl = document.createElement("span");
+    kanjiTextEl.className = "kanji-text";
     if (!tiered && showFurigana && card.hiragana) {
       const furi = document.createElement("span");
       furi.className = "furigana";
       furi.textContent = card.hiragana;
       kanjiEl.appendChild(furi);
-      appendKanjiText(kanjiEl, card.kanji);
-    } else {
-      appendKanjiText(kanjiEl, card.kanji);
     }
+    appendKanjiText(kanjiTextEl, card.kanji);
+    kanjiEl.appendChild(kanjiTextEl);
     kanjiEl.addEventListener("click", (e) => {
       const k = e.target.closest(".k-char");
       if (k) openKanjiView(k.dataset.k);
