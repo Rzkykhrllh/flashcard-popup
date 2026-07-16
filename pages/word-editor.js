@@ -327,7 +327,7 @@ async function openKanjiModal(k) {
   kOn.innerHTML = '<span class="reading-pill">Loading…</span>';
   kKun.innerHTML = "";
 
-  const related = allWords.filter((w) => (w.kanjiList || []).includes(k) && w.id !== editingId);
+  const related = allWords.filter((w) => (w.kanjiList || []).includes(k));
   kRelated.innerHTML = related.length
     ? related.map((w) => `
         <div class="wl-row" data-id="${escapeHtml(w.id)}">
@@ -335,7 +335,7 @@ async function openKanjiModal(k) {
           <span class="wl-r">${escapeHtml(w.hiragana || "")}</span>
           <span class="wl-m">${escapeHtml(w.arti || "")}</span>
         </div>`).join("")
-    : '<p class="empty">No other words use this kanji yet.</p>';
+    : '<p class="empty">No words use this kanji yet.</p>';
   kRelated.querySelectorAll(".wl-row").forEach((row) => {
     row.addEventListener("click", () => {
       const w = allWords.find((x) => x.id === row.dataset.id);

@@ -498,6 +498,23 @@ dicentang manual tiap sub-task kelar.
     fix bug `switchTab`) → klik pensil → input muncul → ganti nama → Save →
     nama ke-update di list, persist abis reload. Dicek juga tampilan dark
     mode-nya lewat screenshot, gak ada console error di semua langkah.
+- [x] **Kanji card gak nampilin kata asalnya sendiri** — user komplain kata
+      yang dari situ kanji-nya diklik gak muncul di list "words using this
+      kanji" pas card kanji-nya dibuka.
+  - Root cause di `openKanjiModal()` (word-editor.js): filter list-nya
+    `(w.kanjiList || []).includes(k) && w.id !== editingId` — sengaja
+    nge-exclude kata yang lagi dibuka di Word modal (`editingId`), niatnya
+    kayaknya biar gak nampilin diri sendiri di list "other words". Tapi
+    ternyata itu bikin kata ASAL-nya (yang kanji-nya diklik) selalu ilang
+    dari list, padahal itu justru kata yang paling relevan buat muncul.
+  - **Fix**: hapus exclusion `&& w.id !== editingId`-nya, list sekarang
+    nampilin SEMUA kata yang pake kanji itu termasuk kata asalnya. Teks
+    empty-state juga diubah dari "No other words use this kanji yet." jadi
+    "No words use this kanji yet." (kata "other"-nya udah gak akurat lagi).
+  - Diverifikasi lewat Playwright: bikin 2 kata satu collection yang share
+    kanji sama (食べる & 食事) → buka 食べる di view mode → klik karakter 食
+    → card kanji-nya nampilin KEDUANYA (termasuk 食べる, si kata asal) →
+    gak ada console error.
 
 ## Next Version (post-MVP)
 
