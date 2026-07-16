@@ -576,6 +576,32 @@ dicentang manual tiap sub-task kelar.
     (屋上) sekarang punya `top` yang sama persis (satu baris), `.kanji` cuma
     punya 1 child, klik kanji-nya tetep jalan normal abis restructure. Dicek
     juga mode furigana tetep bener (furigana tetep row terpisah di atas kata).
+- [x] **Popup kadang muncul kosong** — user nemu kartu flashcard yang bener-
+      bener blank, cuma "Reveal answer" & "Snooze 30 min", gak ada kanji-nya
+      sama sekali.
+  - Root cause: ada kata di bank yang field `kanji`-nya kosong/blank.
+    Kemungkinan besar sisa import TSV masal beberapa waktu lalu (termasuk
+    "linked words" hasil ekstraksi regex dari kolom Notes) — import lewat
+    tombol Import di tab Words nyimpen langsung lewat `putWords()`, LEWATIN
+    validasi "Kanji can't be empty" yang biasanya jalan di form Add/Edit
+    kata (word-editor.js/popup.js). `pickCard()` (srs.js) dan
+    `wordToCard()` (background.js) sama sekali gak ngecek `kanji` kosong,
+    jadi kata rusak itu tetep masuk pool weighted-random dan bisa kepilih
+    kapan aja → card render tapi `.kanji` isinya string kosong.
+  - **Fix**: `pickCard()` skip kata yang `!c.kanji || !c.kanji.trim()`, sama
+    persis di `buildStudyEntries()` (options.js, tab Study) biar Study
+    queue & tabel "Which words show in the popup" juga gak pernah nampilin/
+    ngitung kata rusak itu. Tab **Words** SENGAJA gak disentuh — itu satu-
+    satunya tempat kata rusak masih harus keliatan, karena disitu tempat
+    user nemu & benerin/hapus-nya (kalo di-skip juga di situ, kata-nya jadi
+    invisible selamanya, gak bisa di-fix).
+  - Diverifikasi lewat Playwright: bikin kata dummy `kanji:""` langsung
+    lewat `putWord()` (simulasiin bypass validasi kayak Import) + 1 kata
+    normal di collection yang sama, keduanya di-toggle eligible → tab Words
+    tetep nampilin kata kosongnya (bisa ditemuin) → tab Study, browse
+    table & summary count-nya cuma nganggep 1 kata valid (kata kosong gak
+    kehitung/kelihatan) → trigger `showNow` 8x berturut-turut, SELALU nampilin
+    kata yang valid, gak pernah sekalipun blank. Gak ada console error.
 
 ## Next Version (post-MVP)
 
