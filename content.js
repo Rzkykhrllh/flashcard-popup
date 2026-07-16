@@ -272,6 +272,19 @@
 
     const $ = (s) => shadow.querySelector(s);
 
+    // Wire the close button (and Escape) FIRST, before anything below that
+    // could throw. If a future bug ever crashes mid-render again, the card
+    // must still be closable instead of getting stuck on the page forever —
+    // this is what actually broke here: extractKanjiList() came back
+    // undefined on tabs where core/kanji.js hadn't loaded yet, so
+    // appendKanjiText() below threw and every listener after it (including
+    // this close button) silently never got attached.
+    $(".x").addEventListener("click", close);
+    const onKey = (e) => {
+      if (e.key === "Escape") { close(); document.removeEventListener("keydown", onKey, true); }
+    };
+    document.addEventListener("keydown", onKey, true);
+
     // Wraps each kanji character (not kana/okurigana) in a clickable span so
     // tapping it opens the inline kanji view below — lets you look up an
     // unfamiliar kanji the moment you see it, without leaving the page.
@@ -412,7 +425,6 @@
     $(".known").addEventListener("click", () => gradeAndClose("known"));
     $(".forgot").addEventListener("click", () => gradeAndClose("forgot"));
     $(".hint-known")?.addEventListener("click", () => gradeAndClose("hint"));
-    $(".x").addEventListener("click", close);
     $(".snooze").addEventListener("click", () => {
       send({ type: "snooze", minutes: 30 });
       close();
@@ -427,17 +439,12 @@
       dragState = { startX: e.clientX, startY: e.clientY, wrapX: r.left, wrapY: r.top, wrap, topEl };
       topEl.classList.add("dragging");
     });
-
-    const onKey = (e) => {
-      if (e.key === "Escape") { close(); document.removeEventListener("keydown", onKey, true); }
-    };
-    document.addEventListener("keydown", onKey, true);
   }
 
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === "closeCard") { close(); return; }
     if (msg.type !== "showCard") return;
     if (host) return;
-    render(msg.card);
+    render(msg.card).catch((e) => console.error("[nihongo-popup] render failed:", e));
   });
 })();

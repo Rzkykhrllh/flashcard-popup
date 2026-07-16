@@ -602,6 +602,48 @@ dicentang manual tiap sub-task kelar.
     table & summary count-nya cuma nganggep 1 kata valid (kata kosong gak
     kehitung/kelihatan) → trigger `showNow` 8x berturut-turut, SELALU nampilin
     kata yang valid, gak pernah sekalipun blank. Gak ada console error.
+- [x] **Card popup kadang blank & gak bisa di-close** — bug LAIN (beda sama
+      yang barusan di atas), user bilang "kadang masih dapat error cardnya
+      gak munculin apa2, dan gabisa di close or whatever."
+  - Root cause: REGRESI dari fitur klik-kanji sesi ini sendiri.
+    `background.js`'s `sendToTab()` punya fallback: kalo `chrome.tabs.
+    sendMessage()` gagal (tab belum ada content script-nya — misalnya tab
+    itu udah kebuka SEBELUM extension di-reload), dia `chrome.scripting.
+    executeScript()` buat inject manual terus retry. Fallback ini cuma
+    inject `files: ["content.js"]` — LUPA nambahin `"core/kanji.js"` yang
+    sekarang jadi dependency content.js (buat `extractKanjiList` di fitur
+    klik-kanji). Padahal `manifest.json`'s `content_scripts` udah bener
+    (`["core/kanji.js", "content.js"]`), cuma fallback manual ini yang gak
+    disinkronin pas nambahin fitur kemarin.
+  - Efeknya: di tab yang lewat fallback ini, `render()` di content.js
+    manggil `appendKanjiText()` → `extractKanjiList()` → **ReferenceError**
+    (`extractKanjiList is not defined`) di tengah-tengah fungsi. Card udah
+    kadung ke-attach ke DOM (HTML template-nya keluar duluan sebelum crash),
+    tapi SEMUA listener yang harusnya dipasang SETELAH titik crash itu —
+    termasuk tombol × (close), Reveal, Known/Forgot, drag, Escape key —
+    gak pernah ke-pasang sama sekali. Persis kayak yang user liat: card
+    nongol kosong (`.kanji` gak sempet keisi teks) dan gak bisa di-apa-apain.
+  - **Fix #1 (root cause)**: `sendToTab()`'s fallback sekarang inject
+    `["core/kanji.js", "content.js"]`, sama persis kayak manifest.json.
+  - **Fix #2 (defensive, biar kelas bug ini gak kejadian lagi)**: listener
+    tombol × dan Escape key SEKARANG dipasang PALING AWAL di `render()`,
+    sebelum kode apapun yang bisa throw (termasuk `appendKanjiText`).
+    Kalo suatu saat ada bug lain yang bikin render() crash lagi, card-nya
+    masih HARUS bisa di-close, gak boleh stuck permanen. Ditambahin juga
+    `.catch()` di pemanggilan `render()` dari message listener biar error
+    kecatet di console (`console.error`), gak silent uncaught rejection.
+  - Diverifikasi lewat Playwright dengan cara yang paling jujur: sengaja
+    dibikin ulang bug aslinya (`manifest.json`'s `content_scripts` di-buka
+    balik jadi `["content.js"]` doang, TANPA nyentuh `sendToTab()`), reload
+    extension via context baru → `showNow` di halaman biasa yang document_
+    idle-nya jalan normal (gak perlu race artifisial) → kejadian PERSIS:
+    `.kanji` kosong + console error `ReferenceError: extractKanjiList is
+    not defined` di `appendKanjiText`. TAPI klik × tetep berhasil nutup
+    card (bukti fix #2 udah jalan duluan sebelum fix #1 lengkap). Abis
+    manifest.json dibalikin ke versi bener (`["core/kanji.js","content.js"]`),
+    ulang test yang sama → `.kanji` keisi bener ("選定"), 0 console error,
+    klik × berhasil nutup. Perubahan manifest.json cuma buat reproduksi,
+    udah dibalikin — diff akhir cuma di `background.js` & `content.js`.
 
 ## Next Version (post-MVP)
 

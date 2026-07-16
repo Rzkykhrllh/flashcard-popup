@@ -298,9 +298,14 @@ async function sendToTab(tabId, message) {
     return true;
   } catch (_) {
     // Content script not loaded (tab was open before extension installed, or just navigated).
-    // Try injecting it dynamically, then retry.
+    // Try injecting it dynamically, then retry. Must match manifest.json's
+    // content_scripts file list/order exactly — content.js calls
+    // extractKanjiList() unconditionally on every render, so injecting it
+    // without core/kanji.js first throws partway through render(), leaving
+    // a card on the page with nothing drawn and no button listeners wired
+    // (the crash happens before that code runs) — effectively stuck.
     try {
-      await chrome.scripting.executeScript({ target: { tabId }, files: ["content.js"] });
+      await chrome.scripting.executeScript({ target: { tabId }, files: ["core/kanji.js", "content.js"] });
       await chrome.tabs.sendMessage(tabId, message);
       return true;
     } catch (_) {
