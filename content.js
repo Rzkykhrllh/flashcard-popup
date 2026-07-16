@@ -3,6 +3,12 @@
   window.__nihongoPopupLoaded = true;
 
   let host = null;
+  // render() awaits chrome.storage.local.get() before it ever assigns
+  // `host` — so a second "showCard" arriving during that gap would also
+  // pass the `if (host) return` guard below and start its own concurrent
+  // render, leaving one card orphaned (out of sync with what close()/the
+  // grade buttons operate on). This flag closes that gap synchronously.
+  let rendering = false;
   let dragState = null; // shared across renders, registered once
 
   function escapeHtml(s) {
@@ -444,7 +450,10 @@
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === "closeCard") { close(); return; }
     if (msg.type !== "showCard") return;
-    if (host) return;
-    render(msg.card).catch((e) => console.error("[nihongo-popup] render failed:", e));
+    if (host || rendering) return;
+    rendering = true;
+    render(msg.card)
+      .catch((e) => console.error("[nihongo-popup] render failed:", e))
+      .finally(() => { rendering = false; });
   });
 })();

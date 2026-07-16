@@ -644,6 +644,42 @@ dicentang manual tiap sub-task kelar.
     ulang test yang sama → `.kanji` keisi bener ("選定"), 0 console error,
     klik × berhasil nutup. Perubahan manifest.json cuma buat reproduksi,
     udah dibalikin — diff akhir cuma di `background.js` & `content.js`.
+- [x] **User masih ngalamin blank card abis fix di atas** — user bilang
+      "masih sering munculin empty field, gada tulisan sama sekali".
+  - Investigasi: fix `sendToTab()` di atas nutup celah buat render BARU,
+    tapi TIDAK nyembuhin tab yang UDAH kena crash sebelum fix itu ke-apply.
+    Kenapa: pas `content.js` crash di tengah `render()` (ReferenceError),
+    listener `chrome.runtime.onMessage` UDAH kadung ke-register duluan
+    (di awal IIFE, sebelum titik crash) — jadi tab itu masih "punya" content
+    script yang keliatan hidup dari sudut pandang `chrome.tabs.sendMessage()`
+    (gak throw, gak masuk fallback lagi). Tab itu bakal TERUS nerima
+    `showCard` dan TERUS crash di `appendKanjiText` yang sama, selamanya,
+    sampe tab itu di-refresh manual (F5) — reload extension doang GAK
+    otomatis nyembuhin tab yang UDAH kebuka. User kemungkinan lagi nge-test
+    di tab yang "ke-racun" dari sesi development ini sendiri.
+  - Selain itu, ditemuin 1 lagi celah race condition (belum kejadian
+    dilaporin, tapi berpotensi nyebabin gejala serupa ke depannya):
+    `render()` itu `async function` yang `await chrome.storage.local.get()`
+    duluan SEBELUM assign `host`. Guard `if (host) return` di message
+    listener cuma ngecek `host`, yang MASIH `null` selama window `await`
+    itu — jadi 2 pesan `showCard` yang dateng deket-deketan bisa lolos
+    guard bareng-bareng, masing-masing mulai `render()` sendiri-sendiri.
+    Yang kedua bakal nimpa variable `host` module-level punya yang pertama,
+    ninggalin card pertama nge-orphan di DOM (tombol ×-nya manggil `close()`
+    yang sekarang nutup card yang SALAH, punya render kedua).
+  - **Fix**: tambah flag `rendering` (boolean, di-set `true` SYNCHRONOUS di
+    message listener SEBELUM manggil `render()`, di-reset via `.finally()`)
+    biar guard-nya nutup celah `await` itu — pesan kedua yang dateng
+    selagi masih nunggu `chrome.storage.local.get()` sekarang bener-bener
+    ke-block, bukan cuma keblokir kalo `host` udah keburu ke-assign.
+  - **Buat tab yang UDAH ke-racun**: gak ada cara nge-fix dari extension
+    side (content script yang crash itu masih hidup tapi rusak permanen) —
+    solusinya cuma refresh (F5) tab yang kena, biar content script-nya
+    ke-load ulang fresh lewat `document_idle` (yang sekarang udah bener,
+    include `core/kanji.js`).
+  - Diverifikasi lewat Playwright: fire 2x `showNow` bareng-bareng
+    (`Promise.all`) ke tab yang sama → cuma ADA 1 card host di DOM (bukan
+    2), isinya bener ("選定"), bisa di-close normal, 0 console error.
 
 ## Next Version (post-MVP)
 
