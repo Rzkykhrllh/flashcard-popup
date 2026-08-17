@@ -74,6 +74,11 @@ html[data-theme="dark"] .status-badge.status-mastered { background: #14532d; col
 .modal-overlay.open { display: flex; }
 #kanjiModalOverlay { z-index: 1100; } /* stacks above the word editor it's opened from */
 .modal-card {
+  position: relative; /* anchors .modal-close-abs — every modal card needs this,
+    not just the word/kanji ones, so it lives on the base class now rather
+    than needing a second class remembered per new modal (see the bulk-add
+    modal, which originally missed it and had its close button float off to
+    the viewport corner instead of the card corner). */
   background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
   padding: 30px 26px 24px; width: 100%; max-width: 440px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.25);
@@ -85,7 +90,9 @@ html[data-theme="dark"] .status-badge.status-mastered { background: #14532d; col
 .modal-close:hover { background: var(--surface-2); color: var(--ink); }
 .modal-close-abs { position: absolute; top: 14px; right: 14px; }
 
-.word-modal-card { position: relative; }
+.word-modal-card { position: relative; } /* now redundant with .modal-card above,
+  left in place rather than removed — harmless, and not worth touching the two
+  modals that already reference it correctly. */
 
 /* Word view — read-optimized card layout (furigana above kanji, kanji big and
    centered, meaning below, then a clearly labeled example/notes section),
@@ -162,6 +169,22 @@ html[data-theme="dark"] .status-badge.status-mastered { background: #14532d; col
   font-size: 13px; color: var(--ink-2); cursor: pointer;
 }
 .field-check input { width: auto; margin: 0; }
+
+/* "In Study" toggles (Words tab table, Add/Edit word modal, popup quick-add,
+   and the Study tab's own browse table) all reuse options.css's existing
+   .switch/.slider component as-is (see its "toggle switch" comment there) —
+   deliberately NOT redefined here. Two reasons: options.css is already
+   loaded on every page that needs this, so there's nothing to add; and this
+   file used to define its own conflicting .switch/.switch-track rule with
+   different dimensions, which — since options.css loads first and this file
+   second — silently overrode the original .switch's width/height for the
+   unrelated per-collection enable/disable toggle in Settings. Reusing the
+   same class instead of inventing a second one also means the "study
+   eligibility" toggle now looks identical everywhere it appears. Markup is
+   <span class="switch"><input type="checkbox" .../><span class="slider">
+   </span></span> when nested inside another <label> (modal/quick-add, to
+   avoid invalid nested <label>s), or <label class="switch">...</label> when
+   standalone (table rows) — matching the existing Settings-tab pattern. */
 
 .kanji-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
 .kanji-chip {

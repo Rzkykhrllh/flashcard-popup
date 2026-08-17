@@ -20,6 +20,18 @@ const exportBtn = document.getElementById("exportBtn");
 const importBtn = document.getElementById("importBtn");
 const importFileEl = document.getElementById("importFile");
 const backupStatusEl = document.getElementById("backupStatus");
+const selectAllRowsEl = document.getElementById("selectAllRows");
+const bulkBarEl = document.getElementById("bulkBar");
+const bulkCountEl = document.getElementById("bulkCount");
+const bulkAddBtn = document.getElementById("bulkAddBtn");
+const bulkClearBtn = document.getElementById("bulkClearBtn");
+const bulkAddModalOverlay = document.getElementById("bulkAddModalOverlay");
+const bulkAddModalClose = document.getElementById("bulkAddModalClose");
+const bulkAddCountEl = document.getElementById("bulkAddCount");
+const bulkAddGroupListEl = document.getElementById("bulkAddGroupList");
+const bulkAddNewGroupName = document.getElementById("bulkAddNewGroupName");
+const bulkAddNewGroupBtn = document.getElementById("bulkAddNewGroupBtn");
+const bulkAddStatusEl = document.getElementById("bulkAddStatus");
 
 let allWords = [];
 let allGroups = [];
@@ -64,6 +76,19 @@ function updateCounts() {
   }
 }
 
+// Bulk-select: word ids checked via the leading checkbox column, so several
+// words can be added to a collection in one action instead of opening each
+// one's edit form individually (see bulkAddGroupListEl's click handler
+// below). Purely a UI selection, separate from — and with no effect on —
+// study eligibility (the existing "In Study" column/checkbox).
+let bulkSelectedIds = new Set();
+
+function updateBulkBar() {
+  const n = bulkSelectedIds.size;
+  bulkBarEl.style.display = n ? "flex" : "none";
+  bulkCountEl.textContent = n ? `${n} selected` : "";
+}
+
 function renderList() {
   const q = activeQuery.trim().toLowerCase();
   const filtered = allWords.filter((w) => {
@@ -80,14 +105,16 @@ function renderList() {
     .map((w) => {
       const entry = { key: w.id, deckIds: w.groupIds || [] };
       const checked = stateCache && entry.deckIds.length ? isWordEligible(stateCache, entry) : false;
+      const selected = bulkSelectedIds.has(w.id);
       return `
       <tr data-id="${escapeHtml(w.id)}">
+        <td><input type="checkbox" class="row-select-cb" ${selected ? "checked" : ""} /></td>
         <td class="kanji-cell">${escapeHtml(w.kanji || "")}</td>
         <td class="reading-cell">${escapeHtml(w.hiragana || "")}</td>
         <td>${escapeHtml(w.arti || "")}</td>
         <td>${statusBadge(w.status)}</td>
         <td class="cell-muted">${escapeHtml(groupNames(w))}</td>
-        <td><input type="checkbox" class="word-eligible-cb" ${checked ? "checked" : ""} /></td>
+        <td><label class="switch"><input type="checkbox" class="word-eligible-cb" ${checked ? "checked" : ""} /><span class="slider"></span></label></td>
       </tr>`;
     })
     .join("");
@@ -95,9 +122,29 @@ function renderList() {
   emptyStateEl.style.display = filtered.length ? "none" : "block";
   emptyStateEl.textContent = allWords.length ? "No words match." : "No words here yet.";
   resultCountEl.textContent = allWords.length ? `${filtered.length} of ${allWords.length}` : "";
+
+  // "select all" reflects the *visible* (filtered) rows only, same scope the
+  // checkbox itself selects/deselects — see its own change handler below.
+  const visibleIds = filtered.map((w) => w.id);
+  selectAllRowsEl.checked = visibleIds.length > 0 && visibleIds.every((id) => bulkSelectedIds.has(id));
+  updateBulkBar();
 }
 
 wordRowsEl.addEventListener("change", async (e) => {
+  const selectCb = e.target.closest(".row-select-cb");
+  if (selectCb) {
+    const tr = selectCb.closest("tr[data-id]");
+    if (selectCb.checked) bulkSelectedIds.add(tr.dataset.id);
+    else bulkSelectedIds.delete(tr.dataset.id);
+    // Only the "select all" checkbox's own state needs to refresh here — a
+    // full renderList() would rebuild every row and lose scroll position for
+    // no reason, since nothing else about the rows changed.
+    const visibleIds = [...wordRowsEl.querySelectorAll("tr[data-id]")].map((r) => r.dataset.id);
+    selectAllRowsEl.checked = visibleIds.length > 0 && visibleIds.every((id) => bulkSelectedIds.has(id));
+    updateBulkBar();
+    return;
+  }
+
   const cb = e.target.closest(".word-eligible-cb");
   if (!cb) return;
   const tr = cb.closest("tr[data-id]");
@@ -107,6 +154,101 @@ wordRowsEl.addEventListener("change", async (e) => {
   await refreshStateCache();
   renderList();
 });
+
+wordRowsEl.addEventListener("click", (e) => {
+  // Prevent the row-open-modal handler in word-editor.js from also firing
+  // for clicks on the new select checkbox (it already ignores
+  // .word-eligible-cb the same way — see that file's own listener).
+  if (e.target.closest(".row-select-cb")) e.stopPropagation();
+});
+
+selectAllRowsEl.addEventListener("change", () => {
+  const visibleIds = [...wordRowsEl.querySelectorAll("tr[data-id]")].map((r) => r.dataset.id);
+  if (selectAllRowsEl.checked) visibleIds.forEach((id) => bulkSelectedIds.add(id));
+  else visibleIds.forEach((id) => bulkSelectedIds.delete(id));
+  renderList();
+});
+
+bulkClearBtn.addEventListener("click", () => {
+  bulkSelectedIds.clear();
+  renderList();
+});
+
+function openBulkAddModal() {
+  bulkAddCountEl.textContent = bulkSelectedIds.size;
+  bulkAddStatusEl.textContent = "";
+  bulkAddNewGroupName.value = "";
+  renderBulkAddGroupList();
+  bulkAddModalOverlay.classList.add("open");
+}
+
+function closeBulkAddModal() {
+  bulkAddModalOverlay.classList.remove("open");
+  // Selection is scoped to "words I'm about to file somewhere" — once the
+  // modal that does the filing closes, there's no reason to keep holding it,
+  // and leaving it checked risks a second accidental add-to-collection on
+  // stale rows if the words/group list changed underneath in the meantime.
+  bulkSelectedIds.clear();
+  renderList();
+}
+
+function renderBulkAddGroupList() {
+  bulkAddGroupListEl.innerHTML = allGroups.length
+    ? allGroups.map((g) => `
+        <div class="group-check-row" data-id="${escapeHtml(g.id)}">
+          <span class="group-check-label">${escapeHtml(g.name)}</span>
+          <button type="button" class="btn" data-add-to="${escapeHtml(g.id)}">Add</button>
+        </div>`).join("")
+    : '<p class="empty" style="margin:2px 0">No collections yet — create one below.</p>';
+
+  bulkAddGroupListEl.querySelectorAll("[data-add-to]").forEach((btn) => {
+    btn.addEventListener("click", () => addSelectedWordsToGroup(btn.dataset.addTo));
+  });
+}
+
+bulkAddBtn.addEventListener("click", openBulkAddModal);
+bulkAddModalClose.addEventListener("click", closeBulkAddModal);
+
+bulkAddNewGroupBtn.addEventListener("click", async () => {
+  const name = bulkAddNewGroupName.value.trim();
+  if (!name) return;
+  const groupId = `manual_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const group = { id: groupId, name, type: "manual", sourceSheetUrl: null };
+  await putGroup(group);
+  allGroups.push(group);
+  bulkAddNewGroupName.value = "";
+  renderBulkAddGroupList();
+  await addSelectedWordsToGroup(groupId);
+});
+
+// Adds every currently bulk-selected word to `groupId` — a union onto each
+// word's existing groupIds, same merge rule as the per-word checklist in
+// word-editor.js/popup.js. Words already in the collection are silently
+// skipped (the Set dedupes), nothing about their existing memberships or
+// study eligibility changes. Modal stays open afterward so you can add the
+// same selection to a second collection too, if you want; the group filter
+// dropdown and Words table refresh right away either way.
+async function addSelectedWordsToGroup(groupId) {
+  const group = allGroups.find((g) => g.id === groupId);
+  if (!group || !bulkSelectedIds.size) return;
+
+  let added = 0;
+  for (const id of bulkSelectedIds) {
+    const word = allWords.find((w) => w.id === id) || await getWord(id);
+    if (!word) continue;
+    if ((word.groupIds || []).includes(groupId)) continue; // already there
+    word.groupIds = [...(word.groupIds || []), groupId];
+    await putWord(word);
+    added++;
+  }
+
+  bulkAddStatusEl.textContent = added
+    ? `Added ${added} word(s) to "${group.name}".`
+    : `Selected word(s) were already in "${group.name}".`;
+
+  await reloadData();
+  bulkAddCountEl.textContent = bulkSelectedIds.size; // reloadData() doesn't touch the selection itself
+}
 
 statusTabsEl.addEventListener("click", (e) => {
   const btn = e.target.closest(".status-tab");
@@ -138,6 +280,11 @@ async function reloadData() {
   groupSelectEl.innerHTML = [GENERAL_GROUP, ...allGroups]
     .map((g) => `<option value="${escapeHtml(g.id)}">${escapeHtml(g.name)}</option>`)
     .join("");
+
+  // Drop any bulk-selected id that no longer exists (e.g. deleted elsewhere)
+  // so the count in the bulk bar / modal never overstates what's left.
+  const liveIds = new Set(allWords.map((w) => w.id));
+  for (const id of bulkSelectedIds) if (!liveIds.has(id)) bulkSelectedIds.delete(id);
 
   updateCounts();
   renderList();

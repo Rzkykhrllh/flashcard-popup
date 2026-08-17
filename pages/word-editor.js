@@ -218,10 +218,25 @@ wAddGroupBtn.addEventListener("click", async () => {
 addWordBtn.addEventListener("click", () => openWordModal(null));
 wEditBtn.addEventListener("click", showWordForm);
 wordModalClose.addEventListener("click", closeWordModal);
-wordModalOverlay.addEventListener("click", (e) => { if (e.target === wordModalOverlay) closeWordModal(); });
+// Deliberately no click-outside-to-close and no Escape-to-close here (see the
+// keydown handler below) — this modal holds a multi-field form, and closing
+// it via an accidental outside click or Escape while typing discarded
+// in-progress entries. Only the explicit X button closes it now.
 
 wordRowsEl.addEventListener("click", (e) => {
-  if (e.target.closest(".word-eligible-cb")) return;
+  // "In Study" switch — guards on .switch (the wrapping label), not
+  // .word-eligible-cb (the actual checkbox): the checkbox itself is visually
+  // hidden (options.css's .switch input), so a real click lands on the
+  // visible .slider span, a sibling of .word-eligible-cb, not a descendant
+  // of it. closest(".word-eligible-cb") would miss that click and let it
+  // fall through to openWordModal below.
+  if (e.target.closest(".switch")) return;
+  // Bulk-select checkbox (vocab-bank.js) — must not also open the edit
+  // modal. Its own click handler calls stopPropagation(), but that only
+  // stops the event from bubbling to ancestors; it does nothing for a
+  // second listener bound directly to this same element (this one), so the
+  // guard has to live here too.
+  if (e.target.closest(".row-select-cb")) return;
   const tr = e.target.closest("tr[data-id]");
   if (!tr) return;
   const word = allWords.find((w) => w.id === tr.dataset.id);
@@ -381,6 +396,6 @@ kanjiModalOverlay.addEventListener("click", (e) => { if (e.target === kanjiModal
 
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
+  // Word modal is excluded on purpose — see the comment by wordModalClose above.
   if (kanjiModalOverlay.classList.contains("open")) closeKanjiModal();
-  else if (wordModalOverlay.classList.contains("open")) closeWordModal();
 });

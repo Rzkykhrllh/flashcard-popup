@@ -463,10 +463,12 @@ async function renderStats() {
 /* -------------------------------- study tab ------------------------------- */
 
 let studyState = { cards: [], index: 0, revealed: false, browseOpen: true, done: false, _eligibilityChanged: false };
-// The browse/checklist table's own search + category filter — purely a view
-// filter over the same word list, independent of the Study queue above it
-// (see renderStudy()'s big comment for why those two used to be tangled).
-let browseFilter = { categoryId: "__all__", query: "" };
+// The browse/checklist table's own search + category + eligibility filter —
+// purely a view filter over the same word list, independent of the Study
+// queue above it (see renderStudy()'s big comment for why those two used to
+// be tangled). eligibility: "__all__" | "on" | "off" — "on"/"off" mirror the
+// same isWordEligible() check the switch column itself uses.
+let browseFilter = { categoryId: "__all__", query: "", eligibility: "__all__" };
 
 function shuffle(a) {
   for (let i = a.length - 1; i > 0; i--) {
@@ -518,10 +520,19 @@ async function setWordSelection(entry, selected) {
   }
 }
 
-function filterBrowseEntries(entries, filter) {
+// `state` is needed (not just the entries) to evaluate the eligibility
+// filter — isWordEligible() reads state.selection. Both call sites already
+// have state in scope (wireBrowseToolbar and renderStudyBrowse are both
+// only ever called with it), so this is just threading it one level deeper.
+function filterBrowseEntries(entries, filter, state) {
   const q = filter.query.trim().toLowerCase();
   return entries.filter((entry) => {
     if (filter.categoryId !== "__all__" && !entry.deckIds.includes(filter.categoryId)) return false;
+    if (filter.eligibility !== "__all__") {
+      const eligible = isWordEligible(state, entry);
+      if (filter.eligibility === "on" && !eligible) return false;
+      if (filter.eligibility === "off" && eligible) return false;
+    }
     if (q) {
       const c = entry.card;
       const hay = `${c.kanji || ""} ${c.hiragana || ""} ${c.arti || ""}`.toLowerCase();
@@ -675,26 +686,32 @@ async function renderStudy() {
   document.addEventListener("keydown", studyKeyHandler);
 }
 
-// The browse/checklist section's markup: search + category filter (view-only,
-// see filterBrowseEntries), Select all / Deselect all, and the table itself.
-// Shared by all three renderStudy() branches (done screen, empty queue,
-// normal flashcard view) so the checklist is always reachable regardless of
-// what the queue above it is doing.
+// The browse/checklist section's markup: search + category + eligibility
+// filter (all view-only, see filterBrowseEntries), Select all / Deselect
+// all, and the table itself. Shared by all three renderStudy() branches
+// (done screen, empty queue, normal flashcard view) so the checklist is
+// always reachable regardless of what the queue above it is doing.
 function browseSectionHtml(state) {
   let opts = `<option value="__all__"${browseFilter.categoryId === "__all__" ? " selected" : ""}>All categories</option>`;
   for (const cat of state.categories) {
     opts += `<option value="${cat.id}"${browseFilter.categoryId === cat.id ? " selected" : ""}>${cat.name}</option>`;
   }
+  const eligOpts = `
+    <option value="__all__"${browseFilter.eligibility === "__all__" ? " selected" : ""}>On &amp; off</option>
+    <option value="on"${browseFilter.eligibility === "on" ? " selected" : ""}>On (in study)</option>
+    <option value="off"${browseFilter.eligibility === "off" ? " selected" : ""}>Off (excluded)</option>
+  `;
   return `
     <details class="study-browse" id="studyBrowse" ${studyState.browseOpen ? 'open' : ''}>
       <summary class="browse-summary" id="browseSummary">Which words show in the popup</summary>
-      <p class="hint" style="margin-top:6px">These checkboxes control which words can show up in the flashcard popup
+      <p class="hint" style="margin-top:6px">These switches control which words can show up in the flashcard popup
         on web pages, and which ones are in the Study queue above — they're the same list. Leave a word untouched
-        and it's eligible by default. Search and Category below only filter this table's view; they don't change
-        what's selected.</p>
-      <div class="study-browse-toolbar" style="display:flex;gap:8px;margin:8px 0">
-        <input type="text" id="browseSearch" placeholder="Search words…" class="search-input" style="flex:1" value="${escapeHtml(browseFilter.query)}" />
+        and it's eligible by default. Search, Category, and On/Off below only filter this table's view; they don't
+        change what's selected.</p>
+      <div class="study-browse-toolbar" style="display:flex;gap:8px;margin:8px 0;flex-wrap:wrap">
+        <input type="text" id="browseSearch" placeholder="Search words…" class="search-input" style="flex:1 1 160px" value="${escapeHtml(browseFilter.query)}" />
         <select id="browseCategorySelect" class="tab-select" style="max-width:180px">${opts}</select>
+        <select id="browseEligibleSelect" class="tab-select" style="max-width:150px">${eligOpts}</select>
       </div>
       <div style="margin:8px 0;display:flex;gap:8px">
         <button class="btn" id="selectAllBtn">Select all</button>
@@ -720,15 +737,20 @@ function wireBrowseToolbar(container, entries, state) {
     renderStudyBrowse(container, entries, state);
   });
 
+  document.getElementById("browseEligibleSelect").addEventListener("change", (e) => {
+    browseFilter.eligibility = e.target.value;
+    renderStudyBrowse(container, entries, state);
+  });
+
   document.getElementById("selectAllBtn").addEventListener("click", async () => {
-    const visible = filterBrowseEntries(entries, browseFilter);
+    const visible = filterBrowseEntries(entries, browseFilter, state);
     for (const entry of visible) await setWordSelection(entry, true);
     studyState._eligibilityChanged = true;
     renderStudy();
   });
 
   document.getElementById("clearSelBtn").addEventListener("click", async () => {
-    const visible = filterBrowseEntries(entries, browseFilter);
+    const visible = filterBrowseEntries(entries, browseFilter, state);
     for (const entry of visible) await setWordSelection(entry, false);
     studyState._eligibilityChanged = true;
     renderStudy();
@@ -781,11 +803,11 @@ function renderStudyBrowse(container, entries, state) {
   const wrap = document.getElementById("browseTable");
   if (!wrap) return;
 
-  const visible = filterBrowseEntries(entries, browseFilter);
+  const visible = filterBrowseEntries(entries, browseFilter, state);
   const eligibleCount = visible.filter((entry) => isWordEligible(state, entry)).length;
   const summaryEl = document.getElementById("browseSummary");
   if (summaryEl) {
-    summaryEl.textContent = browseFilter.categoryId === "__all__" && !browseFilter.query
+    summaryEl.textContent = browseFilter.categoryId === "__all__" && !browseFilter.query && browseFilter.eligibility === "__all__"
       ? `Which words show in the popup (${eligibleCount} of ${visible.length} selected)`
       : `Which words show in the popup (${eligibleCount} of ${visible.length} selected in this view)`;
   }
@@ -797,7 +819,7 @@ function renderStudyBrowse(container, entries, state) {
   for (const entry of visible) {
     const { key, card: c } = entry;
     const checked = isWordEligible(state, entry) ? 'checked' : '';
-    html += `<tr data-key="${key}"><td><input type="checkbox" class="card-cb" ${checked} /></td><td class="kanji-cell">${c.kanji}</td><td class="reading-cell">${c.hiragana || "—"}</td><td>${c.arti || "—"}</td><td class="cell-muted">${c.notes || ""}</td></tr>`;
+    html += `<tr data-key="${key}"><td><label class="switch"><input type="checkbox" class="card-cb" ${checked} /><span class="slider"></span></label></td><td class="kanji-cell">${c.kanji}</td><td class="reading-cell">${c.hiragana || "—"}</td><td>${c.arti || "—"}</td><td class="cell-muted">${c.notes || ""}</td></tr>`;
   }
   html += '</tbody></table>';
   wrap.innerHTML = html;
@@ -813,12 +835,18 @@ function renderStudyBrowse(container, entries, state) {
     });
   });
 
-  // Row click (anywhere but the checkbox) opens the same word detail modal
-  // as the Words tab — lets you see the full word and click through to
-  // kanji detail without leaving Study to go find it in the bank.
+  // Row click (anywhere but the switch) opens the same word detail modal as
+  // the Words tab — lets you see the full word and click through to kanji
+  // detail without leaving Study to go find it in the bank. Guards on
+  // .switch (the wrapping label), not .card-cb (the actual checkbox) — the
+  // checkbox itself is visually hidden (options.css's .switch input), so a
+  // real click lands on the visible .slider span, a sibling of .card-cb, not
+  // a descendant of it. closest(".card-cb") would miss that click entirely
+  // and let it fall through to openWordModal below (same bug word-editor.js
+  // had with its own switch column — see that file's click guard comment).
   wrap.querySelectorAll("tr[data-key]").forEach((tr) => {
     tr.addEventListener("click", (e) => {
-      if (e.target.closest(".card-cb")) return;
+      if (e.target.closest(".switch")) return;
       const word = allWords.find((w) => w.id === tr.dataset.key);
       if (word) openWordModal(word);
     });

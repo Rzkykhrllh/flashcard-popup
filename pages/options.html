@@ -185,9 +185,15 @@
               <button class="btn primary" id="addWordBtn">Add word</button>
             </div>
           </div>
+          <div id="bulkBar" style="display:none; align-items:center; gap:10px; margin:0 0 10px">
+            <span class="hint" id="bulkCount"></span>
+            <button class="btn" id="bulkAddBtn">Add to collection…</button>
+            <button class="btn" id="bulkClearBtn">Clear selection</button>
+          </div>
           <table class="stats-table bank-table">
             <thead>
               <tr>
+                <th><input type="checkbox" id="selectAllRows" title="Select all visible" /></th>
                 <th>Kanji</th>
                 <th>Reading</th>
                 <th>Meaning</th>
@@ -197,7 +203,7 @@
               </tr>
             </thead>
             <tbody id="wordRows">
-              <tr><td colspan="6" class="cell-muted">Loading words…</td></tr>
+              <tr><td colspan="7" class="cell-muted">Loading words…</td></tr>
             </tbody>
           </table>
           <p class="empty" id="emptyState" style="display:none">No words here yet.</p>
@@ -282,7 +288,10 @@
                 </div>
               </div>
               <label class="field-check" id="wIncludeField">
-                <input id="wIncludeInStudy" type="checkbox" checked />
+                <span class="switch">
+                  <input id="wIncludeInStudy" type="checkbox" checked />
+                  <span class="slider"></span>
+                </span>
                 Include in current learning (Study &amp; popup)
               </label>
               <div id="wKanjiChips" class="kanji-chips"></div>
@@ -331,6 +340,21 @@
             <div class="wv-label">Related words</div>
             <div id="kRelated" class="wlist-plain"></div>
           </div>
+        </div>
+      </div>
+
+      <div class="modal-overlay" id="bulkAddModalOverlay">
+        <div class="modal-card">
+          <button class="modal-close modal-close-abs" id="bulkAddModalClose">&times;</button>
+          <h2 style="margin-top:0">Add <span id="bulkAddCount">0</span> word(s) to a collection</h2>
+          <p class="hint">Words are added to the collection you pick below — they stay in whatever
+            collections they're already in too, nothing gets removed.</p>
+          <div id="bulkAddGroupList" class="group-checklist"></div>
+          <div class="group-new-row">
+            <input id="bulkAddNewGroupName" type="text" placeholder="New collection name" />
+            <button type="button" class="btn" id="bulkAddNewGroupBtn">Add &amp; use</button>
+          </div>
+          <p id="bulkAddStatus" class="status"></p>
         </div>
       </div>
 
