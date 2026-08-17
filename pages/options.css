@@ -97,6 +97,17 @@ input[type="text"]:focus, input[type="number"]:focus { outline: 2px solid var(--
 .btn.primary { background: var(--shu); color: #fff; border-color: var(--shu); }
 .btn.primary:hover { filter: brightness(0.94); }
 .btn:disabled { opacity: 0.55; cursor: default; }
+/* Muted/borderless variant — used for the Study tab's "Skip" state (a card
+   not yet revealed has nothing graded to commit to, so it reads as a lower-
+   commitment action than the bordered default .btn next to it). */
+.btn.ghost { border-color: transparent; color: var(--muted); }
+.btn.ghost:hover { background: var(--surface-2); color: var(--ink); }
+/* Inline text-link-styled button — Study tab's "Undo last grade" only. */
+.btn-link {
+  border: none; background: none; padding: 0; font: inherit; font-size: 12px;
+  color: var(--shu); cursor: pointer; text-decoration: underline;
+}
+.btn-link:hover { opacity: 0.8; }
 
 .status { font-size: 13px; margin-top: 10px; min-height: 18px; }
 .status.ok { color: #1f7a46; }
@@ -119,8 +130,20 @@ html[data-theme="dark"] .status.err { color: #f87171; }
 html[data-theme="dark"] .deck .rm:hover { color: #f87171; }
 .empty { font-size: 13px; color: var(--muted); margin-top: 12px; }
 
-/* toggle switch */
-.switch { position: relative; width: 40px; height: 22px; flex: none; }
+/* toggle switch — used everywhere a word/collection's "on" state is shown:
+   the per-collection enable/disable toggle here in Settings, the Words tab
+   table's "In Study" column, the Add/Edit word modal, the popup quick-add,
+   and the Study tab's own browse table (see vocab-bank.js/word-editor.js/
+   popup.js/options.js — all reuse this exact class pair rather than each
+   defining their own). `display: inline-block` matters: .switch is a
+   <label> or <span> (inline by default), and width/height on a plain inline
+   element are ignored by CSS entirely UNLESS it's blockified — which
+   happens for free when the parent is a flex container (as .deck is here),
+   but NOT inside a plain <td> (the Words/Study tables have no flex parent).
+   Without this, the switch silently collapses to a hairline sliver in any
+   non-flex context instead of erroring loudly, which is exactly what
+   happened before this was added. */
+.switch { position: relative; display: inline-block; width: 40px; height: 22px; flex: none; }
 .switch input { opacity: 0; width: 0; height: 0; }
 .slider { position: absolute; inset: 0; background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; transition: .15s; cursor: pointer; }
 .slider::before { content: ""; position: absolute; width: 16px; height: 16px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: .15s; }
@@ -284,6 +307,13 @@ html[data-theme="dark"] .ratio-fill { background: #4ade80; }
 .study-toolbar label { font-size: 13px; color: var(--muted); }
 .study-toolbar select { flex: 1; min-width: 160px; }
 
+/* Session progress — how far through the current queue, not a single word's
+   own SRS stats (that's the badge in .study-card-top below). */
+.study-progress-bar { height: 4px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-bottom: 10px; }
+.study-progress-bar-fill { height: 100%; background: var(--shu); border-radius: 999px; transition: width .2s; }
+
+.study-card-top { display: flex; justify-content: center; margin-bottom: 8px; }
+
 .study-card {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -300,6 +330,12 @@ html[data-theme="dark"] .ratio-fill { background: #4ade80; }
   user-select: none;
 }
 .study-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+/* Once revealed, clicking the card itself no longer does anything (only the
+   per-character kanji spans below do, via .wv-k-char from vocab-bank.css) —
+   drop the pointer cursor so the card doesn't keep advertising a click that
+   no longer has an effect. */
+.study-card.revealed { cursor: default; }
+.study-card .front-furigana { font-size: 16px; color: var(--muted); letter-spacing: .04em; margin-bottom: 4px; }
 .study-card .front-kanji { font-size: 52px; font-weight: 500; line-height: 1.2; word-break: break-word; }
 .study-card .front-hint { font-size: 14px; color: var(--muted); margin-top: 8px; }
 
@@ -307,13 +343,32 @@ html[data-theme="dark"] .ratio-fill { background: #4ade80; }
 .study-card .back.show { display: block; }
 .study-card .back-reading { font-size: 20px; color: var(--ink); margin-top: 12px; }
 .study-card .back-arti { font-size: 22px; font-weight: 600; color: var(--shu); margin-top: 8px; }
+.study-card .back-example { font-size: 14px; color: var(--ink-2); margin-top: 10px; font-style: italic; line-height: 1.5; }
 .study-card .back-notes { font-size: 14px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
 
 .study-actions { display: flex; gap: 10px; margin-top: 18px; justify-content: center; flex-wrap: wrap; }
 .study-actions .btn { min-width: 90px; }
 
+.study-undo { text-align: center; margin-top: 10px; }
+
 .study-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
 .study-progress { font-size: 13px; color: var(--muted); }
+
+.study-shortcuts { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; }
+
+/* Session-complete tally — Know/Hint/Forgot counts + recall rate, shown once
+   at least one card was graded this session (see renderStudy()'s done
+   screen). Pill colors intentionally reuse the same hues as vocab-bank.css's
+   .status-badge tiers (green/amber/muted-red family) rather than inventing a
+   third palette, so "success vs. needs-work" reads the same way everywhere. */
+.study-tally { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+.tally-pill { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
+.tally-know { background: #dcfce7; color: #166534; }
+.tally-hint { background: #fef3c7; color: #92400e; }
+.tally-forgot { background: var(--surface-2); color: var(--muted); }
+html[data-theme="dark"] .tally-know { background: #14532d; color: #86efac; }
+html[data-theme="dark"] .tally-hint { background: #78350f; color: #fde68a; }
+.tally-accuracy { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); }
 
 .study-browse { margin-top: 20px; }
 .browse-summary { font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; padding: 6px 0; user-select: none; }

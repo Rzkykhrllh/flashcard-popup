@@ -58,6 +58,14 @@ function wordToCard(w) {
     hiragana: w.hiragana,
     arti: w.arti,
     notes: w.notes,
+    // `example` and `status` used to be dropped here — the Study tab's card
+    // (options.js's renderStudy) is built straight from this shape, so it
+    // never saw a word's example sentence or new/learning/mastered status
+    // even though both already exist on the IndexedDB word record. Purely
+    // additive: pickCard/content.js's on-page popup just ignore the extra
+    // keys they don't use, same as they already ignore createdAt.
+    example: w.example || "",
+    status: w.status || "new",
     seen: w.seen || 0,
     known: w.known || 0,
     hint: w.hint || 0,
@@ -542,6 +550,21 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         await recordGrade(msg.key, msg.result);
         currentCard = null;
         closeCardOnAllTabs();
+        sendResponse({ ok: true });
+        break;
+      }
+      case "restoreWordStats": {
+        // Undo for the Study tab's grade buttons (see options.js's
+        // renderStudy) — it snapshots a word's mutable stats fields right
+        // before sending "grade", and calls this to write that snapshot
+        // straight back if you misclick. Deliberately generic (merges
+        // whatever fields are passed) rather than a bespoke "undo grade"
+        // handler, since the snapshot is just whatever recordGrade() above
+        // can touch (seen/known/hint/forgot/n/easeFactor/status) — no SRS
+        // logic duplicated here, this only ever writes back values that
+        // came from a real card object earlier.
+        const w = await getWord(msg.key);
+        if (w) { Object.assign(w, msg.fields || {}); await putWord(w); }
         sendResponse({ ok: true });
         break;
       }

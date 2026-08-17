@@ -462,7 +462,21 @@ async function renderStats() {
 
 /* -------------------------------- study tab ------------------------------- */
 
-let studyState = { cards: [], index: 0, revealed: false, browseOpen: true, done: false, _eligibilityChanged: false };
+// browseOpen defaults false now — the browse/filter table is a secondary
+// "manage words" panel, not the point of the Study tab, and always having it
+// open by default competed for attention with the actual flashcard.
+// tally/forgottenKeys track the CURRENT session only, reset whenever a fresh
+// session queue is built (see the "_eligibilityChanged" rebuild branch below
+// and startSession()) — not persisted, not the same thing as the per-word
+// lifetime stats already in Stats tab. lastGrade is the one-shot undo
+// snapshot for "Undo last grade" (see gradeCurrent()/undoLastGrade()).
+let studyState = {
+  cards: [], index: 0, revealed: false, browseOpen: false, done: false,
+  _eligibilityChanged: false,
+  tally: { known: 0, hint: 0, forgot: 0 },
+  forgottenKeys: new Set(),
+  lastGrade: null,
+};
 // The browse/checklist table's own search + category + eligibility filter —
 // purely a view filter over the same word list, independent of the Study
 // queue above it (see renderStudy()'s big comment for why those two used to
@@ -565,24 +579,56 @@ async function renderStudy() {
   }
 
   if (!studyState.cards.length || studyState._eligibilityChanged) {
+    // Only a genuinely fresh session (cards was empty) resets the session
+    // tally/forgotten-set/undo snapshot — an eligibility-triggered rebuild
+    // mid-session (you toggled a switch in the browse table below while
+    // studying) shouldn't wipe progress you've already made this session.
+    const isFreshSession = !studyState.cards.length;
     studyState._eligibilityChanged = false;
     const eligible = entries.filter((entry) => isWordEligible(state, entry));
     const prevKey = studyState.cards[studyState.index]?.key;
     studyState.cards = eligible.map((entry) => ({ key: entry.key, deckIds: entry.deckIds, ...entry.card }));
     const newIdx = prevKey ? studyState.cards.findIndex((c) => c.key === prevKey) : -1;
     studyState.index = newIdx >= 0 ? newIdx : 0;
+    if (isFreshSession) {
+      studyState.tally = { known: 0, hint: 0, forgot: 0 };
+      studyState.forgottenKeys = new Set();
+    }
+    // Any rebuild (fresh or eligibility-triggered) can shift where a given
+    // card lands in the array — lastGrade.index would no longer reliably
+    // point at the card it was snapshotted from, so drop the undo
+    // affordance rather than risk it landing on the wrong card after
+    // restoring the right word's stats.
+    studyState.lastGrade = null;
   }
 
   let html = "";
 
   // Session complete screen
   if (studyState.done) {
+    const { known, hint, forgot } = studyState.tally;
+    const gradedTotal = known + hint + forgot;
+    // "Recalled" counts Hint alongside Know — matching applySM2's own model,
+    // where a hint-assisted answer still continues the streak (only Forgot
+    // resets it), so it counts as a successful (if imperfect) recall.
+    const accuracy = gradedTotal > 0 ? Math.round(((known + hint) / gradedTotal) * 100) : 0;
+    const forgottenCount = studyState.forgottenKeys.size;
     html += `
       <div style="text-align:center;padding:60px 20px">
         <div style="font-size:48px;margin-bottom:16px">&#10003;</div>
         <div style="font-size:20px;font-weight:600;margin-bottom:8px">Session complete</div>
-        <div style="font-size:14px;color:var(--muted);margin-bottom:24px">All cards reviewed.</div>
-        <button class="btn primary" id="restudyBtn" style="min-width:160px">Study again</button>
+        <div style="font-size:14px;color:var(--muted);margin-bottom:${gradedTotal ? "16" : "24"}px">All cards reviewed.</div>
+        ${gradedTotal ? `
+        <div class="study-tally">
+          <span class="tally-pill tally-know">Know ${known}</span>
+          <span class="tally-pill tally-hint">Hint ${hint}</span>
+          <span class="tally-pill tally-forgot">Forgot ${forgot}</span>
+          <span class="tally-accuracy">${accuracy}% recalled</span>
+        </div>` : ""}
+        <div style="margin-top:24px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button class="btn primary" id="restudyBtn" style="min-width:160px">Study again</button>
+          ${forgottenCount ? `<button class="btn" id="reviewForgotBtn" style="min-width:160px">Review forgotten (${forgottenCount})</button>` : ""}
+        </div>
       </div>`;
     html += browseSectionHtml(state);
     container.innerHTML = html;
@@ -593,6 +639,25 @@ async function renderStudy() {
       shuffle(studyState.cards);
       studyState.index = 0;
       studyState.revealed = false;
+      studyState.tally = { known: 0, hint: 0, forgot: 0 };
+      studyState.forgottenKeys = new Set();
+      studyState.lastGrade = null;
+      renderStudy();
+    });
+    const reviewForgotBtn = document.getElementById("reviewForgotBtn");
+    if (reviewForgotBtn) reviewForgotBtn.addEventListener("click", () => {
+      // A filtered sub-session over just this session's "Forgot" words — built
+      // from `entries` (freshly re-fetched at the top of this render, so it
+      // reflects post-grading state) rather than re-running the normal
+      // eligibility rebuild, which would pull in the FULL queue again.
+      const forgotten = entries.filter((entry) => studyState.forgottenKeys.has(entry.key));
+      studyState.cards = forgotten.map((entry) => ({ key: entry.key, deckIds: entry.deckIds, ...entry.card }));
+      studyState.done = false;
+      studyState.index = 0;
+      studyState.revealed = false;
+      studyState.tally = { known: 0, hint: 0, forgot: 0 };
+      studyState.forgottenKeys = new Set();
+      studyState.lastGrade = null;
       renderStudy();
     });
     return;
@@ -609,16 +674,29 @@ async function renderStudy() {
 
   const current = studyState.cards[studyState.index];
   const total = studyState.cards.length;
+  const progressPct = Math.round(((studyState.index + 1) / total) * 100);
+  // Mirrors content.js's on-page popup for these two settings specifically
+  // (see that file's `showFurigana`/`showHiragana` handling) — NOT the
+  // Classic/Tiered hint-before-reveal flow, which is a bigger interaction
+  // change this pass deliberately leaves alone (Study tab has no tiered
+  // concept of its own; a single reveal step already matches "Classic").
+  const showFurigana = !!state.settings.showFurigana;
+  const showReadingOnReveal = state.settings.showHiragana !== false;
+  const lastGrade = studyState.lastGrade;
 
   html += `
-    <div class="study-card" id="studyCard">
+    <div class="study-progress-bar"><div class="study-progress-bar-fill" style="width:${progressPct}%"></div></div>
+    <div class="study-card-top">${statusBadge(current.status || "new")}</div>
+    <div class="study-card ${studyState.revealed ? 'revealed' : ''}" id="studyCard">
       <div class="front">
-        <div class="front-kanji">${current.kanji}</div>
-        ${current.hiragana ? '<div class="front-hint">click to reveal</div>' : ''}
+        ${showFurigana && current.hiragana ? `<div class="front-furigana">${current.hiragana}</div>` : ""}
+        <div class="front-kanji" id="studyFrontKanji">${escapeHtml(current.kanji)}</div>
+        ${studyState.revealed ? "" : '<div class="front-hint">Click or press Space to reveal</div>'}
       </div>
       <div class="back ${studyState.revealed ? 'show' : ''}">
-        <div class="back-reading">${current.hiragana || ''}</div>
+        ${showReadingOnReveal ? `<div class="back-reading">${current.hiragana || ''}</div>` : ''}
         <div class="back-arti">${current.arti || ''}</div>
+        ${current.example ? `<div class="back-example">${escapeHtml(current.example)}</div>` : ''}
         ${current.notes ? `<div class="back-notes">${current.notes}</div>` : ''}
       </div>
     </div>
@@ -627,18 +705,30 @@ async function renderStudy() {
       <button class="btn" id="studyHint" ${studyState.revealed ? '' : 'disabled'}>Hint</button>
       <button class="btn primary" id="studyKnow" ${studyState.revealed ? '' : 'disabled'}>Know</button>
     </div>
+    ${lastGrade ? `<p class="study-undo"><button type="button" class="btn-link" id="undoGradeBtn">Undo last grade — "${escapeHtml(lastGrade.kanji)}" (${lastGrade.result})</button></p>` : ""}
     <div class="study-nav">
       <button class="btn" id="studyPrev" ${studyState.index > 0 ? '' : 'disabled'}>&larr; Prev</button>
       <span class="study-progress">${studyState.index + 1} / ${total}</span>
-      <button class="btn" id="studyNext">Next &rarr;</button>
+      <button class="btn ${studyState.revealed ? '' : 'ghost'}" id="studyNext">${studyState.revealed ? 'Next &rarr;' : 'Skip &rarr;'}</button>
       <button class="btn" id="studyShuffle">Shuffle</button>
-    </div>`;
+    </div>
+    <p class="study-shortcuts">Space reveal &middot; &larr; / &rarr; navigate &middot; 1 Forgot &middot; 2 Hint &middot; 3 Know</p>`;
   html += browseSectionHtml(state);
 
   container.innerHTML = html;
 
   renderStudyBrowse(container, entries, state);
   wireBrowseToolbar(container, entries, state);
+
+  // Once revealed, each kanji character in the front becomes its own
+  // clickable span opening the same kanji detail modal the Words tab uses
+  // (renderKanjiInline/openKanjiModal — both defined in word-editor.js,
+  // reused as-is since options.html loads it into this same shared script
+  // scope). Only wired when revealed: before that, .front-kanji stays plain
+  // text so a click anywhere on the card still just reveals it (see the
+  // studyCard listener below, unaffected either way since it already no-ops
+  // once revealed).
+  if (studyState.revealed) renderKanjiInline(document.getElementById("studyFrontKanji"), current.kanji);
 
   document.getElementById("studyCard").addEventListener("click", () => {
     if (!studyState.revealed) {
@@ -647,19 +737,43 @@ async function renderStudy() {
     }
   });
 
-  document.getElementById("studyKnow").addEventListener("click", async () => {
-    await send({ type: "grade", deckId: current.deckIds[0], key: current.key, result: "known" });
+  // Snapshots the current card's mutable stats BEFORE grading (so "Undo"
+  // below can write them straight back via restoreWordStats), tallies the
+  // session counters, and tracks "Forgot" keys for the done screen's
+  // "Review forgotten" button — all before handing off to advanceStudy().
+  async function gradeCurrent(result) {
+    studyState.lastGrade = {
+      key: current.key,
+      kanji: current.kanji,
+      result,
+      index: studyState.index,
+      fields: {
+        seen: current.seen, known: current.known, hint: current.hint, forgot: current.forgot,
+        n: current.n, easeFactor: current.easeFactor, status: current.status, lastSeen: current.lastSeen,
+      },
+    };
+    studyState.tally[result]++;
+    if (result === "forgot") studyState.forgottenKeys.add(current.key);
+    await send({ type: "grade", deckId: current.deckIds[0], key: current.key, result });
     advanceStudy();
-  });
+  }
 
-  document.getElementById("studyHint").addEventListener("click", async () => {
-    await send({ type: "grade", deckId: current.deckIds[0], key: current.key, result: "hint" });
-    advanceStudy();
-  });
+  document.getElementById("studyKnow").addEventListener("click", () => gradeCurrent("known"));
+  document.getElementById("studyHint").addEventListener("click", () => gradeCurrent("hint"));
+  document.getElementById("studyForgot").addEventListener("click", () => gradeCurrent("forgot"));
 
-  document.getElementById("studyForgot").addEventListener("click", async () => {
-    await send({ type: "grade", deckId: current.deckIds[0], key: current.key, result: "forgot" });
-    advanceStudy();
+  const undoBtn = document.getElementById("undoGradeBtn");
+  if (undoBtn) undoBtn.addEventListener("click", async () => {
+    const lg = studyState.lastGrade;
+    if (!lg) return;
+    await send({ type: "restoreWordStats", key: lg.key, fields: lg.fields });
+    studyState.tally[lg.result]--;
+    if (lg.result === "forgot") studyState.forgottenKeys.delete(lg.key);
+    studyState.lastGrade = null;
+    studyState.done = false;
+    studyState.index = lg.index;
+    studyState.revealed = true;
+    renderStudy();
   });
 
   document.getElementById("studyPrev").addEventListener("click", () => {
@@ -667,16 +781,19 @@ async function renderStudy() {
       studyState.done = false;
       studyState.revealed = false;
       studyState.index--;
+      studyState.lastGrade = null; // undo only ever applies to the grade just made, before navigating away
       renderStudy();
     }
   });
 
   document.getElementById("studyNext").addEventListener("click", () => {
+    studyState.lastGrade = null;
     advanceStudy();
   });
 
   document.getElementById("studyShuffle").addEventListener("click", () => {
     studyState.done = false;
+    studyState.lastGrade = null;
     const remaining = studyState.cards.slice(studyState.index);
     shuffle(remaining);
     studyState.cards = [...studyState.cards.slice(0, studyState.index), ...remaining];
