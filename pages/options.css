@@ -277,6 +277,15 @@ html[data-theme="dark"] .deck .rm:hover { color: #f87171; }
    to its own reading/meaning. Bumped enough to actually be comfortable. */
 .stats-table .kanji-cell { font-size: 21px; line-height: 1.3; }
 .stats-table .reading-cell { color: var(--ink-2); font-size: 14px; }
+/* Never wrap a word's own kanji/reading, even when Meaning/Notes are long
+   enough to squeeze the row — those columns should give way and wrap
+   instead (default <td> behavior, unchanged). Same priority rule as
+   .wlist-plain's .wl-k/.wl-r in vocab-bank.css and .kv-k/.kv-r in
+   content.js's on-page kanji view. Kanji-tab's on'yomi/kun'yomi columns
+   (.kt-readings) are a different thing — a whole reading LIST, not one
+   word's reading — so they opt back into wrapping below. */
+.stats-table .kanji-cell, .stats-table .reading-cell { white-space: nowrap; }
+.stats-table .kt-readings { white-space: normal; }
 .stats-table .cell-know { color: #1f7a46; font-weight: 500; }
 .stats-table .cell-hint { color: #a6540a; font-weight: 500; }
 .stats-table .cell-lupa { color: #c0392b; font-weight: 500; }
@@ -355,6 +364,15 @@ html[data-theme="dark"] .ratio-fill { background: #4ade80; }
 .study-progress { font-size: 13px; color: var(--muted); }
 
 .study-shortcuts { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; }
+.study-shortcuts kbd {
+  display: inline-block; font-family: inherit; font-size: 10px; font-weight: 600;
+  padding: 1px 5px; border-radius: 4px; background: var(--surface-2); color: var(--ink-2);
+  margin: 0 1px;
+}
+
+.study-paused { text-align: center; padding: 40px 20px; }
+.study-paused-title { font-size: 15px; font-weight: 600; color: var(--ink-2); margin-bottom: 14px; }
+.study-paused .btn { min-width: 180px; }
 
 /* Session-complete tally — Know/Hint/Forgot counts + recall rate, shown once
    at least one card was graded this session (see renderStudy()'s done
@@ -373,3 +391,10 @@ html[data-theme="dark"] .tally-hint { background: #78350f; color: #fde68a; }
 .study-browse { margin-top: 20px; }
 .browse-summary { font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; padding: 6px 0; user-select: none; }
 .browse-summary:hover { color: var(--ink); }
+/* Shown only while a card is actively up (see renderStudy()'s `locked` param
+   to browseSectionHtml) — explains why the toolbar/switches below are
+   disabled and offers the one way out of it (Pause). */
+.study-browse-locked {
+  font-size: 12px; color: var(--muted); background: var(--surface-2);
+  border-radius: 8px; padding: 8px 10px; margin-top: 6px;
+}

@@ -206,7 +206,13 @@ html[data-theme="dark"] .status-badge.status-mastered { background: #14532d; col
   cursor: pointer; font-size: 13px;
 }
 .wlist-plain .wl-row:hover { background: var(--surface-2); }
-.wlist-plain .wl-row .wl-k { font-size: 15px; }
-.wlist-plain .wl-row .wl-r { color: var(--muted); }
-.wlist-plain .wl-row .wl-m { color: var(--muted); margin-left: auto; text-align: right; }
+/* Kanji/reading are short, fixed-identity text — never worth breaking mid-
+   character just because the meaning column (wl-m) is long. Keep them at
+   their natural width (nowrap + no shrink) and let wl-m absorb the space
+   pressure instead, same priority rule applied to every kanji/reading pair
+   across the app (see .stats-table .kanji-cell/.reading-cell in options.css
+   and .kv-row .kv-k/.kv-r in content.js for the other three spots). */
+.wlist-plain .wl-row .wl-k { font-size: 15px; white-space: nowrap; flex-shrink: 0; }
+.wlist-plain .wl-row .wl-r { color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+.wlist-plain .wl-row .wl-m { color: var(--muted); margin-left: auto; text-align: right; min-width: 0; }
 .wlist-plain .empty { margin: 0; }

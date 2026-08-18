@@ -222,9 +222,9 @@
       .kv-saved { font-size:11px; color:var(--muted); margin-left:8px; }
       .kv-related { display:flex; flex-direction:column; gap:2px; margin-top:6px; max-height:120px; overflow-y:auto; }
       .kv-row { display:flex; align-items:baseline; gap:6px; padding:5px 4px; border-radius:6px; font-size:13px; }
-      .kv-row .kv-k { font-weight:500; }
-      .kv-row .kv-r { color:var(--reading); font-size:11px; }
-      .kv-row .kv-m { color:var(--notes); margin-left:auto; text-align:right; font-size:12px; }
+      .kv-row .kv-k { font-weight:500; white-space:nowrap; flex-shrink:0; }
+      .kv-row .kv-r { color:var(--reading); font-size:11px; white-space:nowrap; flex-shrink:0; }
+      .kv-row .kv-m { color:var(--notes); margin-left:auto; text-align:right; font-size:12px; min-width:0; }
       .kview-loading { font-size:12px; color:var(--muted); text-align:center; padding:20px 0; }
     `;
 
