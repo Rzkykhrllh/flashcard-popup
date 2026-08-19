@@ -290,7 +290,11 @@ async function reloadData() {
   renderList();
 }
 
-exportBtn.addEventListener("click", async () => {
+// Shared by the manual Export button and the auto safety-backup an
+// overwriting Import triggers below — always reads fresh from IndexedDB
+// (not the in-memory allWords/allGroups cache) so a safety backup taken
+// right before an import genuinely reflects what's about to be overwritten.
+async function downloadBackup(filenamePrefix) {
   const words = await getAllWords();
   const groups = await getAllGroups();
   const payload = { exportedAt: Date.now(), words, groups };
@@ -298,11 +302,16 @@ exportBtn.addEventListener("click", async () => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `kotoba-bank-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `${filenamePrefix}-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.appendChild(a);
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+  return { words, groups };
+}
+
+exportBtn.addEventListener("click", async () => {
+  const { words, groups } = await downloadBackup("kotoba-bank-backup");
   backupStatusEl.textContent = `Exported ${words.length} words, ${groups.length} groups.`;
 });
 
@@ -321,27 +330,47 @@ importFileEl.addEventListener("change", async () => {
     return;
   }
 
-  const words = Array.isArray(payload.words) ? payload.words : [];
+  const rawWords = Array.isArray(payload.words) ? payload.words : [];
   const groups = Array.isArray(payload.groups) ? payload.groups : [];
-  if (!words.length && !groups.length) {
+  if (!rawWords.length && !groups.length) {
     backupStatusEl.textContent = "No words or groups found in this file.";
     return;
   }
+
+  // Same rule the Add/Edit form (and pickCard/buildStudyEntries) already
+  // enforce — see TODO.md's blank-flashcard investigation. A row with no
+  // visible kanji (empty, whitespace-only, or zero-width-only — plausible
+  // straight out of a stale/hand-edited backup or a bad TSV/spreadsheet
+  // copy) used to write straight to IndexedDB via putWords(), bypassing
+  // every other door's validation and reintroducing the exact blank-card
+  // bug class that was already fixed everywhere else words can enter the
+  // bank. Skip those rows here instead of importing them silently.
+  const words = rawWords.filter((w) => hasVisibleText(w.kanji) && w.id);
+  const skippedCount = rawWords.length - words.length;
 
   const existingIds = new Set(allWords.map((w) => w.id));
   const overwriteCount = words.filter((w) => existingIds.has(w.id)).length;
   const newCount = words.length - overwriteCount;
 
-  const ok = confirm(
-    `Import ${words.length} words & ${groups.length} groups?\n` +
-    `${newCount} new, ${overwriteCount} will be overwritten (same id already exists).`
-  );
+  let confirmMsg = `Import ${words.length} words & ${groups.length} groups?\n` +
+    `${newCount} new, ${overwriteCount} will be overwritten (same id already exists).`;
+  if (skippedCount) confirmMsg += `\n${skippedCount} skipped — missing or invalid kanji text.`;
+  if (overwriteCount) confirmMsg += `\nYour current data will be backed up (downloaded) first, so this can be undone.`;
+
+  const ok = confirm(confirmMsg);
   if (!ok) return;
+
+  // Import has no real undo — this is the closest thing to one: whatever's
+  // about to be overwritten gets snapshotted to a file first. Only needed
+  // when something would actually be clobbered; a purely-new import has
+  // nothing to protect.
+  if (overwriteCount) await downloadBackup("kotoba-bank-pre-import-backup");
 
   await putWords(words);
   await putGroups(groups);
   await reloadData();
-  backupStatusEl.textContent = `Imported: ${newCount} new, ${overwriteCount} overwritten.`;
+  backupStatusEl.textContent = `Imported: ${newCount} new, ${overwriteCount} overwritten` +
+    (skippedCount ? `, ${skippedCount} skipped (invalid kanji).` : ".");
 });
 
 async function init() {

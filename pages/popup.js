@@ -1,8 +1,8 @@
 const send = (msg) => chrome.runtime.sendMessage(msg);
 
-const cardCountEl = document.getElementById("cardCount");
-const deckCountEl = document.getElementById("deckCount");
-const syncStatusEl = document.getElementById("syncStatus");
+const wordCountEl = document.getElementById("wordCount");
+const learningCountEl = document.getElementById("learningCount");
+const collectionStatusEl = document.getElementById("collectionStatus");
 const enabledStateEl = document.getElementById("enabledState");
 const quizBtn = document.getElementById("quizBtn");
 const addWordShortcut = document.getElementById("addWordShortcut");
@@ -16,6 +16,8 @@ const qaNotes = document.getElementById("qaNotes");
 const qaGroupChecklist = document.getElementById("qaGroupChecklist");
 const qaNewGroupName = document.getElementById("qaNewGroupName");
 const qaAddGroupBtn = document.getElementById("qaAddGroupBtn");
+const qaIncludeSwitchWrap = document.getElementById("qaIncludeSwitchWrap");
+const qaIncludeLabelText = document.getElementById("qaIncludeLabelText");
 const qaIncludeInStudy = document.getElementById("qaIncludeInStudy");
 const qaStatus = document.getElementById("qaStatus");
 const qaSaveBtn = document.getElementById("qaSaveBtn");
@@ -25,16 +27,6 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => (
     { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
   ));
-}
-
-function timeAgo(ts) {
-  if (!ts) return "never";
-  const m = Math.round((Date.now() - ts) / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m} min ago`;
-  const h = Math.round(m / 60);
-  if (h < 24) return `${h} hr ago`;
-  return `${Math.round(h / 24)} days ago`;
 }
 
 // colorMode: "system" | "light" | "dark" (settings.colorMode). Sets an
@@ -61,20 +53,20 @@ window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () 
 });
 
 async function refresh() {
-  const state = await send({ type: "getState" });
+  // getState (settings/theme) and getStats (the headline numbers below) are
+  // independent reads — see background.js's "getStats" handler for why the
+  // eligibility count lives there rather than a 3rd copy-pasted rule here.
+  const [state, stats] = await Promise.all([
+    send({ type: "getState" }),
+    send({ type: "getStats" }),
+  ]);
   applyTheme(state.settings.theme, state.settings.colorMode);
-  const enabledDecks = state.decks.filter((d) => d.enabled !== false);
-  const total = enabledDecks.reduce(
-    (s, d) => s + Object.keys(state.cards[d.id] || {}).length,
-    0
-  );
-  cardCountEl.textContent = total;
-  deckCountEl.textContent = enabledDecks.length;
 
-  const lastSynced = Math.max(0, ...state.decks.map((d) => d.lastSynced || 0));
-  syncStatusEl.textContent = state.decks.length
-    ? `Last sync: ${timeAgo(lastSynced)}.`
-    : "No decks — add one in settings.";
+  wordCountEl.textContent = stats.totalWords;
+  learningCountEl.textContent = stats.eligibleWords;
+  collectionStatusEl.textContent = stats.collectionCount
+    ? `${stats.collectionCount} collection${stats.collectionCount === 1 ? "" : "s"}`
+    : "No collections yet.";
 
   if (!state.settings.enabled) {
     enabledStateEl.textContent = "Popup is disabled.";

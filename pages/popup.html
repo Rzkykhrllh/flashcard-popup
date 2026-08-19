@@ -12,10 +12,10 @@
     </div>
 
     <div class="stats">
-      <div class="stat"><span class="num" id="cardCount">—</span><span class="lbl">cards</span></div>
-      <div class="stat"><span class="num" id="deckCount">—</span><span class="lbl">decks</span></div>
+      <div class="stat"><span class="num" id="wordCount">—</span><span class="lbl">words</span></div>
+      <div class="stat"><span class="num" id="learningCount">—</span><span class="lbl">learning</span></div>
     </div>
-    <p class="sync" id="syncStatus">Never synced.</p>
+    <p class="sync" id="collectionStatus"></p>
 
     <button class="btn primary" id="quizBtn">Show card now</button>
     <button class="btn" id="addWordShortcut">Add word</button>
@@ -32,11 +32,11 @@
         <button type="button" class="btn" id="qaAddGroupBtn">Add</button>
       </div>
       <label class="field-check">
-        <span class="switch">
+        <span class="switch" id="qaIncludeSwitchWrap">
           <input id="qaIncludeInStudy" type="checkbox" checked />
           <span class="slider"></span>
         </span>
-        Include in current learning (Study &amp; popup)
+        <span id="qaIncludeLabelText">Include in current learning (Study &amp; popup)</span>
       </label>
       <p id="qaStatus" class="qa-status"></p>
       <div class="btn-row">

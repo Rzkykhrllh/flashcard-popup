@@ -454,6 +454,36 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         sendResponse(await getState());
         break;
       }
+      case "getStats": {
+        // Popup toolbar's headline numbers (see popup.js's refresh()) — kept
+        // as one handler rather than three separate copies of the
+        // eligibility rule (core/srs.js's pickCard and options.js's
+        // isWordEligible are the other two; a popup.js-local copy would
+        // have made a third that could silently drift out of sync).
+        // totalWords: every word in IndexedDB, regardless of collection or
+        // sync status — NOT a sum across state.cards[deckId], since a word
+        // in more than one collection would be double-counted there.
+        // eligibleWords: same "eligible unless explicitly excluded in every
+        // one of its collections" rule as isWordEligible/pickCard, just
+        // deduped per word (a word counts once even if it's in several
+        // collections) instead of per (deck, word) pair.
+        const [state, words] = await Promise.all([getState(), getAllWords()]);
+        const sel = state.selection || {};
+        let eligibleWords = 0;
+        for (const w of words) {
+          const eligible = (w.groupIds || []).some((deckId) => {
+            const deckSel = sel[deckId];
+            return !(deckSel && deckSel[w.id] === false);
+          });
+          if (eligible) eligibleWords++;
+        }
+        sendResponse({
+          totalWords: words.length,
+          eligibleWords,
+          collectionCount: state.categories.length,
+        });
+        break;
+      }
       case "getSheetTabs": {
         const parsed = parseSheetUrl(msg.url || "");
         if (!parsed) { sendResponse({ ok: false, error: "Invalid sheet URL." }); break; }

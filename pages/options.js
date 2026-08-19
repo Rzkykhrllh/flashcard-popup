@@ -175,7 +175,13 @@ async function render() {
       render();
     });
     li.querySelector(".rm").addEventListener("click", async () => {
-      if (!confirm(`Delete collection "${cat.name}"? Card progress will be lost.`)) return;
+      // removeDeck (background.js) only unlinks the group — it strips this
+      // collection from every word's groupIds and deletes the group record,
+      // but never touches the words themselves. Progress (seen/known/n/
+      // etc.) survives untouched; a word just stops belonging to this one
+      // collection. The old copy here ("Card progress will be lost") was
+      // stale/wrong and could talk someone out of a perfectly safe cleanup.
+      if (!confirm(`Delete collection "${cat.name}"? Words keep their progress — they just won't belong to this collection anymore.`)) return;
       await send({ type: "removeDeck", deckId: cat.id });
       render();
     });
@@ -470,13 +476,63 @@ async function renderStats() {
 // and startSession()) — not persisted, not the same thing as the per-word
 // lifetime stats already in Stats tab. lastGrade is the one-shot undo
 // snapshot for "Undo last grade" (see gradeCurrent()/undoLastGrade()).
+// `paused` (new) is a deliberate, explicit "let me edit the word list"
+// state — see the "Pause to edit" / "Resume study" flow in renderStudy()/
+// browseSectionHtml() below. It's what makes the browse panel read-only the
+// rest of the time: locking is derived from "there's an active queue and
+// you're not paused/done", not tracked as its own flag.
 let studyState = {
-  cards: [], index: 0, revealed: false, browseOpen: false, done: false,
+  cards: [], index: 0, revealed: false, browseOpen: false, done: false, paused: false,
   _eligibilityChanged: false,
   tally: { known: 0, hint: 0, forgot: 0 },
   forgottenKeys: new Set(),
   lastGrade: null,
 };
+
+// Persists just enough of studyState to resume the exact same queue after
+// reopening/reloading the options page (chrome.storage.local, same pattern
+// render() already uses for `cardPosition` — plain UI/session state, not
+// part of getState()'s core data model). `cards` itself isn't persisted,
+// only the ordered list of keys — the actual card data (seen/known/n/etc.)
+// always comes fresh from getState() on restore, so it can't go stale.
+function saveStudySession() {
+  chrome.storage.local.set({
+    studySession: {
+      keys: studyState.cards.map((c) => c.key),
+      index: studyState.index,
+      revealed: studyState.revealed,
+      done: studyState.done,
+      paused: studyState.paused,
+      tally: studyState.tally,
+      forgottenKeys: [...studyState.forgottenKeys],
+    },
+  });
+}
+
+// Runs once, on the very first renderStudy() call after the page loads —
+// see the `studySessionRestored` guard at its call site. Rebuilds
+// studyState.cards from the saved key order (dropping any key that no
+// longer exists — a word could've been deleted, or its kanji field emptied,
+// while this page was closed) rather than trusting the saved snapshot's own
+// card data, which could otherwise go stale.
+let studySessionRestored = false;
+async function restoreStudySession(entries) {
+  const { studySession } = await chrome.storage.local.get("studySession");
+  if (!studySession || !Array.isArray(studySession.keys) || !studySession.keys.length) return;
+  const byKey = new Map(entries.map((e) => [e.key, e]));
+  const restoredCards = studySession.keys
+    .map((k) => byKey.get(k))
+    .filter(Boolean)
+    .map((entry) => ({ key: entry.key, deckIds: entry.deckIds, ...entry.card }));
+  if (!restoredCards.length) return;
+  studyState.cards = restoredCards;
+  studyState.index = Math.min(Math.max(studySession.index || 0, 0), restoredCards.length - 1);
+  studyState.revealed = !!studySession.revealed;
+  studyState.done = !!studySession.done;
+  studyState.paused = !!studySession.paused;
+  studyState.tally = studySession.tally || { known: 0, hint: 0, forgot: 0 };
+  studyState.forgottenKeys = new Set(studySession.forgottenKeys || []);
+}
 // The browse/checklist table's own search + category + eligibility filter —
 // purely a view filter over the same word list, independent of the Study
 // queue above it (see renderStudy()'s big comment for why those two used to
@@ -578,6 +634,17 @@ async function renderStudy() {
     return;
   }
 
+  // Resume the last session (if any) before the normal rebuild-from-scratch
+  // logic below gets a chance to run — only on the very first render after
+  // the page loads. If this finds a saved session, studyState.cards is
+  // already non-empty by the time the next check runs, so the "fresh
+  // session" branch is skipped entirely and the restored queue/index/tally
+  // carry straight through.
+  if (!studySessionRestored) {
+    studySessionRestored = true;
+    await restoreStudySession(entries);
+  }
+
   if (!studyState.cards.length || studyState._eligibilityChanged) {
     // Only a genuinely fresh session (cards was empty) resets the session
     // tally/forgotten-set/undo snapshot — an eligibility-triggered rebuild
@@ -630,9 +697,9 @@ async function renderStudy() {
           ${forgottenCount ? `<button class="btn" id="reviewForgotBtn" style="min-width:160px">Review forgotten (${forgottenCount})</button>` : ""}
         </div>
       </div>`;
-    html += browseSectionHtml(state);
+    html += browseSectionHtml(state, false);
     container.innerHTML = html;
-    renderStudyBrowse(container, entries, state);
+    renderStudyBrowse(container, entries, state, false);
     wireBrowseToolbar(container, entries, state);
     document.getElementById("restudyBtn").addEventListener("click", () => {
       studyState.done = false;
@@ -660,15 +727,41 @@ async function renderStudy() {
       studyState.lastGrade = null;
       renderStudy();
     });
+    saveStudySession();
     return;
   }
 
   if (!studyState.cards.length) {
-    html += '<p class="empty" style="margin-top:12px">No words selected. Check some words in the list below to start studying.</p>';
-    html += browseSectionHtml(state);
+    html += '<p class="empty" style="margin-top:12px">No words selected — check some below to start.</p>';
+    html += browseSectionHtml(state, false);
     container.innerHTML = html;
-    renderStudyBrowse(container, entries, state);
+    renderStudyBrowse(container, entries, state, false);
     wireBrowseToolbar(container, entries, state);
+    saveStudySession();
+    return;
+  }
+
+  // Paused — a deliberate break from the active card so the browse panel
+  // below can be freely edited (see the "locked" branch further down, and
+  // the "Pause to edit" button inside browseSectionHtml). Resuming picks
+  // right back up at the same index/revealed/tally — nothing about the
+  // queue itself changes just by pausing.
+  if (studyState.paused) {
+    const pausedTotal = studyState.cards.length;
+    html += `
+      <div class="study-paused">
+        <div class="study-paused-title">Paused</div>
+        <button class="btn primary" id="resumeStudyBtn">Resume (${studyState.index + 1}/${pausedTotal})</button>
+      </div>`;
+    html += browseSectionHtml(state, false);
+    container.innerHTML = html;
+    renderStudyBrowse(container, entries, state, false);
+    wireBrowseToolbar(container, entries, state);
+    document.getElementById("resumeStudyBtn").addEventListener("click", () => {
+      studyState.paused = false;
+      renderStudy();
+    });
+    saveStudySession();
     return;
   }
 
@@ -691,7 +784,7 @@ async function renderStudy() {
       <div class="front">
         ${showFurigana && current.hiragana ? `<div class="front-furigana">${current.hiragana}</div>` : ""}
         <div class="front-kanji" id="studyFrontKanji">${escapeHtml(current.kanji)}</div>
-        ${studyState.revealed ? "" : '<div class="front-hint">Click or press Space to reveal</div>'}
+        ${studyState.revealed ? "" : '<div class="front-hint">Click or Space to reveal</div>'}
       </div>
       <div class="back ${studyState.revealed ? 'show' : ''}">
         ${showReadingOnReveal ? `<div class="back-reading">${current.hiragana || ''}</div>` : ''}
@@ -712,13 +805,24 @@ async function renderStudy() {
       <button class="btn ${studyState.revealed ? '' : 'ghost'}" id="studyNext">${studyState.revealed ? 'Next &rarr;' : 'Skip &rarr;'}</button>
       <button class="btn" id="studyShuffle">Shuffle</button>
     </div>
-    <p class="study-shortcuts">Space reveal &middot; &larr; / &rarr; navigate &middot; 1 Forgot &middot; 2 Hint &middot; 3 Know</p>`;
-  html += browseSectionHtml(state);
+    <p class="study-shortcuts"><kbd>Space</kbd> flip &middot; <kbd>&larr;</kbd><kbd>&rarr;</kbd> nav &middot; <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> grade</p>`;
+  // Locked while a card's actively up — editing eligibility mid-card would
+  // shift the queue under you (see the isFreshSession/lastGrade comments
+  // above); pausing first (see studyState.paused above) is the deliberate
+  // way to make changes instead. Not locked on the done/empty/paused
+  // screens, since you're not mid-card in any of those.
+  html += browseSectionHtml(state, true);
 
   container.innerHTML = html;
 
-  renderStudyBrowse(container, entries, state);
+  renderStudyBrowse(container, entries, state, true);
   wireBrowseToolbar(container, entries, state);
+
+  const pauseBtn = document.getElementById("pauseStudyBtn");
+  if (pauseBtn) pauseBtn.addEventListener("click", () => {
+    studyState.paused = true;
+    renderStudy();
+  });
 
   // Once revealed, each kanji character in the front becomes its own
   // clickable span opening the same kanji detail modal the Words tab uses
@@ -801,14 +905,17 @@ async function renderStudy() {
   });
 
   document.addEventListener("keydown", studyKeyHandler);
+  saveStudySession();
 }
 
 // The browse/checklist section's markup: search + category + eligibility
 // filter (all view-only, see filterBrowseEntries), Select all / Deselect
-// all, and the table itself. Shared by all three renderStudy() branches
-// (done screen, empty queue, normal flashcard view) so the checklist is
-// always reachable regardless of what the queue above it is doing.
-function browseSectionHtml(state) {
+// all, and the table itself. Shared by all four renderStudy() branches
+// (done screen, empty queue, paused, normal flashcard view) so the
+// checklist is always reachable regardless of what the queue above it is
+// doing. `locked` (true only for the active-card view) swaps the toolbar for
+// a read-only notice — see the "Pause to edit" button it renders.
+function browseSectionHtml(state, locked) {
   let opts = `<option value="__all__"${browseFilter.categoryId === "__all__" ? " selected" : ""}>All categories</option>`;
   for (const cat of state.categories) {
     opts += `<option value="${cat.id}"${browseFilter.categoryId === cat.id ? " selected" : ""}>${cat.name}</option>`;
@@ -818,21 +925,21 @@ function browseSectionHtml(state) {
     <option value="on"${browseFilter.eligibility === "on" ? " selected" : ""}>On (in study)</option>
     <option value="off"${browseFilter.eligibility === "off" ? " selected" : ""}>Off (excluded)</option>
   `;
+  const lockedNotice = locked ? `
+      <p class="study-browse-locked">&#128274; Locked &middot; <button type="button" class="btn-link" id="pauseStudyBtn">Pause to edit</button></p>` : "";
   return `
     <details class="study-browse" id="studyBrowse" ${studyState.browseOpen ? 'open' : ''}>
-      <summary class="browse-summary" id="browseSummary">Which words show in the popup</summary>
-      <p class="hint" style="margin-top:6px">These switches control which words can show up in the flashcard popup
-        on web pages, and which ones are in the Study queue above — they're the same list. Leave a word untouched
-        and it's eligible by default. Search, Category, and On/Off below only filter this table's view; they don't
-        change what's selected.</p>
+      <summary class="browse-summary" id="browseSummary">Word list</summary>
+      ${lockedNotice}
+      <p class="hint">Controls which words are active in Study &amp; the popup.</p>
       <div class="study-browse-toolbar" style="display:flex;gap:8px;margin:8px 0;flex-wrap:wrap">
-        <input type="text" id="browseSearch" placeholder="Search words…" class="search-input" style="flex:1 1 160px" value="${escapeHtml(browseFilter.query)}" />
-        <select id="browseCategorySelect" class="tab-select" style="max-width:180px">${opts}</select>
-        <select id="browseEligibleSelect" class="tab-select" style="max-width:150px">${eligOpts}</select>
+        <input type="text" id="browseSearch" placeholder="Search words…" class="search-input" style="flex:1 1 160px" value="${escapeHtml(browseFilter.query)}" ${locked ? "disabled" : ""} />
+        <select id="browseCategorySelect" class="tab-select" style="max-width:180px" ${locked ? "disabled" : ""}>${opts}</select>
+        <select id="browseEligibleSelect" class="tab-select" style="max-width:150px" ${locked ? "disabled" : ""}>${eligOpts}</select>
       </div>
       <div style="margin:8px 0;display:flex;gap:8px">
-        <button class="btn" id="selectAllBtn">Select all</button>
-        <button class="btn" id="clearSelBtn">Deselect all</button>
+        <button class="btn" id="selectAllBtn" ${locked ? "disabled" : ""}>Select all</button>
+        <button class="btn" id="clearSelBtn" ${locked ? "disabled" : ""}>Deselect all</button>
       </div>
       <div id="browseTable"></div>
     </details>
@@ -916,7 +1023,7 @@ function studyKeyHandler(e) {
   }
 }
 
-function renderStudyBrowse(container, entries, state) {
+function renderStudyBrowse(container, entries, state, locked) {
   const wrap = document.getElementById("browseTable");
   if (!wrap) return;
 
@@ -925,8 +1032,8 @@ function renderStudyBrowse(container, entries, state) {
   const summaryEl = document.getElementById("browseSummary");
   if (summaryEl) {
     summaryEl.textContent = browseFilter.categoryId === "__all__" && !browseFilter.query && browseFilter.eligibility === "__all__"
-      ? `Which words show in the popup (${eligibleCount} of ${visible.length} selected)`
-      : `Which words show in the popup (${eligibleCount} of ${visible.length} selected in this view)`;
+      ? `Word list (${eligibleCount}/${visible.length} active)`
+      : `Word list (${eligibleCount}/${visible.length} active in view)`;
   }
 
   let html = '<table class="stats-table bank-table"><thead><tr><th>In popup</th><th>Kanji</th><th>Reading</th><th>Meaning</th><th>Notes</th></tr></thead><tbody>';
@@ -936,7 +1043,7 @@ function renderStudyBrowse(container, entries, state) {
   for (const entry of visible) {
     const { key, card: c } = entry;
     const checked = isWordEligible(state, entry) ? 'checked' : '';
-    html += `<tr data-key="${key}"><td><label class="switch"><input type="checkbox" class="card-cb" ${checked} /><span class="slider"></span></label></td><td class="kanji-cell">${c.kanji}</td><td class="reading-cell">${c.hiragana || "—"}</td><td>${c.arti || "—"}</td><td class="cell-muted">${c.notes || ""}</td></tr>`;
+    html += `<tr data-key="${key}"><td><label class="switch"><input type="checkbox" class="card-cb" ${checked}${locked ? " disabled" : ""} /><span class="slider"></span></label></td><td class="kanji-cell">${c.kanji}</td><td class="reading-cell">${c.hiragana || "—"}</td><td>${c.arti || "—"}</td><td class="cell-muted">${c.notes || ""}</td></tr>`;
   }
   html += '</tbody></table>';
   wrap.innerHTML = html;
