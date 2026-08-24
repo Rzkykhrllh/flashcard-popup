@@ -33,9 +33,20 @@ html[data-theme="dark"] body.theme-purple { --shu: #a78bfa; }
 html[data-theme="dark"] body.theme-green  { --shu: #4ade80; }
 
 * { box-sizing: border-box; margin: 0; }
+/* Chrome sizes an extension action popup's actual WINDOW to the page's
+   scrollWidth/scrollHeight, not to body's own CSS box — if anything inside
+   ever overflows body's fixed 268px (even briefly, e.g. right after the
+   quick-add form's height/content changes post-load), Chrome can widen the
+   real popup window to fit that overflow while body itself stays drawn at
+   268px, left-aligned — exactly the "content hugs the left, dead space on
+   the right" look reported after opening quick-add. overflow-x: hidden on
+   both html and body clips scrollWidth to what's actually visible, so an
+   overflowing descendant can never blow up the window size like that. */
+html { overflow-x: hidden; background: var(--paper); }
 body {
   width: 268px;
   padding: 16px;
+  overflow-x: hidden;
   background: var(--paper);
   color: var(--ink);
   font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", -apple-system,
@@ -128,9 +139,17 @@ body {
   background: var(--paper); color: var(--ink); border-radius: 6px;
   padding: 2px 5px; font-size: 12px; font-family: inherit;
 }
-.group-new-row { display: flex; gap: 6px; margin-bottom: 6px; }
-.group-new-row input { flex: 1; width: auto; margin-bottom: 0; }
-.group-new-row .btn { flex: none; padding: 8px 12px; font-size: 13px; }
+/* Was a side-by-side flex row — turns out .btn's own base rule sets
+   width:100%, and with flex:none (flex-shrink:0) on the button, it refused
+   to shrink below that 100%-of-row width while the input ALSO wanted
+   space, overflowing the 236px content box. With overflow-x:hidden now on
+   html/body (see the note up top), that overflow silently clipped the Add
+   button off-screen instead of visibly widening the popup like before.
+   Stacking the two instead — full-width input on top, full-width button
+   below — sidesteps the whole "two things competing for one row" problem. */
+.group-new-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px; }
+.group-new-row input { width: 100%; margin-bottom: 0; }
+.group-new-row .btn { width: 100%; margin-bottom: 0; padding: 8px 12px; font-size: 13px; }
 
 .state { font-size: 11px; color: var(--muted); text-align: center; margin-top: 6px; min-height: 14px; }
 

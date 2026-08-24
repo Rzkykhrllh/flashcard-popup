@@ -81,8 +81,21 @@ async function getWordsByKanji(kanji) {
 
 /* --------------------------------- groups ---------------------------------- */
 
+// Sorted by the user's custom order (Settings' drag-to-reorder list) — this
+// is the single place that ordering is applied, so every consumer across
+// the extension (Settings' own list, Study/Stats' category dropdowns, the
+// Words tab filter, the Add/Edit and quick-add checklists) automatically
+// reflects it without each call site needing to remember to sort. `order`
+// is a plain integer assigned in full-renumber passes (0, 1, 2, …) whenever
+// the Settings list is reordered — see options.js's deckList drop handler.
+// Groups that predate this field (or were never touched by a reorder) fall
+// back to 0, and since Array.prototype.sort is a STABLE sort, any group
+// missing `order` simply keeps its original getAll() (~creation) order
+// relative to its equally-untouched siblings — nothing jumps around just
+// because this field shipped.
 async function getAllGroups() {
-  return reqToPromise((await store("groups", "readonly")).getAll());
+  const groups = await reqToPromise((await store("groups", "readonly")).getAll());
+  return groups.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
 async function getGroup(id) {

@@ -128,6 +128,13 @@ html[data-theme="dark"] .status.err { color: #f87171; }
 .deck .rm { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; padding: 4px 8px; border-radius: 6px; }
 .deck .rm:hover { background: var(--surface-2); color: #c0392b; }
 html[data-theme="dark"] .deck .rm:hover { color: #f87171; }
+/* Drag-to-reorder handle (see options.js's deckList dragover/drop) — the
+   whole <li> is draggable, this is just the visual/grab affordance. Letter-
+   spacing tightens the two stacked "⋮⋮" glyphs into one compact grip icon
+   rather than two separated dots. */
+.deck-grip { flex: none; color: var(--muted); font-size: 14px; letter-spacing: -3px; cursor: grab; user-select: none; padding: 0 2px; }
+.deck-grip:active { cursor: grabbing; }
+.deck.dragging { opacity: 0.4; }
 .empty { font-size: 13px; color: var(--muted); margin-top: 12px; }
 
 /* toggle switch — used everywhere a word/collection's "on" state is shown:

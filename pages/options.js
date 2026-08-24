@@ -104,6 +104,53 @@ function applyActivePos(cardPosition) {
 // put, only the name label swaps to an input) so re-render never loses state.
 let settingsEditingGroupId = null;
 
+// Drag-to-reorder for the Settings collection list (#deckList). The <li>
+// currently being dragged, set by its own "dragstart" (wired per-row inside
+// render()'s loop, since each row needs its own closure over `cat.id`) and
+// read here by the two container-level listeners below. Those two are
+// wired ONCE at module load — not inside render()'s loop — since #deckList
+// itself is never recreated, only its <li> children are (render() does
+// `deckList.innerHTML = ""` then re-appends), so re-attaching them on every
+// render() would just pile up duplicate listeners.
+let draggedGroupEl = null;
+
+// Fires continuously while dragging over the list — reads the cursor's Y
+// position against each non-dragged row's vertical midpoint to find the
+// first row the dragged one belongs ABOVE, and live-moves the dragged <li>
+// there in the DOM. This is what gives the drag its "the list reflows as
+// you drag" feel; the actual persistence happens once, in "drop" below,
+// off of whatever order the DOM ends up in. preventDefault() is required
+// here — without it the browser never treats #deckList as a valid drop
+// target at all.
+deckList.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  if (!draggedGroupEl) return;
+  const siblings = [...deckList.querySelectorAll("li.deck:not(.dragging)")];
+  const after = siblings.find((sib) => {
+    const rect = sib.getBoundingClientRect();
+    return e.clientY < rect.top + rect.height / 2;
+  });
+  deckList.insertBefore(draggedGroupEl, after || null);
+});
+
+deckList.addEventListener("drop", async (e) => {
+  e.preventDefault();
+  if (!draggedGroupEl) return;
+  // The DOM is already in its final order by now (dragover reordered it
+  // live) — read that order straight off the <li> elements rather than
+  // recomputing anything, and do a full renumber (0, 1, 2, …) rather than
+  // trying to slot a fractional value in between neighbors, so ordering
+  // stays simple integers forever instead of accumulating gaps/precision
+  // issues across many reorders.
+  const ids = [...deckList.querySelectorAll("li.deck")].map((el) => el.dataset.id);
+  const groups = await getAllGroups();
+  const byId = new Map(groups.map((g) => [g.id, g]));
+  const reordered = ids.map((id, i) => ({ ...byId.get(id), order: i })).filter((g) => g.id);
+  await putGroups(reordered);
+  draggedGroupEl = null;
+  render();
+});
+
 async function render() {
   const [state, { cardPosition }] = await Promise.all([
     send({ type: "getState" }),
@@ -127,6 +174,8 @@ async function render() {
     const count = Object.keys(state.cards[cat.id] || {}).length;
     const li = document.createElement("li");
     li.className = "deck";
+    li.draggable = true;
+    li.dataset.id = cat.id;
 
     const switchHtml = isSynced
       ? `<label class="switch">
@@ -143,6 +192,7 @@ async function render() {
          <button type="button" class="group-rename-btn" title="Rename">&#9998;</button>`;
 
     li.innerHTML = `
+      <span class="deck-grip" title="Drag to reorder">&#8942;&#8942;</span>
       ${switchHtml}
       <div class="meta">
         <div class="name-row" style="display:inline-flex;align-items:center;gap:4px;max-width:100%">${nameCell}</div>
@@ -150,6 +200,17 @@ async function render() {
       </div>
       <button class="rm">Delete</button>
     `;
+
+    li.addEventListener("dragstart", (e) => {
+      draggedGroupEl = li;
+      li.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", cat.id);
+    });
+    li.addEventListener("dragend", () => {
+      li.classList.remove("dragging");
+      draggedGroupEl = null;
+    });
 
     if (isSynced) {
       li.querySelector("input[type=checkbox]").addEventListener("change", async (e) => {
@@ -356,6 +417,22 @@ tabBtns.forEach((btn) => {
 const hashTab = window.location.hash.replace("#", "");
 if (hashTab) switchTab(hashTab);
 
+// Red (barely known) -> green (well known), scaled straight off the same
+// "know" ratio the bar's width already encodes — so the color is never a
+// second, independently-set piece of state that could drift out of sync
+// with the number/width next to it. Hue 0 = red, 120 = green in HSL; a flat
+// linear ramp reads clearly enough at a glance without needing an eased
+// curve. Lightness is bumped for dark mode (same reasoning as the explicit
+// light/dark hex pairs on .cell-know/.cell-hint/.cell-lupa above — a color
+// tuned for a light background reads muddy on a dark one at the same
+// lightness) rather than relying on a CSS variable, since this value is
+// computed per-row in JS, not swapped via a stylesheet rule.
+function ratioColor(pct) {
+  const hue = Math.max(0, Math.min(100, pct)) * 1.2;
+  const dark = document.documentElement.getAttribute("data-theme") === "dark";
+  return `hsl(${hue}, 70%, ${dark ? 60 : 38}%)`;
+}
+
 /* ---------------------------------- stats --------------------------------- */
 
 let statsState = { categoryId: "__all__" };
@@ -452,7 +529,7 @@ async function renderStats() {
         <td class="${hintC ? "cell-hint"  : "cell-muted"}">${seen ? hintC : "—"}</td>
         <td class="${lupa  ? "cell-lupa"  : "cell-muted"}">${seen ? lupa  : "—"}</td>
         <td>${seen
-          ? `<span class="ratio-bar"><span class="ratio-fill" style="width:${pct}%"></span></span>${pct}%`
+          ? `<span class="ratio-bar"><span class="ratio-fill" style="width:${pct}%;background:${ratioColor(pct)}"></span></span><span style="color:${ratioColor(pct)};font-weight:500">${pct}%</span>`
           : '<span class="cell-muted">—</span>'}</td>
       `;
       tr.querySelector(".kanji-cell").textContent   = card.kanji;
