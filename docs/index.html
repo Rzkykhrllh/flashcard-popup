@@ -7,7 +7,7 @@
   <meta name="description" content="A Chrome extension with a personal Japanese word bank, flashcards that pop up while you browse, and highlights for the words you know on any page." />
   <meta property="og:title" content="Kotoba Bank" />
   <meta property="og:description" content="Learn Japanese vocabulary while you browse." />
-  <meta property="og:image" content="screenshots/reader.png" />
+  <meta property="og:image" content="screenshots/browsing.png" />
   <link rel="icon" href="icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -69,6 +69,8 @@
     .shot { margin: 48px auto 0; max-width: 960px; border-radius: 20px; overflow: hidden; border: 1px solid var(--line);
       box-shadow: 0 40px 80px -40px rgba(31,29,43,.45); background: var(--surface); }
     .shot img { display: block; width: 100%; height: auto; }
+    /* Screenshot already has its own browser frame and backdrop. */
+    .shot-bare { border: 0; border-radius: 0; box-shadow: none; background: none; max-width: 1040px; }
 
     section { padding: 88px 0 0; }
     .kicker { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--shu); }
@@ -156,7 +158,7 @@
         <a class="btn ghost" href="https://github.com/Rzkykhrllh/flashcard-popup">View on GitHub</a>
       </div>
       <p class="note">Free &amp; open source · No account · Your data never leaves your browser</p>
-      <div class="shot"><img src="screenshots/reader.png" alt="A Japanese news article with known words underlined and a hover card showing 乗る" width="1800" height="1120" /></div>
+      <div class="shot shot-bare"><img src="screenshots/browsing.png" alt="A Kotoba Bank flashcard popping up in the corner of an ordinary article" width="1800" height="1244" /></div>
     </header>
 
     <section>
@@ -176,6 +178,20 @@
         <div class="card c2"><div class="ico">札</div><h3>Flashcards that find you</h3><p>Every few minutes a card appears on whatever page you're on. Recall, reveal, grade — then get back to what you were doing.</p></div>
         <div class="card c3"><div class="ico">学</div><h3>A focused Study tab</h3><p>Both directions (kanji → meaning and back), keyboard-first, with undo, pause and session results.</p></div>
         <div class="card c4"><div class="ico">漢</div><h3>Kanji &amp; graph</h3><p>Every kanji across your words with on'yomi / kun'yomi, your own notes, and a graph of how your words connect.</p></div>
+      </div>
+    </section>
+
+    <section>
+      <span class="kicker">Pop-up flashcards</span>
+      <h2>Reviews that happen while you browse</h2>
+      <div class="split">
+        <ul>
+          <li><b>A card finds you.</b> Every few minutes a kanji slides in on whatever page you're on — news, video, your inbox.</li>
+          <li><b>Five seconds.</b> Recall, reveal, grade yourself, and you're back to what you were doing.</li>
+          <li><b>Smart repetition.</b> Words you forget come back more often; words you know, less.</li>
+          <li><b>On your terms.</b> Snooze it, drag it anywhere, or tap a kanji to see its readings.</li>
+        </ul>
+        <img src="screenshots/browsing-card.png" alt="The card revealed on an article: やくそく, promise, with Forgot and Known buttons" width="1460" height="1000" />
       </div>
     </section>
 

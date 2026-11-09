@@ -9,7 +9,7 @@ site and can't tell which words you've already learned.
 browse, and every word you've saved is highlighted on any Japanese page you open. No extra app to
 remember to open. Your reviews happen while you browse.
 
-![Words from your bank, highlighted on a Japanese news page](docs/screenshots/reader.png)
+![A Kotoba Bank flashcard popping up while reading an ordinary article](docs/screenshots/browsing.png)
 
 <p align="center">
   <a href="https://github.com/Rzkykhrllh/flashcard-popup/releases/latest"><b>⬇ Download for Chrome</b></a>
@@ -28,6 +28,8 @@ Every few minutes, a card slides in on whatever page you're on: news, YouTube, y
 appears, you try to recall it, reveal, grade yourself. Five seconds, and you're back to what you were
 doing.
 
+![The card revealed: reading, meaning, and Forgot / Known](docs/screenshots/browsing-card.png)
+
 - Words you keep forgetting come back more often. Words you know come back less.
 - Classic (reveal → Know / Forgot) or Tiered mode (with a reading hint first).
 - Snooze it, drag it anywhere, tap a kanji to see its readings without leaving the page.
@@ -36,6 +38,8 @@ doing.
 Open any Japanese website and the words already in your bank are underlined, coloured by how well
 you know them. Reading real Japanese stops being a wall of text: you instantly see what you've
 learned, and every time you spot a word in the wild it sticks a little better.
+
+![Words from your bank, highlighted on a Japanese news page](docs/screenshots/reader.png)
 
 - **New**, **Learning**, **Mastered**, each with its own colour.
 - Conjugated forms are recognised too: 食べた and 行った link back to 食べる and 行く.
