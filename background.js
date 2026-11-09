@@ -41,6 +41,10 @@ const DEFAULT_SETTINGS = {
   theme: "blue",
   colorMode: "system", // "system" | "light" | "dark" — manual override of prefers-color-scheme
   cardMode: "classic",
+  // Reader (reader.js — highlights bank words on web pages, hover for details).
+  readerHighlight: true,
+  readerStatuses: ["new", "learning", "mastered"],
+  readerIgnore: [], // word ids the user muted via the hover card's "Don't highlight"
 };
 
 // in-memory only; used to avoid showing the same card twice in a row.
@@ -517,6 +521,26 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           eligibleWords,
           collectionCount: state.categories.length,
         });
+        break;
+      }
+      case "getReaderIndex": {
+        // Everything reader.js needs to highlight bank words on a page —
+        // only the fields it actually renders, not the full SRS record.
+        const [state, words] = await Promise.all([getState(), getAllWords()]);
+        sendResponse({
+          settings: state.settings,
+          words: words.map((w) => ({
+            id: w.id, kanji: w.kanji, hiragana: w.hiragana, arti: w.arti, status: w.status || "new",
+          })),
+        });
+        break;
+      }
+      case "readerIgnoreWord": {
+        const { settings } = await getState();
+        const ignore = new Set(settings.readerIgnore || []);
+        if (msg.unignore) ignore.delete(msg.id); else ignore.add(msg.id);
+        await saveSettings({ readerIgnore: [...ignore] });
+        sendResponse({ ok: true });
         break;
       }
       case "getSheetTabs": {

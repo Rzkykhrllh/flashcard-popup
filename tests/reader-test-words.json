@@ -1,0 +1,316 @@
+{
+ "exportedAt": 0,
+ "_note": "Test words for tests/reader-test.html. WARNING: importing OVERWRITES any existing word with the same id (kanji|reading), including its review progress. Check the 'will be overwritten' count in the import dialog — cancel if it isn't 0, or rely on the automatic pre-import backup it downloads.",
+ "groups": [
+  {
+   "id": "reader_test",
+   "name": "Reader Test",
+   "type": "manual",
+   "sourceSheetUrl": null
+  }
+ ],
+ "words": [
+  {
+   "id": "電車|でんしゃ",
+   "kanji": "電車",
+   "hiragana": "でんしゃ",
+   "arti": "train",
+   "example": "",
+   "notes": "reader test word",
+   "kanjiList": [
+    "電",
+    "車"
+   ],
+   "seen": 6,
+   "known": 6,
+   "hint": 0,
+   "forgot": 0,
+   "lastSeen": 0,
+   "createdAt": 0,
+   "n": 4,
+   "easeFactor": 2.5,
+   "source": "manual",
+   "groupIds": [
+    "reader_test"
+   ],
+   "statusOverride": false,
+   "status": "mastered"
+  },
+  {
+   "id": "時間|じかん",
+   "kanji": "時間",
+   "hiragana": "じかん",
+   "arti": "time",
+   "example": "",
+   "notes": "reader test word",
+   "kanjiList": [
+    "時",
+    "間"
+   ],
+   "seen": 3,
+   "known": 2,
+   "hint": 0,
+   "forgot": 1,
+   "lastSeen": 0,
+   "createdAt": 0,
+   "n": 1,
+   "easeFactor": 2.5,
+   "source": "manual",
+   "groupIds": [
+    "reader_test"
+   ],
+   "statusOverride": false,
+   "status": "learning"
+  },
+  {
+   "id": "食べる|たべる",
+   "kanji": "食べる",
+   "hiragana": "たべる",
+   "arti": "to eat",
+   "example": "",
+   "notes": "reader test word",
+   "kanjiList": [
+    "食"
+   ],
+   "seen": 2,
+   "known": 1,
+   "hint": 0,
+   "forgot": 1,
+   "lastSeen": 0,
+   "createdAt": 0,
+   "n": 1,
+   "easeFactor": 2.5,
+   "source": "manual",
+   "groupIds": [
+    "reader_test"
+   ],
+   "statusOverride": false,
+   "status": "learning"
+  },
+  {
+   "id": "行く|いく",
+   "kanji": "行く",
+   "hiragana": "いく",
+   "arti": "to go",
+   "example": "",
+   "notes": "reader test word",
+   "kanjiList": [
+    "行"
+   ],
+   "seen": 0,
+   "known": 0,
+   "hint": 0,
+   "forgot": 0,
+   "lastSeen": 0,
+   "createdAt": 0,
+   "n": 0,
+   "easeFactor": 2.5,
+   "source": "manual",
+   "groupIds": [
+    "reader_test"
+   ],
+   "statusOverride": false,
+   "status": "new"
+  },
+  {
+   "id": "勉強する|べんきょうする",
+   "kanji": "勉強する",
+   "hiragana": "べんきょうする",
+   "arti": "to study",
+   "example": "",
+   "notes": "reader test word",
+   "kanjiList": [
+    "勉",
+    "強"
+   ],
+   "seen": 4,
+   "known": 3,
+   "hint": 0,
+   "forgot": 1,
+   "lastSeen": 0,
+   "createdAt": 0,
+   "n": 2,
+   "easeFactor": 2.5,
+   "source": "manual",
+   "groupIds": [
+    "reader_test"
+   ],
+   "statusOverride": false,
+   "status": "learning"
+  },
+  {
+   "id": "雨|あめ",
+   "kanji": "雨",
+   "hiragana": "あめ",
+   "arti": "rain",
+   "example": "",
+   "notes": "reader test word",
+   "kanjiList": [
+    "雨"
+   ],
+   "seen": 0,
+   "known": 0,
+   "hint": 0,
+   "forgot": 0,
+   "lastSeen": 0,
+   "createdAt": 0,
+   "n": 0,
+   "easeFactor": 2.5,
+   "source": "manual",
+   "groupIds": [
+    "reader_test"
+   ],
+   "statusOverride": false,
+   "status": "new"
+  },
+  {
+   "id": "約束|やくそく",
+   "kanji": "約束",
+   "hiragana": "やくそく",
+   "arti": "promise",
+   "example": "",
+   "notes": "reader test word",
+   "kanjiList": [
+    "約",
+    "束"
+   ],
+   "seen": 5,
+   "known": 5,
+   "hint": 0,
+   "forgot": 0,
+   "lastSeen": 0,
+   "createdAt": 0,
+   "n": 3,
+   "easeFactor": 2.5,
+   "source": "manual",
+   "groupIds": [
+    "reader_test"
+   ],
+   "statusOverride": false,
+   "status": "mastered"
+  },
+  {
+   "id": "乗る|のる",
+   "kanji": "乗る",
+   "hiragana": "のる",
+   "arti": "to ride, board",
+   "example": "",
+   "notes": "reader test word",
+   "kanjiList": [
+    "乗"
+   ],
+   "seen": 2,
+   "known": 1,
+   "hint": 0,
+   "forgot": 1,
+   "lastSeen": 0,
+   "createdAt": 0,
+   "n": 0,
+   "easeFactor": 2.5,
+   "source": "manual",
+   "groupIds": [
+    "reader_test"
+   ],
+   "statusOverride": false,
+   "status": "learning"
+  },
+  {
+   "id": "美しい|うつくしい",
+   "kanji": "美しい",
+   "hiragana": "うつくしい",
+   "arti": "beautiful",
+   "example": "",
+   "notes": "reader test word",
+   "kanjiList": [
+    "美"
+   ],
+   "seen": 0,
+   "known": 0,
+   "hint": 0,
+   "forgot": 0,
+   "lastSeen": 0,
+   "createdAt": 0,
+   "n": 0,
+   "easeFactor": 2.5,
+   "source": "manual",
+   "groupIds": [
+    "reader_test"
+   ],
+   "statusOverride": false,
+   "status": "new"
+  },
+  {
+   "id": "時々|ときどき",
+   "kanji": "時々",
+   "hiragana": "ときどき",
+   "arti": "sometimes",
+   "example": "",
+   "notes": "reader test word",
+   "kanjiList": [
+    "時"
+   ],
+   "seen": 0,
+   "known": 0,
+   "hint": 0,
+   "forgot": 0,
+   "lastSeen": 0,
+   "createdAt": 0,
+   "n": 0,
+   "easeFactor": 2.5,
+   "source": "manual",
+   "groupIds": [
+    "reader_test"
+   ],
+   "statusOverride": false,
+   "status": "new"
+  },
+  {
+   "id": "時|とき",
+   "kanji": "時",
+   "hiragana": "とき",
+   "arti": "time, moment",
+   "example": "",
+   "notes": "reader test word",
+   "kanjiList": [
+    "時"
+   ],
+   "seen": 0,
+   "known": 0,
+   "hint": 0,
+   "forgot": 0,
+   "lastSeen": 0,
+   "createdAt": 0,
+   "n": 0,
+   "easeFactor": 2.5,
+   "source": "manual",
+   "groupIds": [
+    "reader_test"
+   ],
+   "statusOverride": false,
+   "status": "new"
+  },
+  {
+   "id": "とても|とても",
+   "kanji": "とても",
+   "hiragana": "とても",
+   "arti": "very",
+   "example": "",
+   "notes": "reader test word",
+   "kanjiList": [],
+   "seen": 0,
+   "known": 0,
+   "hint": 0,
+   "forgot": 0,
+   "lastSeen": 0,
+   "createdAt": 0,
+   "n": 0,
+   "easeFactor": 2.5,
+   "source": "manual",
+   "groupIds": [
+    "reader_test"
+   ],
+   "statusOverride": false,
+   "status": "new"
+  }
+ ]
+}

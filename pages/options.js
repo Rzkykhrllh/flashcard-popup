@@ -161,6 +161,7 @@ async function render() {
   enabledInput.checked   = !!state.settings.enabled;
   showHiragana.checked   = state.settings.showHiragana !== false;
   showFurigana.checked   = !!state.settings.showFurigana;
+  renderReaderSettings(state.settings);
   currentTheme = state.settings.theme || "blue";
   applyColorMode(state.settings.colorMode || "system"); // also applies the accent (currentTheme)
   applyActivePos(cardPosition);
@@ -359,6 +360,34 @@ enabledInput.addEventListener("change", () =>
 showHiragana.addEventListener("change", () =>
   send({ type: "updateSettings", patch: { showHiragana: showHiragana.checked } })
 );
+
+/* ------------------------ reading on web pages ------------------------- */
+// reader.js picks these up live via chrome.storage.onChanged — no reload.
+const readerHighlightInput = el("readerHighlight");
+const readerStatusInputs   = document.querySelectorAll("#readerStatuses input");
+const readerIgnoreLabel    = el("readerIgnoreLabel");
+const readerIgnoreClear    = el("readerIgnoreClear");
+
+function renderReaderSettings(settings) {
+  readerHighlightInput.checked = settings.readerHighlight !== false;
+  const statuses = settings.readerStatuses || ["new", "learning", "mastered"];
+  readerStatusInputs.forEach((cb) => { cb.checked = statuses.includes(cb.value); });
+  const n = (settings.readerIgnore || []).length;
+  readerIgnoreLabel.textContent = n ? `Hidden words: ${n}` : "Hidden words: none";
+  readerIgnoreClear.disabled = !n;
+}
+
+readerHighlightInput.addEventListener("change", () =>
+  send({ type: "updateSettings", patch: { readerHighlight: readerHighlightInput.checked } })
+);
+readerStatusInputs.forEach((cb) => cb.addEventListener("change", () => {
+  const statuses = [...readerStatusInputs].filter((x) => x.checked).map((x) => x.value);
+  send({ type: "updateSettings", patch: { readerStatuses: statuses } });
+}));
+readerIgnoreClear.addEventListener("click", async () => {
+  const { settings } = await send({ type: "updateSettings", patch: { readerIgnore: [] } });
+  renderReaderSettings(settings);
+});
 
 showFurigana.addEventListener("change", () =>
   send({ type: "updateSettings", patch: { showFurigana: showFurigana.checked } })

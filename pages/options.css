@@ -340,6 +340,21 @@ html[data-theme="dark"] .btn.primary:hover { background: color-mix(in srgb, var(
 .mode-label { font-weight: 650; font-size: 14px; margin-bottom: 4px; color: var(--ink); }
 .mode-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
 
+/* Reader status picker — same chip look as the Words tab's status filter. */
+.reader-statuses { display: flex; gap: 8px; flex-wrap: wrap; }
+.reader-status {
+  --c: var(--shu); --c-soft: var(--shu-soft); --c-ink: var(--shu-ink);
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;
+  border: 1px solid var(--line-2); background: var(--surface); color: var(--ink-2);
+  border-radius: 999px; padding: 7px 14px 7px 11px; font: 550 13px var(--font-ui);
+  transition: background .15s, color .15s, box-shadow .15s;
+}
+.reader-status[data-status="new"]      { --c: var(--new);  --c-soft: var(--new-soft);  --c-ink: var(--new-ink); }
+.reader-status[data-status="learning"] { --c: var(--hint); --c-soft: var(--hint-soft); --c-ink: var(--hint-ink); }
+.reader-status[data-status="mastered"] { --c: var(--know); --c-soft: var(--know-soft); --c-ink: var(--know-ink); }
+.reader-status input[type="checkbox"] { accent-color: var(--c); margin: 0; }
+.reader-status:has(input:checked) { border-color: transparent; background: var(--c-soft); color: var(--c-ink); box-shadow: 0 0 0 1.5px var(--c) inset; }
+
 .credit { font-size: 12px; color: var(--muted); text-align: center; margin-top: 40px; }
 .credit a { color: var(--muted); text-decoration: none; }
 .credit a:hover { color: var(--shu-ink); }

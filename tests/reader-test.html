@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reader test page — Kotoba Bank</title>
+  <style>
+    :root { color-scheme: light; }
+    body { font: 16px/1.8 -apple-system, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; max-width: 760px; margin: 40px auto 120px; padding: 0 20px; color: #222; background: #fafafa; }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    h2 { font-size: 15px; margin: 36px 0 6px; color: #555; font-family: -apple-system, sans-serif; }
+    .how { font: 13px/1.6 -apple-system, sans-serif; color: #555; background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; padding: 14px 18px; }
+    .how code { background: #f1f1f1; padding: 1px 5px; border-radius: 4px; }
+    .expect { font: 12px/1.5 -apple-system, sans-serif; color: #777; margin-top: 4px; }
+    .expect b { color: #333; }
+    p.jp { font-size: 19px; margin: 6px 0 0; }
+    .dark { background: #16151c; color: #e9e8ee; padding: 14px 18px; border-radius: 10px; }
+    textarea, input { font-size: 17px; width: 100%; padding: 8px; box-sizing: border-box; }
+    button { font-size: 14px; padding: 8px 14px; cursor: pointer; }
+    ruby rt { font-size: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Kotoba Bank — reader test page</h1>
+  <div class="how">
+    <b>Setup:</b> load the extension (unpacked), then either
+    (a) keep your own bank — sections will highlight whichever of these words you already have, or
+    (b) Words tab → <b>Import JSON</b> → <code>tests/reader-test-words.json</code> (collection "Reader Test").
+    <b>Check the overwrite count in the import dialog</b> — importing replaces any existing word with the same kanji|reading, including its progress.<br />
+    <b>Open this page</b> over http (<code>python3 -m http.server</code> in the repo root, then
+    <code>http://localhost:8000/tests/reader-test.html</code>), or via file:// after enabling
+    "Allow access to file URLs" for the extension in <code>chrome://extensions</code>.<br />
+    <b>Legend:</b> solid underline + tint = exact word from your bank; dashed underline = similar (probably conjugated) form.
+    Colour = status: indigo New · amber Learning · green Mastered. Hover any highlight for its card.
+  </div>
+
+  <h2>1 · Exact matches</h2>
+  <p class="jp">毎朝、電車で会社に行く。友達と約束がある。雨が降っている。</p>
+  <p class="expect">Expect: <b>電車</b> (green), <b>行く</b> (indigo), <b>約束</b> (green), <b>雨</b> (indigo) — all solid.</p>
+
+  <h2>2 · Conjugated forms → "similar"</h2>
+  <p class="jp">昨日はすしを食べた。まだ食べられない。学校に行った。日本語を勉強しました。バスに乗って帰った。とても美しかった。</p>
+  <p class="expect">Expect dashed: <b>食べた</b>, <b>食べられない</b>, <b>行った</b>, <b>勉強しました</b>, <b>乗って</b>, <b>美しかった</b>. Hover → "similar form · maybe a form of …".</p>
+
+  <h2>3 · Should NOT match (noise rules)</h2>
+  <p class="jp">行動する。雨天中止。大雨です。旅行った。</p>
+  <p class="expect">Expect <b>nothing</b>: 行動 isn't 行く (kanji after the stem), 雨 inside 雨天/大雨 (single kanji next to kanji), 行 after 旅.</p>
+
+  <h2>4 · Longest match wins</h2>
+  <p class="jp">時間がない。時々散歩する。その時、電話が鳴った。</p>
+  <p class="expect">Expect: <b>時間</b> (not 時), <b>時々</b> (not 時), and <b>時</b> alone in 「その時、」.</p>
+
+  <h2>5 · Kana-only words are ignored</h2>
+  <p class="jp">とてもいい天気ですね。</p>
+  <p class="expect">Expect: <b>とても</b> NOT highlighted (rule B), even though it's in the test bank.</p>
+
+  <h2>6 · Inside other markup</h2>
+  <p class="jp"><b>電車</b>に<i>乗る</i>。<a href="#">約束</a>を守る。<ruby>雨<rt>あめ</rt></ruby>が好き。</p>
+  <p class="expect">Expect: bold/italic/link words still highlight. Known limit: words split across elements (e.g. <code>食&lt;b&gt;べる&lt;/b&gt;</code>) won't.</p>
+
+  <h2>7 · Form fields are left alone</h2>
+  <textarea rows="2">電車に乗る時間です</textarea>
+  <input value="約束を守る" />
+  <p class="expect">Expect: no highlight inside the textarea / input.</p>
+
+  <h2>8 · Dark background</h2>
+  <div class="dark"><p class="jp">電車の時間を勉強した。美しい雨。</p></div>
+  <p class="expect">Expect: highlights stay readable on dark backgrounds.</p>
+
+  <h2>9 · Dynamic content (SPA / infinite scroll)</h2>
+  <button id="addBtn">Add a paragraph</button>
+  <button id="editBtn">Change its text</button>
+  <div id="dyn"></div>
+  <p class="expect">Expect: new paragraph highlights within ~½ s; changed text re-highlights (old highlight gone).</p>
+
+  <h2>10 · Long page</h2>
+  <button id="bulkBtn">Add 2,000 lines</button>
+  <div id="bulk"></div>
+  <p class="expect">Expect: scrolling stays smooth while highlights fill in.</p>
+
+  <script>
+    const dyn = document.getElementById("dyn");
+    let last = null;
+    document.getElementById("addBtn").onclick = () => {
+      last = document.createElement("p");
+      last.className = "jp";
+      last.textContent = "新しい段落：電車に乗って、時間通りに着いた。";
+      dyn.appendChild(last);
+    };
+    document.getElementById("editBtn").onclick = () => {
+      if (last) last.firstChild.data = "書き換え：雨の日は食べない。";
+    };
+    document.getElementById("bulkBtn").onclick = () => {
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < 2000; i++) {
+        const p = document.createElement("p");
+        p.textContent = `${i + 1}. 毎日電車で行く。時間を守って約束した。昨日は雨だったので、家で勉強しました。`;
+        frag.appendChild(p);
+      }
+      document.getElementById("bulk").appendChild(frag);
+    };
+  </script>
+</body>
+</html>

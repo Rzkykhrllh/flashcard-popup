@@ -28,6 +28,11 @@
       "matches": ["<all_urls>"],
       "js": ["core/kanji.js", "content.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["core/reader-match.js", "reader.js"],
+      "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [

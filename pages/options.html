@@ -92,6 +92,33 @@
           to rename. "Sync all" only touches decks with a Google Sheet attached — everything stays local to this browser.</p>
       </section>
 
+      <div class="settings-section-label">Reading on web pages</div>
+
+      <section class="panel">
+        <h2>Highlight words from your bank</h2>
+        <div class="setting">
+          <label for="readerHighlight">Highlight on Japanese pages <span class="label-note">hover for details</span></label>
+          <label class="switch">
+            <input id="readerHighlight" type="checkbox" />
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="setting-group">
+          <div class="setting-label">Which words</div>
+          <div class="reader-statuses" id="readerStatuses">
+            <label class="reader-status" data-status="new"><input type="checkbox" value="new" /> New</label>
+            <label class="reader-status" data-status="learning"><input type="checkbox" value="learning" /> Learning</label>
+            <label class="reader-status" data-status="mastered"><input type="checkbox" value="mastered" /> Mastered</label>
+          </div>
+          <p class="hint">Solid underline = the exact word. Dashed = a similar (probably conjugated) form, e.g.
+            食べた for 食べる. Only words with kanji are highlighted.</p>
+        </div>
+        <div class="setting">
+          <label id="readerIgnoreLabel">Hidden words</label>
+          <button class="btn" id="readerIgnoreClear">Show all again</button>
+        </div>
+      </section>
+
       <div class="settings-section-label">Flashcard popup</div>
 
       <section class="panel">
