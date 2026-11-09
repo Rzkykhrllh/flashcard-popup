@@ -7,22 +7,28 @@
   </head>
   <body>
     <div class="head">
-      <span class="seal"></span>
-      <h1>Nihongo Popup</h1>
+      <span class="seal" aria-hidden="true">言</span>
+      <div class="head-text">
+        <h1>Kotoba Bank</h1>
+        <p class="sync" id="collectionStatus"></p>
+      </div>
     </div>
 
     <div class="stats">
-      <div class="stat"><span class="num" id="wordCount">—</span><span class="lbl">words</span></div>
-      <div class="stat"><span class="num" id="learningCount">—</span><span class="lbl">learning</span></div>
+      <div class="stat stat-words"><span class="num" id="wordCount">—</span><span class="lbl">words</span></div>
+      <div class="stat stat-learning"><span class="num" id="learningCount">—</span><span class="lbl">in rotation</span></div>
+      <div class="meter" aria-hidden="true"><span class="meter-fill" id="rotationMeter"></span></div>
     </div>
-    <p class="sync" id="collectionStatus"></p>
 
-    <button class="btn primary" id="quizBtn">Show card now</button>
-    <button class="btn" id="addWordShortcut">Add word</button>
-    <button class="btn ghost" id="openBankBtn">Open Kotoba Bank</button>
+    <button class="btn primary" id="quizBtn"><span class="btn-ico" aria-hidden="true">▶</span>Show card now</button>
+    <div class="btn-pair">
+      <button class="btn" id="addWordShortcut"><span class="btn-ico" aria-hidden="true">＋</span>Add word</button>
+      <button class="btn" id="openBankBtn"><span class="btn-ico" aria-hidden="true">↗</span>Open bank</button>
+    </div>
 
     <div class="quick-add" id="quickAdd">
-      <input id="qaKanji" type="text" placeholder="Kanji" autocomplete="off" />
+      <div class="qa-title">New word</div>
+      <input id="qaKanji" class="qa-kanji" type="text" placeholder="漢字" autocomplete="off" />
       <input id="qaHiragana" type="text" placeholder="Reading (hiragana)" autocomplete="off" />
       <input id="qaArti" type="text" placeholder="Meaning" autocomplete="off" />
       <textarea id="qaNotes" rows="2" placeholder="Notes (optional)"></textarea>
@@ -36,7 +42,7 @@
           <input id="qaIncludeInStudy" type="checkbox" checked />
           <span class="slider"></span>
         </span>
-        <span id="qaIncludeLabelText">Include in current learning (Study &amp; popup)</span>
+        <span id="qaIncludeLabelText">Include in Study &amp; popup</span>
       </label>
       <p id="qaStatus" class="qa-status"></p>
       <div class="btn-row">
@@ -45,9 +51,10 @@
       </div>
     </div>
 
-    <p class="state" id="enabledState"></p>
-
-    <p class="credit">by <a href="https://dev.byairu.com" target="_blank">dev.byairu.com</a></p>
+    <div class="foot">
+      <p class="state" id="enabledState"></p>
+      <p class="credit"><a href="https://dev.byairu.com" target="_blank">dev.byairu.com</a></p>
+    </div>
     <script src="../core/db.js"></script>
     <script src="../core/kanji.js"></script>
     <script src="popup.js"></script>

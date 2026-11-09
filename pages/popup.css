@@ -1,158 +1,220 @@
-/* Same neutral scale as options.css (kept in sync by hand — see the comment
-   there for why --muted/--ink-2 are split and contrast-checked). Theme is
-   picked by JS via [data-theme] on <html> — no @media(prefers-color-scheme)
-   here, matching options.css's architecture (see that file's top comment). */
+/* popup.css — toolbar popup. Same tokens as options.css (kept in sync by
+   hand — the two pages never load together). Theme is picked by JS via
+   [data-theme] on <html> and a theme-* class on <body>; there is no
+   @media(prefers-color-scheme) here on purpose (see options.css). */
 :root {
-  --paper: #f7f7f6;
-  --ink: #1c1c1c;
-  --ink-2: #4b4b4b;
-  --muted: #6b6b6b;
-  --shu: #2563eb;
-  --line: rgba(0, 0, 0, 0.10);
-  --surface: #eeeeec;
+  --paper: #f6f4f0;
+  --surface: #ffffff;
+  --surface-2: #f1eee8;
+  --ink: #1f1d2b;
+  --ink-2: #4a4757;
+  --muted: #696676;
+  --line: rgba(31, 29, 43, 0.08);
+  --line-2: rgba(31, 29, 43, 0.15);
+  --know: #16a34a; --know-soft: #e6f6ec; --know-ink: #15693a;
+  --hint: #d97706;
+  --forgot: #e11d48;
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", sans-serif;
+  --font-jp: "Hiragino Maru Gothic ProN", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif;
+  color-scheme: light;
 }
 html[data-theme="dark"] {
-  --paper: #1e1e1e;
-  --ink: #ededed;
-  --ink-2: #c2c2c2;
-  --muted: #a6a6a6;
-  --shu: #3b82f6;
-  --line: rgba(255, 255, 255, 0.12);
-  --surface: #363636;
+  --paper: #121118;
+  --surface: #1b1a23;
+  --surface-2: #262531;
+  --ink: #eceaf3;
+  --ink-2: #c5c2d1;
+  --muted: #9d9aad;
+  --line: rgba(255, 255, 255, 0.07);
+  --line-2: rgba(255, 255, 255, 0.14);
+  --know: #34d399; --know-soft: rgba(52, 211, 153, 0.14); --know-ink: #6ee7b7;
+  --hint: #fbbf24;
+  --forgot: #fb7185;
+  color-scheme: dark;
 }
 
-/* Matches the "Color theme" picker in Settings and the flashcard overlay's
-   own ACCENT map (content.js) — kept in sync by hand, same 4 colors. */
-body.theme-blue   { --shu: #2563eb; }
-body.theme-red    { --shu: #d34533; }
-body.theme-purple { --shu: #7c3aed; }
-body.theme-green  { --shu: #16a34a; }
+/* Matches Settings' "Color theme" picker and content.js's ACCENT map. */
+body              { --shu: #2563eb; --shu-d: #1d4ed8; }
+body.theme-blue   { --shu: #2563eb; --shu-d: #1d4ed8; }
+body.theme-red    { --shu: #d34533; --shu-d: #b23a26; }
+body.theme-purple { --shu: #7c3aed; --shu-d: #6d28d9; }
+body.theme-green  { --shu: #16a34a; --shu-d: #15803d; }
 html[data-theme="dark"] body.theme-blue   { --shu: #3b82f6; }
 html[data-theme="dark"] body.theme-red    { --shu: #e06a55; }
 html[data-theme="dark"] body.theme-purple { --shu: #a78bfa; }
 html[data-theme="dark"] body.theme-green  { --shu: #4ade80; }
+body {
+  --shu-soft: color-mix(in srgb, var(--shu) 11%, var(--surface));
+  --shu-ink: color-mix(in srgb, var(--shu) 82%, var(--ink));
+  --ring: color-mix(in srgb, var(--shu) 30%, transparent);
+}
+html[data-theme="dark"] body {
+  --shu-soft: color-mix(in srgb, var(--shu) 18%, var(--surface));
+  --shu-ink: color-mix(in srgb, var(--shu) 70%, #fff);
+}
 
 * { box-sizing: border-box; margin: 0; }
-/* Chrome sizes an extension action popup's actual WINDOW to the page's
-   scrollWidth/scrollHeight, not to body's own CSS box — if anything inside
-   ever overflows body's fixed 268px (even briefly, e.g. right after the
-   quick-add form's height/content changes post-load), Chrome can widen the
-   real popup window to fit that overflow while body itself stays drawn at
-   268px, left-aligned — exactly the "content hugs the left, dead space on
-   the right" look reported after opening quick-add. overflow-x: hidden on
-   both html and body clips scrollWidth to what's actually visible, so an
-   overflowing descendant can never blow up the window size like that. */
+/* Chrome sizes the popup WINDOW to scrollWidth, not body's CSS box — any
+   overflowing descendant would widen the window and leave dead space on the
+   right. overflow-x: hidden on html and body clips that. */
 html { overflow-x: hidden; background: var(--paper); }
 body {
-  width: 268px;
-  padding: 16px;
+  width: 300px;
+  padding: 18px;
   overflow-x: hidden;
-  background: var(--paper);
+  background:
+    radial-gradient(260px 160px at 0% 0%, color-mix(in srgb, var(--shu) 16%, transparent), transparent 75%),
+    var(--paper);
   color: var(--ink);
-  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", -apple-system,
-    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font: 13px/1.45 var(--font-ui);
+  -webkit-font-smoothing: antialiased;
 }
-.head { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; }
-.head h1 { font-size: 15px; font-weight: 600; }
-.seal { width: 12px; height: 12px; border-radius: 3px; background: var(--shu); }
 
-.stats { display: flex; gap: 10px; margin-bottom: 12px; }
+/* header */
+.head { display: flex; align-items: center; gap: 11px; margin-bottom: 16px; }
+.seal {
+  width: 34px; height: 34px; border-radius: 10px; flex: none;
+  display: grid; place-items: center;
+  background: linear-gradient(140deg, color-mix(in srgb, var(--shu) 78%, #fff), var(--shu) 55%, var(--shu-d));
+  color: #fff; font: 700 18px/1 var(--font-jp);
+  box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--shu) 75%, transparent);
+}
+.head h1 { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
+.sync { font-size: 12px; color: var(--muted); }
+
+/* stats — two tiles + a rotation meter spanning both */
+.stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;
+}
 .stat {
-  flex: 1; background: var(--surface); border-radius: 10px; padding: 10px 12px;
-  display: flex; flex-direction: column; gap: 2px;
+  border-radius: 14px; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 4px;
+  border: 1px solid var(--line);
 }
-.num { font-size: 22px; font-weight: 600; line-height: 1; }
-.lbl { font-size: 11px; color: var(--muted); }
+.stat-words { background: var(--shu-soft); }
+.stat-words .num { color: var(--shu-ink); }
+.stat-learning { background: var(--know-soft); }
+.stat-learning .num { color: var(--know-ink); }
+.num { font-size: 24px; font-weight: 750; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.lbl { font-size: 11px; font-weight: 600; color: var(--ink-2); }
+.meter { grid-column: 1 / -1; height: 5px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.meter-fill {
+  display: block; height: 100%; width: 0; border-radius: 99px;
+  background: linear-gradient(90deg, var(--shu), var(--know));
+  transition: width .4s cubic-bezier(.2,.8,.2,1);
+}
 
-.sync { font-size: 12px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
-
+/* buttons */
 .btn {
-  width: 100%; border: 1px solid var(--line); background: transparent; color: var(--ink);
-  border-radius: 10px; padding: 10px; font-size: 13px; font-weight: 500;
-  cursor: pointer; margin-bottom: 8px; font-family: inherit;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink);
+  border-radius: 11px; padding: 10px 12px; font: 600 13px var(--font-ui);
+  cursor: pointer; margin-bottom: 8px;
+  transition: background .15s, border-color .15s, transform .08s, box-shadow .15s;
 }
-.btn:hover { background: var(--surface); }
-.btn.primary { background: var(--shu); color: #fff; border-color: var(--shu); }
-.btn.primary:hover { filter: brightness(0.94); }
+.btn:hover { background: var(--surface-2); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+.btn.primary {
+  background: var(--shu); color: #fff; border-color: transparent; padding: 12px;
+  font-size: 14px;
+  box-shadow: 0 8px 18px -10px color-mix(in srgb, var(--shu) 85%, transparent);
+}
+.btn.primary:hover { background: var(--shu-d); }
+html[data-theme="dark"] .btn.primary { color: #14131a; }
+html[data-theme="dark"] .btn.primary:hover { background: color-mix(in srgb, var(--shu) 85%, #fff); }
 .btn.ghost { color: var(--muted); }
-.btn:disabled { opacity: 0.55; cursor: default; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btn-ico { font-size: 11px; opacity: .85; }
+.btn:not(.primary) .btn-ico { color: var(--shu-ink); font-size: 13px; }
 
-.btn-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.btn-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn-pair .btn { margin-bottom: 0; }
+
+.btn-row { display: flex; gap: 8px; margin-top: 4px; }
 .btn-row .btn { margin-bottom: 0; }
 
-/* Quick-add — inline, opens independently when "Add word" is clicked. */
-.quick-add { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
-.quick-add.open { display: block; }
+/* quick-add */
+.quick-add {
+  display: none; margin-top: 12px; padding: 14px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 10px 24px -16px rgba(0, 0, 0, .3);
+}
+.quick-add.open { display: block; animation: rise .18s ease; }
+@keyframes rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.qa-title { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--shu-ink); margin-bottom: 10px; }
 .quick-add input, .quick-add select, .quick-add textarea {
-  display: block; width: 100%; border: 1px solid var(--line); background: var(--paper); color: var(--ink);
-  border-radius: 8px; padding: 8px 10px; font-size: 13px; font-family: inherit;
-  margin-bottom: 6px; resize: vertical;
+  display: block; width: 100%; border: 1px solid var(--line-2); background: var(--paper); color: var(--ink);
+  border-radius: 9px; padding: 8px 11px; font: 13px var(--font-ui);
+  margin-bottom: 7px; resize: vertical; transition: border-color .15s, box-shadow .15s;
 }
+.quick-add input::placeholder, .quick-add textarea::placeholder { color: var(--muted); opacity: .8; }
 .quick-add input:focus, .quick-add select:focus, .quick-add textarea:focus {
-  outline: 2px solid var(--shu); outline-offset: -1px;
+  outline: none; border-color: var(--shu); box-shadow: 0 0 0 3px var(--ring);
 }
-.qa-status { font-size: 11px; color: var(--muted); min-height: 14px; margin: 0 0 6px; }
+.quick-add .qa-kanji { font: 500 20px var(--font-jp); padding: 8px 11px; }
+.qa-status { font-size: 11px; color: var(--forgot); min-height: 0; margin: 0 0 6px; }
+.qa-status:empty { margin: 0; }
 
 .field-check {
-  display: flex; align-items: center; gap: 6px; margin: 0 0 8px;
+  display: flex; align-items: center; gap: 9px; margin: 4px 0 10px;
   font-size: 12px; color: var(--ink-2); cursor: pointer;
 }
 .field-check input { display: inline; width: auto; margin: 0; }
 
-/* "In Study" toggle — same component/markup/class names as options.css's
-   .switch/.slider (the per-collection enable toggle in Settings started
-   this pattern; the Words tab, word-editor modal, and Study tab's browse
-   table all reuse it too — see vocab-bank.css's comment for the full
-   rationale). Duplicated here rather than shared since popup.css and
-   options.css are two independent stylesheets/pages that never load
-   together — kept pixel-identical on purpose so the toggle looks the same
-   whether you're in the popup's quick-add or anywhere in the full options
-   page. --surface-2 doesn't exist in this file's :root, so --surface
-   stands in for it (the muted/undersaturated surface tone either way). */
-.switch { position: relative; display: inline-block; width: 40px; height: 22px; flex: none; }
-.switch input { opacity: 0; width: 0; height: 0; }
-.slider { position: absolute; inset: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; transition: .15s; cursor: pointer; }
-.slider::before { content: ""; position: absolute; width: 16px; height: 16px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: .15s; }
-.switch input:checked + .slider { background: var(--shu); border-color: var(--shu); }
-.switch input:checked + .slider::before { transform: translateX(18px); }
+/* Same switch as options.css — kept pixel-identical by hand. */
+.switch { position: relative; display: inline-block; width: 38px; height: 22px; flex: none; }
+.switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.slider { position: absolute; inset: 0; background: var(--line-2); border-radius: 999px; transition: background .18s; cursor: pointer; }
+.slider::before {
+  content: ""; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px;
+  background: #fff; border-radius: 50%; transition: transform .18s cubic-bezier(.3,.7,.4,1.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+}
+.switch input:checked + .slider { background: var(--shu); }
+.switch input:checked + .slider::before { transform: translateX(16px); }
 
 .group-checklist {
-  display: flex; flex-direction: column; gap: 1px; margin-bottom: 6px;
-  max-height: 110px; overflow-y: auto; border: 1px solid var(--line);
-  border-radius: 8px; padding: 4px 8px; background: var(--paper);
+  display: flex; flex-direction: column; gap: 1px; margin-bottom: 7px;
+  max-height: 120px; overflow-y: auto; border: 1px solid var(--line-2);
+  border-radius: 9px; padding: 4px; background: var(--paper);
 }
 .group-check-row {
-  display: flex; align-items: center; gap: 5px; padding: 4px 2px;
-  font-size: 12px; color: var(--ink);
+  display: flex; align-items: center; gap: 7px; padding: 5px 6px; border-radius: 7px;
+  font-size: 12px; font-weight: 500; color: var(--ink);
 }
-.group-check-row input[type="checkbox"] { display: inline; width: auto; margin: 0; flex: none; }
+.group-check-row:hover { background: var(--surface); }
+.group-check-row input[type="checkbox"] { display: inline; width: auto; margin: 0; flex: none; accent-color: var(--shu); }
 .group-check-label { flex: 1; cursor: pointer; }
+.group-check-row .empty, .group-checklist .empty { font-size: 12px; color: var(--muted); padding: 4px 6px; }
 .group-rename-btn, .group-rename-save, .group-rename-cancel {
   flex: none; border: none; background: transparent; cursor: pointer;
-  font-size: 12px; color: var(--muted); padding: 2px 4px; border-radius: 5px; line-height: 1;
+  font-size: 12px; color: var(--muted); padding: 3px 5px; border-radius: 5px; line-height: 1;
 }
-.group-rename-btn:hover, .group-rename-save:hover, .group-rename-cancel:hover {
-  background: var(--surface); color: var(--ink);
+.group-check-row .group-rename-btn { opacity: 0; }
+.group-check-row:hover .group-rename-btn { opacity: 1; }
+.group-rename-btn:hover, .group-rename-save:hover, .group-rename-cancel:hover { background: var(--surface-2); color: var(--ink); }
+.quick-add .group-rename-input {
+  flex: 1; width: auto; margin: 0; padding: 3px 6px; font-size: 12px; border-radius: 6px;
 }
-.group-rename-input {
-  flex: 1; width: auto; margin: 0; border: 1px solid var(--line);
-  background: var(--paper); color: var(--ink); border-radius: 6px;
-  padding: 2px 5px; font-size: 12px; font-family: inherit;
-}
-/* Was a side-by-side flex row — turns out .btn's own base rule sets
-   width:100%, and with flex:none (flex-shrink:0) on the button, it refused
-   to shrink below that 100%-of-row width while the input ALSO wanted
-   space, overflowing the 236px content box. With overflow-x:hidden now on
-   html/body (see the note up top), that overflow silently clipped the Add
-   button off-screen instead of visibly widening the popup like before.
-   Stacking the two instead — full-width input on top, full-width button
-   below — sidesteps the whole "two things competing for one row" problem. */
-.group-new-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px; }
-.group-new-row input { width: 100%; margin-bottom: 0; }
-.group-new-row .btn { width: 100%; margin-bottom: 0; padding: 8px 12px; font-size: 13px; }
+/* Grid, not flex: .btn's base width:100% made a flex row overflow the
+   popup's content box (see the overflow note at the top). A 1fr/auto grid
+   with min-width:0 on the input can't overflow. */
+.group-new-row { display: grid; grid-template-columns: 1fr auto; gap: 6px; margin-bottom: 8px; }
+.group-new-row input { margin-bottom: 0; min-width: 0; }
+.group-new-row .btn { width: auto; margin-bottom: 0; padding: 7px 12px; font-size: 12px; }
 
-.state { font-size: 11px; color: var(--muted); text-align: center; margin-top: 6px; min-height: 14px; }
-
-.credit { font-size: 10px; color: var(--muted); text-align: center; margin-top: 10px; }
+/* footer */
+.foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line);
+}
+.state { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 600; color: var(--ink-2); }
+.state::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.state:empty::before { display: none; }
+.state[data-state="on"]::before { background: var(--know); box-shadow: 0 0 0 3px color-mix(in srgb, var(--know) 22%, transparent); }
+.state[data-state="snoozed"]::before { background: var(--hint); }
+.state[data-state="off"]::before { background: var(--forgot); }
+.credit { font-size: 10px; color: var(--muted); }
 .credit a { color: var(--muted); text-decoration: none; }
-.credit a:hover { color: var(--shu); }
+.credit a:hover { color: var(--shu-ink); }

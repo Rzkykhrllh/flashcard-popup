@@ -115,13 +115,22 @@
     // this style block is rebuilt fresh on every card render anyway.
     const isDark = settings.colorMode === "dark"
       || (settings.colorMode !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+    // Same neutral + semantic palette as pages/options.css (kept in sync by
+    // hand). Grade buttons use fixed semantic colors (forgot = rose, hint =
+    // amber, known = green) so they read the same as the Study tab.
     const neutral = isDark
-      ? { bg:"#1e1e1e", fg:"#e8e8e8", muted:"#a6a6a6", reading:"#b0b0b0", notes:"#888",
-          border:"rgba(255,255,255,.09)", revealBg:"#e8e8e8", revealFg:"#1e1e1e",
-          shadow:"0 12px 40px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.2)", x:"#666" }
-      : { bg:"#f7f7f6", fg:"#1c1c1c", muted:"#6b6b6b", reading:"#444", notes:"#666",
-          border:"rgba(0,0,0,.09)", revealBg:"#1c1c1c", revealFg:"#f7f7f6",
-          shadow:"0 12px 40px rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.07)", x:"#aaa" };
+      ? { bg:"#1b1a23", fg:"#eceaf3", muted:"#9d9aad", reading:"#c5c2d1", notes:"#9d9aad",
+          border:"rgba(255,255,255,.08)", soft:"#262531",
+          shadow:"0 20px 50px -12px rgba(0,0,0,.7),0 2px 6px rgba(0,0,0,.3)", x:"#9d9aad",
+          forgotBg:"rgba(251,113,133,.15)", forgotFg:"#fda4af",
+          hintBg:"rgba(251,191,36,.15)", hintFg:"#fcd34d",
+          knownBg:"#34d399", knownFg:"#052e1a" }
+      : { bg:"#ffffff", fg:"#1f1d2b", muted:"#696676", reading:"#4a4757", notes:"#696676",
+          border:"rgba(31,29,43,.09)", soft:"#f6f4f0",
+          shadow:"0 20px 50px -14px rgba(31,29,43,.35),0 2px 6px rgba(31,29,43,.06)", x:"#8a8797",
+          forgotBg:"#fde7ec", forgotFg:"#a3123a",
+          hintBg:"#fdf1dc", hintFg:"#8a4b06",
+          knownBg:"#16a34a", knownFg:"#ffffff" };
     const accent = isDark
       ? { c: ac.dk, arti: ac.artiDk, fBg: ac.fBgDk, fFg: ac.fFgDk }
       : { c: ac.l, arti: ac.arti, fBg: ac.fBg, fFg: ac.fFg };
@@ -137,27 +146,34 @@
       :host {
         --bg:${neutral.bg}; --fg:${neutral.fg};
         --muted:${neutral.muted}; --reading:${neutral.reading}; --notes:${neutral.notes};
-        --border:${neutral.border};
-        --reveal-bg:${neutral.revealBg}; --reveal-fg:${neutral.revealFg};
+        --border:${neutral.border}; --soft:${neutral.soft};
         --shadow:${neutral.shadow};
         --x:${neutral.x};
-        --accent:${accent.c}; --arti:${accent.arti};
-        --forgot-bg:${accent.fBg}; --forgot-fg:${accent.fFg}; --known-bg:${ac.l};
+        --accent:${accent.c}; --arti:${accent.arti}; --on-accent:${isDark ? "#14131a" : "#ffffff"};
+        --forgot-bg:${neutral.forgotBg}; --forgot-fg:${neutral.forgotFg};
+        --hint-bg:${neutral.hintBg}; --hint-fg:${neutral.hintFg};
+        --known-bg:${neutral.knownBg}; --known-fg:${neutral.knownFg};
       }
 
       /* ── layout ── */
       * { box-sizing:border-box; margin:0; padding:0; }
       .wrap {
         position:fixed; z-index:2147483647;
-        font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",
-          -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN",
+          "Yu Gothic","Noto Sans JP",sans-serif;
+        -webkit-font-smoothing:antialiased;
       }
       .card {
-        width:320px; max-width:calc(100vw - 40px);
+        position:relative; overflow:hidden;
+        width:330px; max-width:calc(100vw - 40px);
         background:var(--bg); color:var(--fg);
-        border:1px solid var(--border); border-radius:16px;
-        padding:18px 18px 16px; box-shadow:var(--shadow);
-        animation:rise .22s cubic-bezier(.2,.8,.2,1);
+        border:1px solid var(--border); border-radius:20px;
+        padding:20px 20px 14px; box-shadow:var(--shadow);
+        animation:rise .24s cubic-bezier(.2,.8,.2,1);
+      }
+      .card::before {
+        content:""; position:absolute; inset:0 0 auto 0; height:4px;
+        background:linear-gradient(90deg,var(--accent),#16a34a);
       }
       .card.leaving { animation:sink .18s ease forwards; }
       @keyframes rise { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
@@ -170,39 +186,48 @@
       }
       .top.dragging { cursor:grabbing; }
       .eyebrow {
-        font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+        display:flex; align-items:center; gap:8px;
+        font-size:11px; font-weight:600; letter-spacing:.06em;
         color:var(--muted); pointer-events:none;
       }
-      .seal { display:inline-block; width:8px; height:8px; border-radius:2px; background:var(--accent); margin-right:7px; vertical-align:1px; }
-      .x { border:0; background:transparent; color:var(--x); font-size:18px; line-height:1; cursor:pointer; padding:2px 4px; border-radius:6px; flex:none; }
-      .x:hover { background:rgba(0,0,0,.06); color:#444; }
-      .kanji { font-size:46px; font-weight:500; line-height:1.15; text-align:center; padding:10px 0 14px; word-break:break-word; display:flex; flex-direction:column; align-items:center; gap:4px; }
+      .seal {
+        display:inline-grid; place-items:center; width:20px; height:20px; border-radius:6px;
+        background:var(--accent); color:var(--on-accent); font-size:11px; font-weight:700; letter-spacing:0;
+      }
+      .x { border:0; background:var(--soft); color:var(--x); font-size:16px; line-height:1; cursor:pointer; width:26px; height:26px; border-radius:8px; flex:none; display:grid; place-items:center; }
+      .x:hover { color:var(--fg); filter:brightness(.96); }
+      .kanji {
+        font-family:"Hiragino Maru Gothic ProN","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
+        font-size:52px; font-weight:500; line-height:1.15; text-align:center; padding:14px 0 18px;
+        word-break:break-word; display:flex; flex-direction:column; align-items:center; gap:6px;
+      }
       .furigana { font-size:0.38em; font-weight:400; color:var(--muted); letter-spacing:0.06em; line-height:1; }
       .k-char { cursor:pointer; border-radius:6px; }
       .k-char:hover { background:rgba(128,128,128,.16); }
-      .answer { display:none; border-top:1px dashed var(--border); padding-top:12px; text-align:center; }
+      .answer { display:none; border-top:1px solid var(--border); padding-top:14px; text-align:center; }
       .answer.show { display:block; }
       .reading { font-size:18px; color:var(--reading); }
-      .arti { font-size:17px; font-weight:500; color:var(--arti); margin-top:4px; }
+      .arti { font-size:18px; font-weight:650; color:var(--arti); margin-top:4px; }
       .notes { font-size:13px; color:var(--notes); margin-top:8px; line-height:1.5; }
       .actions { margin-top:14px; }
-      button.act { width:100%; border:0; border-radius:10px; padding:11px; font-size:15px; font-weight:500; cursor:pointer; font-family:inherit; }
-      .reveal { background:var(--reveal-bg); color:var(--reveal-fg); }
-      .reveal:hover { opacity:.88; }
-      .grade { display:none; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+      button.act { width:100%; border:0; border-radius:12px; padding:12px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; transition:filter .15s, transform .08s; }
+      button.act:active { transform:translateY(1px); }
+      .reveal { background:var(--accent); color:var(--on-accent); }
+      .reveal:hover { filter:brightness(.93); }
+      .grade { display:none; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
       .grade.show { display:grid; }
       .grade-tiered.show { display:flex; flex-direction:column-reverse; gap:8px; }
       .forgot { background:var(--forgot-bg); color:var(--forgot-fg); }
       .forgot:hover { filter:brightness(.96); }
-      .known  { background:var(--known-bg); color:#fff; }
-      .known:hover { filter:brightness(.92); }
-      .hint-known { background:transparent; border:1.5px solid var(--accent); color:var(--accent); }
-      .hint-known:hover { background:var(--known-bg); color:#fff; }
+      .known  { background:var(--known-bg); color:var(--known-fg); }
+      .known:hover { filter:brightness(.93); }
+      .hint-known { background:var(--hint-bg); color:var(--hint-fg); }
+      .hint-known:hover { filter:brightness(.96); }
       .hint-row { text-align:center; margin-bottom:8px; }
-      button.hint-btn { width:auto; background:transparent; border:1px solid var(--border); color:var(--muted); font-size:13px; padding:5px 16px; border-radius:99px; }
-      button.hint-btn:hover { background:rgba(128,128,128,.08); color:var(--fg); }
-      .snooze { display:block; width:100%; text-align:center; background:transparent; border:0; color:var(--muted); font-size:12px; margin-top:12px; cursor:pointer; font-family:inherit; }
-      .snooze:hover { color:#444; text-decoration:underline; }
+      button.hint-btn { width:auto; background:var(--soft); border:0; color:var(--reading); font-size:12px; padding:6px 16px; border-radius:99px; }
+      button.hint-btn:hover { color:var(--fg); }
+      .snooze { display:block; width:100%; text-align:center; background:transparent; border:0; color:var(--muted); font-size:12px; margin-top:10px; padding:4px; cursor:pointer; font-family:inherit; border-radius:8px; }
+      .snooze:hover { color:var(--fg); background:var(--soft); }
 
       /* ── inline kanji view (swaps in over the flashcard, same card) ── */
       .kv-back { border:0; background:transparent; color:var(--muted); font-size:11px; letter-spacing:.02em; cursor:pointer; padding:2px 0; font-family:inherit; }
@@ -217,7 +242,7 @@
         border-radius:8px; padding:7px 9px; font-size:13px; font-family:inherit; margin-top:4px; resize:vertical;
       }
       .kv-meaning:focus, .kv-notes:focus { outline:2px solid var(--accent); outline-offset:-1px; }
-      .kv-save { width:auto; margin-top:8px; background:var(--accent); color:#fff; border:0; border-radius:8px; padding:7px 14px; font-size:13px; font-weight:500; cursor:pointer; font-family:inherit; }
+      .kv-save { width:auto; margin-top:8px; background:var(--accent); color:var(--on-accent); border:0; border-radius:10px; padding:7px 14px; font-size:13px; font-weight:500; cursor:pointer; font-family:inherit; }
       .kv-save:hover { opacity:.9; }
       .kv-saved { font-size:11px; color:var(--muted); margin-left:8px; }
       .kv-related { display:flex; flex-direction:column; gap:2px; margin-top:6px; max-height:120px; overflow-y:auto; }
@@ -235,7 +260,7 @@
     wrap.innerHTML = `
       <div class="card" role="dialog" aria-label="Japanese flashcard">
         <div class="top">
-          <span class="eyebrow"><span class="seal"></span>思い出して · what does it mean?</span>
+          <span class="eyebrow"><span class="seal">言</span>思い出して · what does it mean?</span>
           <button class="x" aria-label="Close">×</button>
         </div>
         <div class="fc">

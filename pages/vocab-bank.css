@@ -1,218 +1,184 @@
-/* vocab-bank.css — page-specific styles on top of options.css's design system. */
+/* vocab-bank.css — Words / Kanji tabs and the word & kanji modals, on top of
+   options.css's design system (tokens, .btn, .switch, .stats-table). */
 
-.bank-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-.bank-toolbar-2 { margin-top: 14px; }
+.bank-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.bank-toolbar-2 { margin-top: 12px; }
+.bank-filters { margin: 0 0 16px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
 
 .btn-row-bank { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
 .btn-row-bank .btn { width: auto; margin-bottom: 0; }
 
-/* Delete sits far from Edit/Save and reads as quiet-by-default so it can't
-   be mistaken for the primary action or mis-clicked. */
-#wordModalActions { justify-content: space-between; margin-top: 24px; }
-.btn.ghost-danger { background: transparent; border-color: var(--line); color: var(--muted); }
-.btn.ghost-danger:hover { background: rgba(192, 57, 43, 0.1); border-color: #c0392b; color: #c0392b; }
-html[data-theme="dark"] .btn.ghost-danger:hover { background: rgba(248, 113, 113, 0.15); border-color: #f87171; color: #f87171; }
+/* Delete sits far from Edit/Save and stays quiet until hovered. */
+#wordModalActions { justify-content: space-between; margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); }
+.btn.ghost-danger { background: transparent; border-color: transparent; color: var(--muted); }
+.btn.ghost-danger:hover { background: var(--forgot-soft); color: var(--forgot-ink); }
 
-.search-input {
-  flex: 1 1 240px; min-width: 0; border: 1px solid var(--line); background: var(--paper); color: var(--ink);
-  border-radius: 9px; padding: 10px 12px; font-size: 14px; font-family: inherit;
-}
-.search-input:focus { outline: 2px solid var(--shu); outline-offset: -1px; }
-.search-input::placeholder { color: var(--muted); }
+.search-input { flex: 1 1 260px; min-width: 0; }
 
+/* Status filter — colored chips, one hue per status. */
 .status-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
 .status-tab {
-  border: 1.5px solid var(--line); background: var(--paper); color: var(--muted);
-  border-radius: 999px; padding: 7px 14px; font-size: 13px; font-weight: 500;
-  cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 6px;
-  transition: border-color .12s, background .12s, color .12s;
+  --c: var(--shu); --c-soft: var(--shu-soft); --c-ink: var(--shu-ink);
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid var(--line-2); background: var(--surface); color: var(--ink-2);
+  border-radius: 999px; padding: 7px 8px 7px 13px; font: 550 13px var(--font-ui);
+  cursor: pointer; transition: border-color .15s, background .15s, color .15s;
 }
+.status-tab::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.status-tab[data-status="new"]      { --c: var(--new);    --c-soft: var(--new-soft);  --c-ink: var(--new-ink); }
+.status-tab[data-status="learning"] { --c: var(--hint);   --c-soft: var(--hint-soft); --c-ink: var(--hint-ink); }
+.status-tab[data-status="mastered"] { --c: var(--know);   --c-soft: var(--know-soft); --c-ink: var(--know-ink); }
 .status-tab:hover { background: var(--surface-2); color: var(--ink); }
-.status-tab.active { border-color: var(--shu); background: var(--surface-2); color: var(--shu); }
+.status-tab.active { border-color: transparent; background: var(--c-soft); color: var(--c-ink); box-shadow: 0 0 0 1.5px var(--c) inset; }
 .status-tab .count {
-  font-size: 11px; color: var(--muted); background: var(--surface-2);
-  border-radius: 999px; padding: 1px 6px;
+  font-size: 11px; font-weight: 650; color: var(--muted); background: var(--surface-2);
+  border-radius: 999px; padding: 1px 8px; min-width: 24px; text-align: center; font-variant-numeric: tabular-nums;
 }
-.status-tab.active .count { color: var(--shu); }
+.status-tab.active .count { background: var(--surface); color: var(--c-ink); }
 
 #groupSelect { max-width: 240px; }
 
 .bank-table { margin-top: 4px; }
+.bank-table tbody tr { cursor: pointer; }
 
-/* Kanji tab table — readings stay compact, meaning/words get the room
-   (on'yomi/kun'yomi is reference info, the meaning and which words actually
-   use the kanji is what you scan for). */
+#bulkBar {
+  padding: 10px 12px; border-radius: 12px;
+  background: var(--shu-soft); border: 1px solid color-mix(in srgb, var(--shu) 25%, transparent);
+}
+#bulkBar .hint { margin: 0 auto 0 0; color: var(--shu-ink); font-weight: 600; }
+
+/* Kanji tab table — readings compact, meaning/words get the room. */
 .kanji-table { table-layout: fixed; }
-.kt-col-kanji { width: 56px; }
-.kt-col-reading { width: 11%; }
-.kt-col-meaning { width: 15%; }
+.kt-col-kanji { width: 72px; }
+.kt-col-reading { width: 19%; }
+.kt-col-meaning { width: 13%; }
 .kt-col-words { width: auto; }
 .kt-readings { font-size: 12px; color: var(--muted); }
 .kt-notes { color: var(--muted); }
-.kt-words { font-size: 13px; line-height: 1.6; word-break: break-word; }
+.kt-words { font-family: var(--font-jp); font-size: 14px; line-height: 1.7; word-break: break-word; }
 
 .status-badge {
-  display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 9px;
-  border-radius: 999px; text-transform: uppercase; letter-spacing: .02em; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 650; padding: 4px 10px 4px 8px;
+  border-radius: 999px; letter-spacing: .02em; white-space: nowrap;
 }
-.status-badge.status-new { background: #e0e7ff; color: #3730a3; }
-.status-badge.status-learning { background: #fef3c7; color: #92400e; }
-.status-badge.status-mastered { background: #dcfce7; color: #166534; }
-html[data-theme="dark"] .status-badge.status-new { background: #312e81; color: #c7d2fe; }
-html[data-theme="dark"] .status-badge.status-learning { background: #78350f; color: #fde68a; }
-html[data-theme="dark"] .status-badge.status-mastered { background: #14532d; color: #86efac; }
+.status-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .8; }
+.status-badge.status-new { background: var(--new-soft); color: var(--new-ink); }
+.status-badge.status-learning { background: var(--hint-soft); color: var(--hint-ink); }
+.status-badge.status-mastered { background: var(--know-soft); color: var(--know-ink); }
 
-.bank-table tbody tr { cursor: pointer; }
-
-/* Word editor / kanji detail modals */
+/* -------------------------------- modals --------------------------------- */
 .modal-overlay {
   display: none; position: fixed; inset: 0; z-index: 1000;
-  background: rgba(20, 18, 14, 0.45);
+  background: rgba(18, 16, 26, 0.42);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   align-items: flex-start; justify-content: center;
-  padding: 60px 20px; overflow-y: auto;
+  padding: 72px 20px; overflow-y: auto;
 }
-.modal-overlay.open { display: flex; }
+.modal-overlay.open { display: flex; animation: overlayIn .18s ease; }
+@keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cardIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
 #kanjiModalOverlay { z-index: 1100; } /* stacks above the word editor it's opened from */
 .modal-card {
-  position: relative; /* anchors .modal-close-abs — every modal card needs this,
-    not just the word/kanji ones, so it lives on the base class now rather
-    than needing a second class remembered per new modal (see the bulk-add
-    modal, which originally missed it and had its close button float off to
-    the viewport corner instead of the card corner). */
-  background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
-  padding: 30px 26px 24px; width: 100%; max-width: 440px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  position: relative; /* anchors .modal-close-abs */
+  background: var(--surface); border: 1px solid var(--line); border-radius: 22px;
+  padding: 34px 30px 26px; width: 100%; max-width: 460px;
+  box-shadow: var(--shadow-lg);
 }
+.modal-overlay.open .modal-card { animation: cardIn .22s cubic-bezier(.2,.8,.2,1); }
+@media (prefers-reduced-motion: reduce) { .modal-overlay.open, .modal-overlay.open .modal-card { animation: none; } }
+.modal-card h2 { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 18px; }
 .modal-close {
-  border: 0; background: transparent; color: var(--muted); font-size: 20px;
-  cursor: pointer; line-height: 1; padding: 2px 6px; border-radius: 6px; flex: none;
+  border: 0; background: var(--surface-2); color: var(--muted); font-size: 18px;
+  cursor: pointer; line-height: 1; width: 32px; height: 32px; border-radius: 10px; flex: none;
+  display: grid; place-items: center; transition: background .15s, color .15s;
 }
-.modal-close:hover { background: var(--surface-2); color: var(--ink); }
-.modal-close-abs { position: absolute; top: 14px; right: 14px; }
+.modal-close:hover { background: var(--line-2); color: var(--ink); }
+.modal-close-abs { position: absolute; top: 16px; right: 16px; }
+.word-modal-card { position: relative; }
 
-.word-modal-card { position: relative; } /* now redundant with .modal-card above,
-  left in place rather than removed — harmless, and not worth touching the two
-  modals that already reference it correctly. */
+/* Word view — read-optimized card (furigana over big kanji, meaning, then
+   labeled example/notes), same visual language as the Study card. */
+.word-view { text-align: center; padding: 6px 2px 0; }
+.wv-furigana { font-size: 14px; color: var(--muted); letter-spacing: .08em; min-height: 18px; }
+.wv-kanji { font-family: var(--font-jp); font-size: 52px; font-weight: 500; line-height: 1.2; margin: 4px 0 14px; word-break: break-word; }
+.wv-k-char { cursor: pointer; border-radius: 10px; padding: 0 4px; transition: background .12s, color .12s; }
+.wv-k-char:hover { background: var(--shu-soft); color: var(--shu-ink); }
+.wv-meaning { font-size: 20px; font-weight: 650; color: var(--shu-ink); }
 
-/* Word view — read-optimized card layout (furigana above kanji, kanji big and
-   centered, meaning below, then a clearly labeled example/notes section),
-   same visual language as the flashcard popup itself (content.js). */
-.word-view { text-align: center; padding: 2px 2px 0; }
-.wv-furigana { font-size: 14px; color: var(--muted); letter-spacing: .04em; min-height: 18px; }
-.wv-kanji { font-size: 44px; font-weight: 500; line-height: 1.25; margin: 4px 0 20px; word-break: break-word; }
-.wv-k-char { cursor: pointer; border-radius: 8px; padding: 0 3px; transition: background .12s, color .12s; }
-.wv-k-char:hover { background: var(--surface-2); color: var(--shu); }
-.wv-meaning { font-size: 19px; font-weight: 600; color: var(--shu); }
-
-.wv-divider { display: none; height: 1px; background: var(--line); margin: 20px 0 16px; }
+.wv-divider { display: none; height: 1px; background: var(--line); margin: 22px 0 18px; }
 
 .wv-section { display: none; text-align: left; margin-bottom: 16px; }
 .wv-section:last-child { margin-bottom: 0; }
 .wv-label {
-  font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-  color: var(--muted); margin-bottom: 5px;
+  font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 6px;
 }
-.wv-example { font-size: 14px; color: var(--ink); line-height: 1.5; }
-.wv-notes { font-size: 13px; color: var(--muted); line-height: 1.55; }
+.wv-example { font-size: 14px; color: var(--ink); line-height: 1.6; padding: 10px 13px; border-radius: 12px; background: var(--paper); }
+.wv-notes { font-size: 13px; color: var(--ink-2); line-height: 1.6; }
 
-/* Kanji card — same family as the word view card above, always-visible
-   sections (unlike .wv-section, which is optional/toggled). */
-.kv-readings { display: flex; gap: 24px; margin-top: 6px; }
+/* Kanji card */
+.kv-readings { display: flex; gap: 24px; margin-top: 8px; }
 .kv-reading-group { flex: 1; min-width: 0; text-align: left; }
 .kv-reading-group .reading-list { margin-top: 4px; }
-.kv-divider { height: 1px; background: var(--line); margin: 20px 0 16px; }
+.kv-divider { height: 1px; background: var(--line); margin: 22px 0 18px; }
 .kv-section { text-align: left; }
-.kv-input {
-  display: block; width: 100%; border: 1px solid var(--line); background: var(--paper); color: var(--ink);
-  border-radius: 9px; padding: 9px 11px; font-size: 14px; font-family: inherit; resize: vertical;
-}
-.kv-input:focus { outline: 2px solid var(--shu); outline-offset: -1px; }
+.kv-input { display: block; resize: vertical; }
 
-.field-label { display: block; font-size: 12px; color: var(--muted); margin-top: 10px; }
+.field-label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-2); margin-top: 12px; }
 .field-label:first-child { margin-top: 0; }
-.field-label input, .field-label select, .field-label textarea {
-  display: block; width: 100%; margin-top: 4px; border: 1px solid var(--line);
-  background: var(--paper); color: var(--ink); border-radius: 9px; padding: 9px 11px;
-  font-size: 14px; font-family: inherit; resize: vertical;
-}
-.field-label input:focus, .field-label select:focus, .field-label textarea:focus {
-  outline: 2px solid var(--shu); outline-offset: -1px;
-}
+.field-label > input, .field-label > select, .field-label > textarea { display: block; margin-top: 6px; resize: vertical; }
+
 .group-checklist {
   display: flex; flex-direction: column; gap: 2px; margin-top: 6px;
-  max-height: 160px; overflow-y: auto; border: 1px solid var(--line);
-  border-radius: 9px; padding: 6px 8px; background: var(--paper);
+  max-height: 170px; overflow-y: auto; border: 1px solid var(--line-2);
+  border-radius: 12px; padding: 6px; background: var(--paper);
 }
 .group-check-row {
-  display: flex; align-items: center; gap: 6px; padding: 5px 2px;
-  font-size: 13px; color: var(--ink);
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px;
+  font-size: 13px; font-weight: 500; color: var(--ink); transition: background .12s;
 }
-.group-check-row input[type="checkbox"] { width: auto; margin: 0; flex: none; }
+.group-check-row:hover { background: var(--surface); }
+.group-check-row input[type="checkbox"] { width: 15px; margin: 0; flex: none; }
 .group-check-label { flex: 1; cursor: pointer; }
 .group-rename-btn, .group-rename-save, .group-rename-cancel {
   flex: none; border: none; background: transparent; cursor: pointer;
-  font-size: 13px; color: var(--muted); padding: 3px 5px; border-radius: 6px; line-height: 1;
+  font-size: 13px; color: var(--muted); padding: 4px 6px; border-radius: 6px; line-height: 1;
 }
-.group-rename-btn:hover, .group-rename-save:hover, .group-rename-cancel:hover {
-  background: var(--surface-2); color: var(--ink);
-}
-.group-rename-input {
-  flex: 1; width: auto; margin: 0; border: 1px solid var(--line);
-  background: var(--paper); color: var(--ink); border-radius: 6px;
-  padding: 3px 6px; font-size: 13px; font-family: inherit;
-}
-.group-new-row { display: flex; gap: 6px; margin-top: 6px; }
-.group-new-row input { flex: 1; width: auto; margin-top: 0; }
+.group-check-row .group-rename-btn { opacity: 0; transition: opacity .12s; }
+.group-check-row:hover .group-rename-btn, .group-rename-btn:focus-visible { opacity: 1; }
+.deck .group-rename-btn { opacity: .5; }
+.deck:hover .group-rename-btn { opacity: 1; }
+.group-rename-btn:hover, .group-rename-save:hover, .group-rename-cancel:hover { background: var(--surface-2); color: var(--ink); }
+.group-rename-input { flex: 1; width: auto !important; margin: 0; padding: 4px 8px !important; font-size: 13px !important; border-radius: 7px !important; }
+.group-new-row { display: flex; gap: 8px; margin-top: 8px; }
+.group-new-row input { flex: 1; width: auto; margin-top: 0 !important; }
 
 .field-check {
-  display: flex; align-items: center; gap: 8px; margin-top: 10px;
+  display: flex; align-items: center; gap: 10px; margin-top: 14px;
   font-size: 13px; color: var(--ink-2); cursor: pointer;
 }
 .field-check input { width: auto; margin: 0; }
 
-/* "In Study" toggles (Words tab table, Add/Edit word modal, popup quick-add,
-   and the Study tab's own browse table) all reuse options.css's existing
-   .switch/.slider component as-is (see its "toggle switch" comment there) —
-   deliberately NOT redefined here. Two reasons: options.css is already
-   loaded on every page that needs this, so there's nothing to add; and this
-   file used to define its own conflicting .switch/.switch-track rule with
-   different dimensions, which — since options.css loads first and this file
-   second — silently overrode the original .switch's width/height for the
-   unrelated per-collection enable/disable toggle in Settings. Reusing the
-   same class instead of inventing a second one also means the "study
-   eligibility" toggle now looks identical everywhere it appears. Markup is
-   <span class="switch"><input type="checkbox" .../><span class="slider">
-   </span></span> when nested inside another <label> (modal/quick-add, to
-   avoid invalid nested <label>s), or <label class="switch">...</label> when
-   standalone (table rows) — matching the existing Settings-tab pattern. */
-
-.kanji-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+.kanji-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; }
 .kanji-chip {
-  border: 1.5px solid var(--line); background: var(--paper); color: var(--ink);
-  border-radius: 8px; padding: 4px 11px; font-size: 16px; cursor: pointer;
-  transition: border-color .12s, background .12s;
+  border: 1px solid var(--line-2); background: var(--surface); color: var(--ink);
+  border-radius: 10px; padding: 5px 12px; font-family: var(--font-jp); font-size: 17px; cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
 }
-.kanji-chip:hover { border-color: var(--shu); background: var(--surface-2); }
+.kanji-chip:hover { border-color: var(--shu); background: var(--shu-soft); color: var(--shu-ink); }
 
 .reading-list { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 4px; }
-.reading-pill {
-  background: var(--surface-2); color: var(--ink); border-radius: 999px;
-  padding: 4px 11px; font-size: 13px;
-}
+.reading-pill { background: var(--shu-soft); color: var(--shu-ink); border-radius: 999px; padding: 4px 12px; font-size: 13px; font-weight: 500; }
 
-.wlist-plain { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.wlist-plain { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
 .wlist-plain .wl-row {
-  display: flex; align-items: baseline; gap: 8px; padding: 7px 9px; border-radius: 8px;
-  cursor: pointer; font-size: 13px;
+  display: flex; align-items: baseline; gap: 10px; padding: 8px 10px; border-radius: 10px;
+  cursor: pointer; font-size: 13px; transition: background .12s;
 }
-.wlist-plain .wl-row:hover { background: var(--surface-2); }
-/* Kanji/reading are short, fixed-identity text — never worth breaking mid-
-   character just because the meaning column (wl-m) is long. Keep them at
-   their natural width (nowrap + no shrink) and let wl-m absorb the space
-   pressure instead, same priority rule applied to every kanji/reading pair
-   across the app (see .stats-table .kanji-cell/.reading-cell in options.css
-   and .kv-row .kv-k/.kv-r in content.js for the other three spots). */
-.wlist-plain .wl-row .wl-k { font-size: 15px; white-space: nowrap; flex-shrink: 0; }
+.wlist-plain .wl-row:hover { background: var(--shu-soft); }
+/* Kanji/reading keep natural width; meaning absorbs the squeeze. */
+.wlist-plain .wl-row .wl-k { font-family: var(--font-jp); font-size: 16px; white-space: nowrap; flex-shrink: 0; }
 .wlist-plain .wl-row .wl-r { color: var(--muted); white-space: nowrap; flex-shrink: 0; }
 .wlist-plain .wl-row .wl-m { color: var(--muted); margin-left: auto; text-align: right; min-width: 0; }
 .wlist-plain .empty { margin: 0; }

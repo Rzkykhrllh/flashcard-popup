@@ -68,12 +68,21 @@ async function refresh() {
     ? `${stats.collectionCount} collection${stats.collectionCount === 1 ? "" : "s"}`
     : "No collections yet.";
 
+  // Visual-only: share of the bank currently in rotation (the bar under
+  // the two stat tiles).
+  const pct = stats.totalWords ? Math.round((stats.eligibleWords / stats.totalWords) * 100) : 0;
+  document.getElementById("rotationMeter").style.width = `${pct}%`;
+
+  // data-state drives the colored status dot in popup.css.
   if (!state.settings.enabled) {
-    enabledStateEl.textContent = "Popup is disabled.";
+    enabledStateEl.textContent = "Popup is off";
+    enabledStateEl.dataset.state = "off";
   } else if (Date.now() < (state.settings.snoozeUntil || 0)) {
-    enabledStateEl.textContent = "Snoozed.";
+    enabledStateEl.textContent = "Snoozed";
+    enabledStateEl.dataset.state = "snoozed";
   } else {
-    enabledStateEl.textContent = `Shows every ~${state.settings.intervalMinutes} min.`;
+    enabledStateEl.textContent = `Every ~${state.settings.intervalMinutes} min`;
+    enabledStateEl.dataset.state = "on";
   }
 }
 
@@ -162,6 +171,22 @@ function closeQuickAdd() {
 
 addWordShortcut.addEventListener("click", openQuickAdd);
 qaCancelBtn.addEventListener("click", closeQuickAdd);
+
+// Chrome closes the whole extension popup on Escape by default — normally
+// convenient, but while quick-add is open that silently throws away
+// whatever you'd just typed (there's no draft autosave). Capturing keydown
+// ahead of Chrome's own handler and stopping it there suppresses that
+// close; while the form is open Escape is a full no-op instead, so an
+// accidental press can't lose the word you're mid-typing. Getting out
+// still works the normal way — Cancel, or Save. Capture phase (the `true`
+// 3rd arg) is what lets this run before Chrome's default handling sees the
+// key at all, not just before other page listeners.
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  if (!quickAdd.classList.contains("open")) return;
+  e.preventDefault();
+  e.stopPropagation();
+}, true);
 
 qaAddGroupBtn.addEventListener("click", async () => {
   const name = qaNewGroupName.value.trim();

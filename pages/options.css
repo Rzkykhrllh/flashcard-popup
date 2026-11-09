@@ -1,407 +1,555 @@
-/* Neutral scale has 3 text tiers on purpose (ink / ink-2 / muted), not 2 —
-   --muted was previously overloaded for everything from body copy to
-   throwaway hints and fell below WCAG AA (3.2-3.5:1) doing it. Every value
-   here is contrast-checked against --surface/--surface-2/--paper in both
-   modes (>=4.5:1 for text, >=3:1 for large/UI-only).
-
-   Theme is picked entirely by JS (options.js) via [data-theme] on <html> —
-   no @media (prefers-color-scheme) anywhere in this file. options.js
-   resolves "system" to light/dark once via matchMedia and keeps it live
-   (listens for OS changes), so data-theme is always explicitly "light" or
-   "dark", never absent. One source of truth instead of a media query and an
-   attribute fighting over specificity. --shu is set the same way (see
-   applyActiveTheme in options.js), not here. */
+/* options.css — Kotoba Bank design system.
+ *
+ * Theme is picked entirely by JS (options.js) via [data-theme] on <html> —
+ * no @media (prefers-color-scheme) anywhere. options.js resolves "system"
+ * to light/dark via matchMedia and keeps it live, so data-theme is always
+ * explicitly "light" or "dark". --shu (the user's accent: blue/red/purple/
+ * green) is set inline on <html> by applyActiveTheme(); everything tinted
+ * (--shu-soft, --shu-ink, the page glow) is derived from it with color-mix,
+ * so switching the theme recolors the whole page with no extra rules.
+ *
+ * Semantic colors (know / hint / forgot, new / learning / mastered) are
+ * fixed — they mean the same thing on every theme, which is what lets the
+ * Study grade buttons, tally pills, status badges, and table stat cells
+ * read consistently across tabs.
+ *
+ * Text tiers (ink / ink-2 / muted) are kept >= 4.5:1 against --paper and
+ * --surface in both modes.
+ */
 :root {
-  --paper: #f7f7f6;
-  --ink: #1c1c1c;
-  --ink-2: #4b4b4b;
-  --muted: #6b6b6b;
+  --paper: #f6f4f0;
+  --surface: #ffffff;
+  --surface-2: #f1eee8;
+  --ink: #1f1d2b;
+  --ink-2: #4a4757;
+  --muted: #696676;
+  --line: rgba(31, 29, 43, 0.08);
+  --line-2: rgba(31, 29, 43, 0.15);
   --shu: #2563eb;
   --shu-d: #1d4ed8;
-  --line: rgba(0, 0, 0, 0.10);
-  --line-2: rgba(0, 0, 0, 0.16);
-  --surface: #ffffff;
-  --surface-2: #eeeeec;
+  --shu-soft: color-mix(in srgb, var(--shu) 11%, var(--surface));
+  --shu-ink: color-mix(in srgb, var(--shu) 82%, var(--ink));
+  --ring: color-mix(in srgb, var(--shu) 28%, transparent);
+
+  --know: #16a34a;   --know-soft: #e6f6ec;   --know-ink: #15693a;
+  --hint: #d97706;   --hint-soft: #fdf1dc;   --hint-ink: #8a4b06;
+  --forgot: #e11d48; --forgot-soft: #fde7ec; --forgot-ink: #a3123a;
+  --new: #6366f1;    --new-soft: #ecebfe;    --new-ink: #3f3cb5;
+
+  --shadow-sm: 0 1px 2px rgba(31, 29, 43, 0.04);
+  --shadow: 0 1px 2px rgba(31, 29, 43, 0.04), 0 10px 30px -14px rgba(31, 29, 43, 0.14);
+  --shadow-lg: 0 24px 60px -18px rgba(31, 29, 43, 0.35);
+
+  --r-sm: 8px;
+  --r: 12px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN",
+    "Yu Gothic UI", "Yu Gothic", "Noto Sans JP", sans-serif;
+  --font-jp: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Kaku Gothic ProN",
+    "Yu Gothic", "Noto Sans JP", sans-serif;
+  color-scheme: light;
 }
 html[data-theme="dark"] {
-  --paper: #1e1e1e;
-  --ink: #ededed;
-  --ink-2: #c2c2c2;
-  --muted: #a6a6a6;
-  --line: rgba(255, 255, 255, 0.12);
-  --line-2: rgba(255, 255, 255, 0.20);
-  --surface: #2a2a2a;
-  --surface-2: #363636;
+  --paper: #121118;
+  --surface: #1b1a23;
+  --surface-2: #262531;
+  --ink: #eceaf3;
+  --ink-2: #c5c2d1;
+  --muted: #9d9aad;
+  --line: rgba(255, 255, 255, 0.07);
+  --line-2: rgba(255, 255, 255, 0.14);
+  --shu-soft: color-mix(in srgb, var(--shu) 18%, var(--surface));
+  --shu-ink: color-mix(in srgb, var(--shu) 70%, #ffffff);
+  --ring: color-mix(in srgb, var(--shu) 40%, transparent);
+
+  --know: #34d399;   --know-soft: rgba(52, 211, 153, 0.14);  --know-ink: #6ee7b7;
+  --hint: #fbbf24;   --hint-soft: rgba(251, 191, 36, 0.14);  --hint-ink: #fcd34d;
+  --forgot: #fb7185; --forgot-soft: rgba(251, 113, 133, 0.14); --forgot-ink: #fda4af;
+  --new: #a5b4fc;    --new-soft: rgba(129, 140, 248, 0.16); --new-ink: #c7d2fe;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 30px -14px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 24px 60px -18px rgba(0, 0, 0, 0.8);
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; margin: 0; }
+html { background: var(--paper); }
 body {
-  background: var(--paper);
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 420px at 8% -8%, color-mix(in srgb, var(--shu) 13%, transparent), transparent 70%),
+    radial-gradient(700px 380px at 100% 0%, color-mix(in srgb, var(--know) 7%, transparent), transparent 70%),
+    var(--paper);
+  background-attachment: fixed;
   color: var(--ink);
-  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", -apple-system,
-    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-ui);
+  font-size: 14px;
   line-height: 1.55;
-  padding: 40px 20px 80px;
+  -webkit-font-smoothing: antialiased;
+  padding: 0 24px 64px;
 }
-main { max-width: 1200px; margin: 0 auto; }
+main { max-width: 1120px; margin: 0 auto; }
+::selection { background: color-mix(in srgb, var(--shu) 25%, transparent); }
 
-.hero { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
-.hero .seal { width: 30px; height: 30px; border-radius: 7px; background: var(--shu); flex: none; }
-.hero h1 { font-size: 22px; font-weight: 600; }
-.tag { color: var(--muted); font-size: 14px; }
+/* ------------------------------ app header ------------------------------- */
+.app-header {
+  position: sticky; top: 0; z-index: 50;
+  margin: 0 -24px 32px; padding: 0 24px;
+  background: color-mix(in srgb, var(--paper) 82%, transparent);
+  backdrop-filter: saturate(1.4) blur(14px);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  border-bottom: 1px solid var(--line);
+}
+.app-header-inner { max-width: 1120px; margin: 0 auto; display: flex; align-items: center; gap: 24px; padding: 14px 0; }
+.brand { display: flex; align-items: center; gap: 12px; flex: none; }
+.seal {
+  width: 36px; height: 36px; border-radius: 11px; flex: none;
+  display: grid; place-items: center;
+  background: linear-gradient(140deg, color-mix(in srgb, var(--shu) 78%, #fff), var(--shu) 55%, var(--shu-d));
+  color: #fff; font-family: var(--font-jp); font-weight: 700; font-size: 19px; line-height: 1;
+  box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--shu) 70%, transparent);
+}
+.brand-text h1 { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
+.brand-text .tag { font-size: 12px; color: var(--muted); line-height: 1.3; }
 
-/* Groups panels within the Settings tab into "applies everywhere" vs
-   "flashcard popup only" — the tab got a lot bigger once Kotoba Bank's own
-   Appearance/theme settings moved in, so which is which needed to be visible
-   at a glance, not just inferred from panel titles. */
+/* Tab nav — segmented pill bar. Each tab carries a small kanji glyph
+   (.tab-ico) so the bar has some color and is scannable at a glance. */
+.tab-nav {
+  display: flex; gap: 4px; margin-left: auto;
+  padding: 4px; border-radius: 14px;
+  background: var(--surface-2); border: 1px solid var(--line);
+  overflow-x: auto; scrollbar-width: none;
+}
+.tab-nav::-webkit-scrollbar { display: none; }
+.tab-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: none; background: transparent; color: var(--muted);
+  font: 500 13px/1 var(--font-ui);
+  padding: 9px 14px 9px 10px; border-radius: 10px;
+  cursor: pointer; white-space: nowrap;
+  transition: color .15s, background .15s, box-shadow .15s;
+}
+.tab-ico {
+  width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center;
+  font-family: var(--font-jp); font-size: 12px; font-weight: 700;
+  background: var(--line); color: var(--ink-2);
+  transition: background .15s, color .15s;
+}
+.tab-btn:hover { color: var(--ink); }
+.tab-btn.active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm), 0 0 0 1px var(--line); }
+.tab-btn.active .tab-ico { background: var(--shu); color: #fff; }
+/* Inactive icons carry a soft per-tab hue; the active one goes solid accent. */
+.tab-btn[data-tab="study"]:not(.active)    .tab-ico { background: var(--shu-soft);    color: var(--shu-ink); }
+.tab-btn[data-tab="list"]:not(.active)     .tab-ico { background: var(--new-soft);    color: var(--new-ink); }
+.tab-btn[data-tab="kanji"]:not(.active)    .tab-ico { background: var(--hint-soft);   color: var(--hint-ink); }
+.tab-btn[data-tab="graph"]:not(.active)    .tab-ico { background: var(--know-soft);   color: var(--know-ink); }
+.tab-btn[data-tab="settings"]:not(.active) .tab-ico { background: var(--forgot-soft); color: var(--forgot-ink); }
+.tab-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+
+.tab-pane { display: none; }
+.tab-pane.active { display: block; animation: fade .2s ease; }
+@keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .tab-pane.active { animation: none; } }
+
+/* Page intro inside a tab: title + one line of context. */
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.page-head h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.2; }
+.page-head p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+/* -------------------------------- panels --------------------------------- */
 .settings-section-label {
-  font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-  color: var(--muted); margin: 30px 0 12px; padding-top: 22px; border-top: 1px solid var(--line);
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--shu-ink); margin: 40px 0 14px;
 }
-.settings-section-label:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+.settings-section-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.settings-section-label:first-child { margin-top: 0; }
+
+#tab-settings { max-width: 780px; margin: 0 auto; }
 
 .panel {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 20px 22px;
+  border-radius: var(--r-lg);
+  padding: 24px 26px;
   margin-bottom: 18px;
+  box-shadow: var(--shadow);
 }
-.panel h2 { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
-.hint { font-size: 13px; color: var(--muted); margin-top: 10px; }
-.hint code { background: var(--surface-2); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
-.hint strong { color: var(--ink); }
+.panel h2 { font-size: 15px; font-weight: 650; letter-spacing: -0.005em; margin-bottom: 14px; }
+.row-between h2 { margin-bottom: 0; }
+.hint { font-size: 13px; color: var(--muted); margin-top: 12px; line-height: 1.6; }
+.hint code { background: var(--surface-2); padding: 1px 6px; border-radius: 5px; font-size: 12px; }
+.hint strong { color: var(--ink); font-weight: 600; }
 
-.form { display: flex; flex-direction: column; gap: 10px; }
-input[type="text"], input[type="number"] {
-  width: 100%; border: 1px solid var(--line); background: var(--paper); color: var(--ink);
-  border-radius: 9px; padding: 10px 12px; font-size: 14px; font-family: inherit;
+/* --------------------------------- forms --------------------------------- */
+.form { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+input[type="text"], input[type="number"], textarea, .tab-select, .search-input {
+  width: 100%; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink);
+  border-radius: 10px; padding: 10px 13px; font: 14px/1.4 var(--font-ui);
+  transition: border-color .15s, box-shadow .15s, background .15s;
 }
-input[type="text"]:focus, input[type="number"]:focus { outline: 2px solid var(--shu); outline-offset: -1px; }
+input[type="text"]::placeholder, textarea::placeholder, .search-input::placeholder { color: var(--muted); opacity: .8; }
+input[type="text"]:hover, input[type="number"]:hover, textarea:hover, .tab-select:hover, .search-input:hover { border-color: color-mix(in srgb, var(--shu) 35%, var(--line-2)); }
+input[type="text"]:focus, input[type="number"]:focus, textarea:focus, .tab-select:focus, .search-input:focus {
+  outline: none; border-color: var(--shu); box-shadow: 0 0 0 3px var(--ring);
+}
+input:disabled, select:disabled { opacity: .55; cursor: not-allowed; }
 
 .tab-select {
-  width: 100%; border: 1px solid var(--line); background: var(--paper); color: var(--ink);
-  border-radius: 9px; padding: 10px 36px 10px 12px; font-size: 14px; font-family: inherit;
-  cursor: pointer; appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23888' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  padding-right: 36px; cursor: pointer; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%23888' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' d='M1.5 1.5l4.5 4.5 4.5-4.5'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 13px center;
 }
-.tab-select:focus { outline: 2px solid var(--shu); outline-offset: -1px; }
+.search-input {
+  padding-left: 38px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: 13px center;
+}
 
+input[type="checkbox"]:not(.switch input) { accent-color: var(--shu); width: 15px; height: 15px; cursor: pointer; }
+
+/* -------------------------------- buttons -------------------------------- */
 .btn {
-  border: 1px solid var(--line); background: transparent; color: var(--ink);
-  border-radius: 9px; padding: 9px 16px; font-size: 13px; font-weight: 500;
-  cursor: pointer; font-family: inherit;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  border: 1px solid var(--line-2); background: var(--surface); color: var(--ink);
+  border-radius: 10px; padding: 9px 16px; font: 550 13px/1.2 var(--font-ui);
+  cursor: pointer; white-space: nowrap;
+  transition: background .15s, border-color .15s, color .15s, box-shadow .15s, transform .08s;
 }
-.btn:hover { background: var(--surface-2); }
-.btn.primary { background: var(--shu); color: #fff; border-color: var(--shu); }
-.btn.primary:hover { filter: brightness(0.94); }
-.btn:disabled { opacity: 0.55; cursor: default; }
-/* Muted/borderless variant — used for the Study tab's "Skip" state (a card
-   not yet revealed has nothing graded to commit to, so it reads as a lower-
-   commitment action than the bordered default .btn next to it). */
-.btn.ghost { border-color: transparent; color: var(--muted); }
+.btn:hover { background: var(--surface-2); border-color: var(--line-2); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+.btn.primary {
+  background: var(--shu); color: #fff; border-color: transparent;
+  box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--shu) 80%, transparent);
+}
+.btn.primary:hover { background: var(--shu-d); }
+/* Dark-mode accents are light (#4ade80, #a78bfa…) — white text on them
+   fails contrast, so primary surfaces switch to near-black text. */
+html[data-theme="dark"] .btn.primary,
+html[data-theme="dark"] .tab-btn.active .tab-ico { color: #14131a; }
+html[data-theme="dark"] .btn.primary:hover { background: color-mix(in srgb, var(--shu) 85%, #fff); }
+.btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
 .btn.ghost:hover { background: var(--surface-2); color: var(--ink); }
-/* Inline text-link-styled button — Study tab's "Undo last grade" only. */
 .btn-link {
-  border: none; background: none; padding: 0; font: inherit; font-size: 12px;
-  color: var(--shu); cursor: pointer; text-decoration: underline;
+  border: none; background: none; padding: 0; font: inherit; font-size: 12px; font-weight: 600;
+  color: var(--shu-ink); cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--shu) 40%, transparent);
 }
-.btn-link:hover { opacity: 0.8; }
+.btn-link:hover { text-decoration-color: currentColor; }
 
 .status { font-size: 13px; margin-top: 10px; min-height: 18px; }
-.status.ok { color: #1f7a46; }
-.status.err { color: #c0392b; }
-html[data-theme="dark"] .status.ok { color: #4ade80; }
-html[data-theme="dark"] .status.err { color: #f87171; }
+.status:empty { min-height: 0; margin-top: 0; }
+.status.ok { color: var(--know-ink); }
+.status.err { color: var(--forgot-ink); }
 
-.row-between { display: flex; align-items: center; justify-content: space-between; }
-.decks { list-style: none; margin-top: 12px; }
+/* ------------------------------ collections ------------------------------ */
+.row-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.decks { list-style: none; margin-top: 14px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .deck {
   display: flex; align-items: center; gap: 12px;
-  padding: 12px 0; border-top: 1px solid var(--line);
+  padding: 12px 14px; border-radius: var(--r);
+  background: var(--paper); border: 1px solid var(--line);
+  transition: border-color .15s, background .15s;
 }
-.deck:first-child { border-top: 0; }
+.deck:hover { border-color: var(--line-2); }
 .deck .meta { flex: 1; min-width: 0; }
-.deck .name { font-weight: 500; font-size: 14px; }
+.deck .name { font-weight: 600; font-size: 14px; }
 .deck .sub { font-size: 12px; color: var(--muted); }
-.deck .rm { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; padding: 4px 8px; border-radius: 6px; }
-.deck .rm:hover { background: var(--surface-2); color: #c0392b; }
-html[data-theme="dark"] .deck .rm:hover { color: #f87171; }
-/* Drag-to-reorder handle (see options.js's deckList dragover/drop) — the
-   whole <li> is draggable, this is just the visual/grab affordance. Letter-
-   spacing tightens the two stacked "⋮⋮" glyphs into one compact grip icon
-   rather than two separated dots. */
-.deck-grip { flex: none; color: var(--muted); font-size: 14px; letter-spacing: -3px; cursor: grab; user-select: none; padding: 0 2px; }
+.deck .rm {
+  border: 0; background: transparent; color: var(--muted); cursor: pointer;
+  font: 500 12px var(--font-ui); padding: 6px 10px; border-radius: 8px;
+  opacity: .7; transition: opacity .15s, background .15s, color .15s;
+}
+.deck:hover .rm { opacity: 1; }
+.deck .rm:hover { background: var(--forgot-soft); color: var(--forgot-ink); }
+.deck-grip { flex: none; color: var(--muted); font-size: 14px; letter-spacing: -3px; cursor: grab; user-select: none; padding: 0 4px 0 0; opacity: .6; }
+.deck:hover .deck-grip { opacity: 1; }
 .deck-grip:active { cursor: grabbing; }
 .deck.dragging { opacity: 0.4; }
 .empty { font-size: 13px; color: var(--muted); margin-top: 12px; }
 
-/* toggle switch — used everywhere a word/collection's "on" state is shown:
-   the per-collection enable/disable toggle here in Settings, the Words tab
-   table's "In Study" column, the Add/Edit word modal, the popup quick-add,
-   and the Study tab's own browse table (see vocab-bank.js/word-editor.js/
-   popup.js/options.js — all reuse this exact class pair rather than each
-   defining their own). `display: inline-block` matters: .switch is a
-   <label> or <span> (inline by default), and width/height on a plain inline
-   element are ignored by CSS entirely UNLESS it's blockified — which
-   happens for free when the parent is a flex container (as .deck is here),
-   but NOT inside a plain <td> (the Words/Study tables have no flex parent).
-   Without this, the switch silently collapses to a hairline sliver in any
-   non-flex context instead of erroring loudly, which is exactly what
-   happened before this was added. */
-.switch { position: relative; display: inline-block; width: 40px; height: 22px; flex: none; }
-.switch input { opacity: 0; width: 0; height: 0; }
-.slider { position: absolute; inset: 0; background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; transition: .15s; cursor: pointer; }
-.slider::before { content: ""; position: absolute; width: 16px; height: 16px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: .15s; }
-.switch input:checked + .slider { background: var(--shu); border-color: var(--shu); }
-.switch input:checked + .slider::before { transform: translateX(18px); }
-
-.setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); }
-.setting:first-of-type { border-top: 0; }
-.setting label:first-child { font-size: 14px; }
-.label-note { font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 4px; }
-.setting input[type="number"] { width: 90px; }
-
-/* Card appearance */
-.setting-group { padding: 12px 0; border-top: 1px solid var(--line); }
-.setting-group:first-of-type { padding-top: 0; border-top: none; }
-.setting-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
-
-.theme-row { display: flex; gap: 8px; flex-wrap: wrap; }
-.swatch {
-  display: flex; align-items: center; gap: 7px;
-  padding: 7px 13px; border-radius: 10px;
-  border: 1.5px solid var(--line);
-  background: var(--paper); color: var(--ink);
-  font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit;
-  transition: border-color .12s, background .12s;
+/* --------------------------------- switch -------------------------------- */
+/* Used everywhere a word/collection's "on" state is shown (Settings, Words
+   table, word editor, popup quick-add, Study browse table). display:
+   inline-block matters — inside a plain <td> an inline element ignores
+   width/height and the switch would collapse to a sliver. */
+.switch { position: relative; display: inline-block; width: 38px; height: 22px; flex: none; vertical-align: middle; }
+.switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.slider {
+  position: absolute; inset: 0; cursor: pointer;
+  background: var(--line-2); border-radius: 999px; transition: background .18s;
 }
-.swatch::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--dot); flex: none; }
-.swatch:hover { background: var(--surface-2); }
-.swatch.active { border-color: var(--shu); background: var(--surface-2); }
+.slider::before {
+  content: ""; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px;
+  background: #fff; border-radius: 50%; transition: transform .18s cubic-bezier(.3,.7,.4,1.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+}
+.switch input:checked + .slider { background: var(--shu); }
+.switch input:checked + .slider::before { transform: translateX(16px); }
+.switch input:focus-visible + .slider { box-shadow: 0 0 0 3px var(--ring); }
+.switch input:disabled + .slider { opacity: .45; cursor: not-allowed; }
+
+/* -------------------------------- settings ------------------------------- */
+.setting { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); }
+.setting:first-of-type { border-top: 0; padding-top: 0; }
+.setting label:first-child { font-size: 14px; color: var(--ink); }
+.label-note {
+  display: inline-block; font-size: 11px; font-weight: 600; color: var(--shu-ink);
+  background: var(--shu-soft); border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: 1px;
+}
+.setting input[type="number"] { width: 96px; text-align: center; }
+
+.setting-group { padding: 16px 0; border-top: 1px solid var(--line); }
+.setting-group:first-of-type { padding-top: 0; border-top: none; }
+.setting-label { font-size: 12px; font-weight: 600; color: var(--ink-2); margin-bottom: 10px; }
+
+/* Choice buttons (theme swatch, position, appearance, study mode) share one
+   look: quiet tile, accent ring when active. */
+.theme-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.swatch, .pos-btn, .appearance-btn, .mode-btn {
+  border: 1px solid var(--line-2); background: var(--surface); color: var(--ink);
+  font: 500 13px var(--font-ui); cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s, box-shadow .15s;
+}
+.swatch:hover, .pos-btn:hover, .appearance-btn:hover, .mode-btn:hover { background: var(--surface-2); }
+.swatch:focus-visible, .pos-btn:focus-visible, .appearance-btn:focus-visible, .mode-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+.swatch.active, .pos-btn.active, .appearance-btn.active, .mode-btn.active {
+  border-color: var(--shu); background: var(--shu-soft); color: var(--shu-ink);
+  box-shadow: 0 0 0 1px var(--shu) inset;
+}
+
+.swatch { display: flex; align-items: center; gap: 9px; padding: 8px 14px 8px 10px; border-radius: 999px; }
+.swatch::before {
+  content: ""; width: 18px; height: 18px; border-radius: 50%; flex: none;
+  background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--dot) 55%, #fff), var(--dot) 70%);
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px color-mix(in srgb, var(--dot) 40%, transparent);
+}
+.swatch.active { color: var(--ink); }
 
 .pos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.pos-btn {
-  padding: 10px; border: 1.5px solid var(--line); border-radius: 10px;
-  background: var(--paper); color: var(--ink);
-  font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit;
-  text-align: center; transition: background .12s, border-color .12s, color .12s;
-}
-.pos-btn:hover:not(.active) { background: var(--surface-2); border-color: var(--shu); }
-.pos-btn.active { background: var(--shu); color: #fff; border-color: var(--shu); }
+.pos-btn, .appearance-btn { padding: 11px; border-radius: 11px; text-align: center; }
+.appearance-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 
-.appearance-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-.appearance-btn {
-  padding: 10px; border: 1.5px solid var(--line); border-radius: 10px;
-  background: var(--paper); color: var(--ink);
-  font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit;
-  text-align: center; transition: background .12s, border-color .12s, color .12s;
-}
-.appearance-btn:hover:not(.active) { background: var(--surface-2); border-color: var(--shu); }
-.appearance-btn.active { background: var(--shu); color: #fff; border-color: var(--shu); }
-
-/* Study mode selector */
 .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.mode-btn {
-  border: 1.5px solid var(--line); background: var(--paper); color: var(--ink);
-  border-radius: 12px; padding: 14px 12px; cursor: pointer; font-family: inherit;
-  text-align: left; transition: border-color .12s, background .12s;
-}
-.mode-btn:hover { background: var(--surface-2); }
-.mode-btn.active { border-color: var(--shu); background: var(--surface-2); }
-.mode-label { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
-.mode-desc { font-size: 12px; color: var(--muted); line-height: 1.45; }
+.mode-btn { border-radius: 14px; padding: 16px; text-align: left; }
+.mode-label { font-weight: 650; font-size: 14px; margin-bottom: 4px; color: var(--ink); }
+.mode-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
 
-.credit { font-size: 12px; color: var(--muted); text-align: center; margin-top: 24px; }
+.credit { font-size: 12px; color: var(--muted); text-align: center; margin-top: 40px; }
 .credit a { color: var(--muted); text-decoration: none; }
-.credit a:hover { color: var(--shu); }
+.credit a:hover { color: var(--shu-ink); }
 
-/* Tab nav */
-.tab-nav {
-  display: flex;
-  gap: 0;
-  margin-bottom: 20px;
-  border-bottom: 1px solid var(--line);
-}
-.tab-btn {
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  font-size: 14px;
-  font-weight: 500;
-  padding: 8px 18px;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  font-family: inherit;
-  border-radius: 0;
-  transition: color .12s;
-}
-.tab-btn:hover { color: var(--ink); }
-.tab-btn.active { color: var(--shu); border-bottom-color: var(--shu); }
-
-.tab-pane { display: none; }
-.tab-pane.active { display: block; }
-
-/* Stats */
-.stats-deck { margin-bottom: 18px; }
-.stats-deck-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-.stats-deck-name { font-weight: 600; font-size: 15px; }
-.stats-deck-count { font-size: 12px; color: var(--muted); }
+/* -------------------------------- tables --------------------------------- */
+.table-scroll { overflow-x: auto; border-radius: var(--r); border: 1px solid var(--line); }
+.table-scroll .stats-table { border: none; border-radius: 0; }
 
 .stats-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  overflow: hidden;
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  font-size: 13px; background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--r); overflow: hidden;
 }
 .stats-table th {
-  text-align: left;
-  padding: 9px 12px;
-  font-weight: 500;
-  color: var(--muted);
-  font-size: 12px;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface-2);
+  text-align: left; padding: 11px 14px;
+  font-size: 11px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--muted); background: var(--paper);
+  border-bottom: 1px solid var(--line); white-space: nowrap;
 }
-.stats-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--line);
-  vertical-align: middle;
-}
+.stats-table td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
 .stats-table tbody tr:last-child td { border-bottom: none; }
-.stats-table tbody tr:hover { background: var(--surface-2); }
-/* Kanji is the whole point of this app — 15px read as an afterthought next
-   to its own reading/meaning. Bumped enough to actually be comfortable. */
-.stats-table .kanji-cell { font-size: 21px; line-height: 1.3; }
-.stats-table .reading-cell { color: var(--ink-2); font-size: 14px; }
-/* Never wrap a word's own kanji/reading, even when Meaning/Notes are long
-   enough to squeeze the row — those columns should give way and wrap
-   instead (default <td> behavior, unchanged). Same priority rule as
-   .wlist-plain's .wl-k/.wl-r in vocab-bank.css and .kv-k/.kv-r in
-   content.js's on-page kanji view. Kanji-tab's on'yomi/kun'yomi columns
-   (.kt-readings) are a different thing — a whole reading LIST, not one
-   word's reading — so they opt back into wrapping below. */
+.stats-table tbody tr { transition: background .12s; }
+.stats-table tbody tr:hover { background: color-mix(in srgb, var(--shu) 5%, var(--surface)); }
+.stats-table .kanji-cell { font-family: var(--font-jp); font-size: 22px; font-weight: 500; line-height: 1.3; color: var(--ink); }
+.stats-table .reading-cell { color: var(--ink-2); font-size: 13px; }
+/* Kanji/reading never wrap — Meaning/Notes give way instead. The Kanji
+   tab's on/kun reading LISTS opt back into wrapping. */
 .stats-table .kanji-cell, .stats-table .reading-cell { white-space: nowrap; }
 .stats-table .kt-readings { white-space: normal; }
-.stats-table .cell-know { color: #1f7a46; font-weight: 500; }
-.stats-table .cell-hint { color: #a6540a; font-weight: 500; }
-.stats-table .cell-lupa { color: #c0392b; font-weight: 500; }
-.stats-table .cell-muted { color: var(--muted); }
-html[data-theme="dark"] .stats-table .cell-know { color: #4ade80; }
-html[data-theme="dark"] .stats-table .cell-hint { color: #fbbf24; }
-html[data-theme="dark"] .stats-table .cell-lupa { color: #f87171; }
+.stats-table .cell-know { color: var(--know-ink); font-weight: 650; }
+.stats-table .cell-hint { color: var(--hint-ink); font-weight: 650; }
+.stats-table .cell-lupa { color: var(--forgot-ink); font-weight: 650; }
+.stats-table .cell-muted, .cell-muted { color: var(--muted); }
 
 .ratio-bar {
-  width: 60px;
-  height: 5px;
-  border-radius: 99px;
-  background: var(--surface-2);
-  overflow: hidden;
-  display: inline-block;
-  vertical-align: middle;
-  margin-right: 6px;
+  width: 56px; height: 6px; border-radius: 99px; background: var(--surface-2);
+  overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 8px;
 }
-.ratio-fill {
-  height: 100%;
-  background: #1f7a46;
-  border-radius: 99px;
-}
-html[data-theme="dark"] .ratio-fill { background: #4ade80; }
+.ratio-fill { display: block; height: 100%; background: var(--know); border-radius: 99px; }
 
-/* Study tab */
+/* ================================ STUDY ================================== */
+/* Everything except the word list is a centered focus column — the card is
+   the one thing on screen that matters while studying. */
+#studyContent > :not(.study-browse) { max-width: 640px; margin-left: auto; margin-right: auto; }
+
 .study-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
 .study-toolbar label { font-size: 13px; color: var(--muted); }
 .study-toolbar select { flex: 1; min-width: 160px; }
 
-/* Session progress — how far through the current queue, not a single word's
-   own SRS stats (that's the badge in .study-card-top below). */
-.study-progress-bar { height: 4px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-bottom: 10px; }
-.study-progress-bar-fill { height: 100%; background: var(--shu); border-radius: 999px; transition: width .2s; }
+/* Direction toggle — segmented control. */
+.direction-row {
+  display: flex; width: fit-content; gap: 4px; padding: 4px; margin-bottom: 22px;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px;
+}
+#studyContent > .direction-row { margin-left: auto; margin-right: auto; }
+.direction-btn {
+  border: 0; background: transparent; color: var(--muted);
+  font: 550 13px var(--font-ui); padding: 7px 16px; border-radius: 9px; cursor: pointer;
+  transition: background .15s, color .15s, box-shadow .15s;
+}
+.direction-btn:hover:not(.active) { color: var(--ink); }
+.direction-btn.active { background: var(--surface); color: var(--shu-ink); box-shadow: var(--shadow-sm), 0 0 0 1px var(--line); }
+.direction-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 
-.study-card-top { display: flex; justify-content: center; margin-bottom: 8px; }
+.study-progress-bar { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-bottom: 14px; }
+.study-progress-bar-fill {
+  height: 100%; border-radius: 999px; transition: width .3s cubic-bezier(.2,.8,.2,1);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--shu) 65%, #fff), var(--shu));
+}
+
+.study-card-top { display: flex; justify-content: center; margin-bottom: 12px; }
 
 .study-card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 32px 24px;
-  text-align: center;
-  min-height: 220px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: box-shadow .15s;
-  user-select: none;
+  position: relative; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xl);
+  padding: 56px 32px 44px; text-align: center; min-height: 300px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; user-select: none; box-shadow: var(--shadow);
+  transition: box-shadow .2s, transform .2s;
 }
-.study-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-/* Once revealed, clicking the card itself no longer does anything (only the
-   per-character kanji spans below do, via .wv-k-char from vocab-bank.css) —
-   drop the pointer cursor so the card doesn't keep advertising a click that
-   no longer has an effect. */
+.study-card::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 5px;
+  background: linear-gradient(90deg, var(--shu), color-mix(in srgb, var(--shu) 40%, var(--know)), var(--know));
+  opacity: .85;
+}
+.study-card:not(.revealed):hover { transform: translateY(-2px); box-shadow: var(--shadow), 0 18px 40px -20px color-mix(in srgb, var(--shu) 45%, transparent); }
 .study-card.revealed { cursor: default; }
-.study-card .front-furigana { font-size: 16px; color: var(--muted); letter-spacing: .04em; margin-bottom: 4px; }
-.study-card .front-kanji { font-size: 52px; font-weight: 500; line-height: 1.2; word-break: break-word; }
-.study-card .front-hint { font-size: 14px; color: var(--muted); margin-top: 8px; }
+.study-card .front-furigana { font-size: 16px; color: var(--muted); letter-spacing: .08em; margin-bottom: 6px; }
+.study-card .front-kanji, .study-card .back-kanji {
+  font-family: var(--font-jp); font-size: 68px; font-weight: 500; line-height: 1.15;
+  letter-spacing: .02em; word-break: break-word; color: var(--ink);
+}
+.study-card .front-hint {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--muted); margin-top: 22px;
+  padding: 5px 12px; border-radius: 999px; background: var(--surface-2);
+}
+.study-card .front-arti { font-size: 26px; font-weight: 650; color: var(--shu-ink); line-height: 1.4; }
+.study-card .back-kanji { margin-top: 14px; }
 
 .study-card .back { display: none; width: 100%; }
-.study-card .back.show { display: block; }
-.study-card .back-reading { font-size: 20px; color: var(--ink); margin-top: 12px; }
-.study-card .back-arti { font-size: 22px; font-weight: 600; color: var(--shu); margin-top: 8px; }
-.study-card .back-example { font-size: 14px; color: var(--ink-2); margin-top: 10px; font-style: italic; line-height: 1.5; }
-.study-card .back-notes { font-size: 14px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+.study-card .back.show { display: block; animation: fade .25s ease; }
+.study-card .back.show::before {
+  content: ""; display: block; width: 48px; height: 2px; border-radius: 2px;
+  background: var(--line-2); margin: 22px auto 16px;
+}
+.study-card .back-reading { font-size: 20px; color: var(--ink-2); letter-spacing: .04em; }
+.study-card .back-arti { font-size: 24px; font-weight: 650; color: var(--shu-ink); margin-top: 6px; line-height: 1.35; }
+.study-card .back-example {
+  font-size: 14px; color: var(--ink-2); margin: 18px auto 0; max-width: 460px;
+  line-height: 1.6; padding: 10px 14px; border-radius: 12px; background: var(--paper);
+}
+.study-card .back-notes { font-size: 13px; color: var(--muted); margin: 12px auto 0; max-width: 460px; line-height: 1.6; }
 
-.study-actions { display: flex; gap: 10px; margin-top: 18px; justify-content: center; flex-wrap: wrap; }
-.study-actions .btn { min-width: 90px; }
+/* Grade buttons — semantic colors, same meaning everywhere (tally pills,
+   table stat cells, the on-page popup). */
+.study-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 18px; }
+.study-actions .btn { padding: 13px 10px; font-size: 14px; border-radius: 12px; }
+.study-actions .btn kbd {
+  font: 600 10px var(--font-ui); padding: 2px 6px; border-radius: 5px;
+  background: color-mix(in srgb, currentColor 14%, transparent); opacity: .85;
+}
+.btn.grade-forgot { background: var(--forgot-soft); color: var(--forgot-ink); border-color: transparent; }
+.btn.grade-forgot:hover:not(:disabled) { background: color-mix(in srgb, var(--forgot) 22%, var(--surface)); }
+.btn.grade-hint { background: var(--hint-soft); color: var(--hint-ink); border-color: transparent; }
+.btn.grade-hint:hover:not(:disabled) { background: color-mix(in srgb, var(--hint) 22%, var(--surface)); }
+.btn.grade-know { background: var(--know); color: #fff; border-color: transparent; box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--know) 80%, transparent); }
+html[data-theme="dark"] .btn.grade-know { color: #052e1a; }
+.btn.grade-know:hover:not(:disabled) { background: color-mix(in srgb, var(--know) 88%, #000); }
+.study-actions .btn:disabled { opacity: .35; }
 
-.study-undo { text-align: center; margin-top: 10px; }
+.study-undo { text-align: center; margin-top: 12px; }
 
-.study-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
-.study-progress { font-size: 13px; color: var(--muted); }
-
-.study-shortcuts { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; }
-.study-shortcuts kbd {
-  display: inline-block; font-family: inherit; font-size: 10px; font-weight: 600;
-  padding: 1px 5px; border-radius: 4px; background: var(--surface-2); color: var(--ink-2);
-  margin: 0 1px;
+.study-nav { display: flex; align-items: center; gap: 8px; margin-top: 18px; }
+.study-nav .study-progress { margin: 0 auto; }
+.study-progress {
+  font-size: 12px; font-weight: 650; color: var(--ink-2); font-variant-numeric: tabular-nums;
+  padding: 5px 12px; border-radius: 999px; background: var(--surface-2);
 }
 
-.study-paused { text-align: center; padding: 40px 20px; }
-.study-paused-title { font-size: 15px; font-weight: 600; color: var(--ink-2); margin-bottom: 14px; }
+.study-shortcuts { font-size: 11px; color: var(--muted); text-align: center; margin-top: 16px; }
+.study-shortcuts kbd, .study-actions kbd { display: inline-block; }
+.study-shortcuts kbd {
+  font: 600 10px var(--font-ui); padding: 2px 6px; border-radius: 5px;
+  background: var(--surface); border: 1px solid var(--line-2); border-bottom-width: 2px;
+  color: var(--ink-2); margin: 0 1px;
+}
+
+.study-paused, .study-done {
+  text-align: center; padding: 48px 28px; border-radius: var(--r-xl);
+  background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow);
+}
+.study-paused-title { font-size: 18px; font-weight: 700; color: var(--ink); margin-bottom: 18px; }
 .study-paused .btn { min-width: 180px; }
 
-/* Session-complete tally — Know/Hint/Forgot counts + recall rate, shown once
-   at least one card was graded this session (see renderStudy()'s done
-   screen). Pill colors intentionally reuse the same hues as vocab-bank.css's
-   .status-badge tiers (green/amber/muted-red family) rather than inventing a
-   third palette, so "success vs. needs-work" reads the same way everywhere. */
-.study-tally { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
-.tally-pill { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
-.tally-know { background: #dcfce7; color: #166534; }
-.tally-hint { background: #fef3c7; color: #92400e; }
-.tally-forgot { background: var(--surface-2); color: var(--muted); }
-html[data-theme="dark"] .tally-know { background: #14532d; color: #86efac; }
-html[data-theme="dark"] .tally-hint { background: #78350f; color: #fde68a; }
-.tally-accuracy { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); }
+.study-done-icon {
+  width: 64px; height: 64px; border-radius: 20px; margin: 0 auto 18px;
+  display: grid; place-items: center; font-size: 30px; color: #fff;
+  background: linear-gradient(140deg, color-mix(in srgb, var(--know) 70%, #fff), var(--know));
+  box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--know) 80%, transparent);
+}
+.study-done-title { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+.study-done-sub { font-size: 14px; color: var(--muted); margin-top: 4px; }
+.study-done-actions { margin-top: 26px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.study-done-actions .btn { min-width: 160px; }
 
-.study-browse { margin-top: 20px; }
-.browse-summary { font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; padding: 6px 0; user-select: none; }
-.browse-summary:hover { color: var(--ink); }
-/* Shown only while a card is actively up (see renderStudy()'s `locked` param
-   to browseSectionHtml) — explains why the toolbar/switches below are
-   disabled and offers the one way out of it (Pause). */
+.study-tally { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+.tally-pill, .tally-accuracy { font-size: 12px; font-weight: 650; padding: 6px 12px; border-radius: 999px; }
+.tally-know { background: var(--know-soft); color: var(--know-ink); }
+.tally-hint { background: var(--hint-soft); color: var(--hint-ink); }
+.tally-forgot { background: var(--forgot-soft); color: var(--forgot-ink); }
+.tally-accuracy { background: var(--shu-soft); color: var(--shu-ink); }
+
+/* Word list (collapsible, full width under the focus column). */
+.study-browse {
+  margin-top: 40px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 4px 22px;
+}
+.study-browse[open] { padding-bottom: 22px; }
+.browse-summary {
+  list-style: none; display: flex; align-items: center; gap: 10px;
+  font-size: 14px; font-weight: 650; color: var(--ink); cursor: pointer;
+  padding: 16px 0; user-select: none;
+}
+.browse-summary::-webkit-details-marker { display: none; }
+.browse-summary::before {
+  content: ""; width: 7px; height: 7px; flex: none; margin: 0 4px 0 2px;
+  border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);
+  transform: rotate(-45deg); transition: transform .15s;
+}
+.study-browse[open] > .browse-summary::before { transform: rotate(45deg); }
+.browse-summary:hover::before { border-color: var(--ink); }
+.study-browse > .hint { margin-top: 0; }
 .study-browse-locked {
-  font-size: 12px; color: var(--muted); background: var(--surface-2);
-  border-radius: 8px; padding: 8px 10px; margin-top: 6px;
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--hint-ink); background: var(--hint-soft);
+  border-radius: 10px; padding: 9px 12px; margin-bottom: 10px;
+}
+
+@media (max-width: 860px) {
+  .app-header { position: static; }
+  .app-header-inner { flex-direction: column; align-items: stretch; gap: 14px; }
+  .tab-nav { margin-left: 0; }
+  .brand-text .tag { display: none; }
+}
+@media (max-width: 560px) {
+  body { padding: 0 14px 48px; }
+  .app-header { margin: 0 -14px 24px; padding: 0 14px; }
+  .panel { padding: 20px 18px; }
+  .study-card { padding: 44px 20px 34px; min-height: 260px; }
+  .study-card .front-kanji, .study-card .back-kanji { font-size: 54px; }
+  .mode-grid, .pos-grid { grid-template-columns: 1fr; }
 }

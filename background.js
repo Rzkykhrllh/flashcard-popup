@@ -74,6 +74,22 @@ function wordToCard(w) {
     createdAt: w.createdAt || 0,
     n: w.n || 0,
     easeFactor: w.easeFactor || 2.5,
+    // "Rev" = the reverse-direction (arti -> kanji) Study tab mode — its own
+    // seen/known/hint/forgot/n/easeFactor, entirely separate from the fields
+    // above. Recognition (kanji -> arti, what pickCard/content.js's on-page
+    // popup always tests) and production (arti -> kanji) are genuinely
+    // different skills for kanji specifically, so sharing one counter would
+    // mean acing recognition reps quietly makes the on-page popup show a
+    // word LESS even if you still can't produce it, or vice versa. Same
+    // "purely additive" note as above applies: pickCard/content.js never
+    // read these, so this doesn't touch their behavior at all.
+    seenRev: w.seenRev || 0,
+    knownRev: w.knownRev || 0,
+    hintRev: w.hintRev || 0,
+    forgotRev: w.forgotRev || 0,
+    lastSeenRev: w.lastSeenRev || 0,
+    nRev: w.nRev || 0,
+    easeFactorRev: w.easeFactorRev || 2.5,
   };
 }
 
@@ -376,16 +392,35 @@ async function closeCardOnAllTabs() {
 
 /* ------------------------------ grade + snooze ---------------------------- */
 
-async function recordGrade(key, result) {
+// `direction` ("forward" default, or "reverse" — see options.js's Study
+// tab direction toggle) picks which set of fields this grade updates.
+// content.js's on-page popup and every other "grade" sender never pass it,
+// so they always take the `else` branch below — byte-for-byte the same
+// forward-mode logic as before this existed, untouched on purpose.
+async function recordGrade(key, result, direction) {
   const card = await getWord(key);
   if (!card) return;
-  card.seen = (card.seen || 0) + 1;
-  card.lastSeen = Date.now();
-  if (result === "known") card.known = (card.known || 0) + 1;
-  else if (result === "hint")   card.hint  = (card.hint  || 0) + 1;
-  else if (result === "forgot") card.forgot = (card.forgot || 0) + 1;
-  Object.assign(card, applySM2(card, result));
-  if (!card.statusOverride) card.status = deriveStatus(card);
+  if (direction === "reverse") {
+    card.seenRev = (card.seenRev || 0) + 1;
+    card.lastSeenRev = Date.now();
+    if (result === "known") card.knownRev = (card.knownRev || 0) + 1;
+    else if (result === "hint")   card.hintRev  = (card.hintRev  || 0) + 1;
+    else if (result === "forgot") card.forgotRev = (card.forgotRev || 0) + 1;
+    const sm = applySM2({ n: card.nRev, easeFactor: card.easeFactorRev }, result);
+    card.nRev = sm.n;
+    card.easeFactorRev = sm.easeFactor;
+    // Deliberately no statusRev/deriveStatus for the reverse direction yet —
+    // nothing displays it, so it'd just be dead state (see the "lightweight
+    // tracking" scope this feature was built to).
+  } else {
+    card.seen = (card.seen || 0) + 1;
+    card.lastSeen = Date.now();
+    if (result === "known") card.known = (card.known || 0) + 1;
+    else if (result === "hint")   card.hint  = (card.hint  || 0) + 1;
+    else if (result === "forgot") card.forgot = (card.forgot || 0) + 1;
+    Object.assign(card, applySM2(card, result));
+    if (!card.statusOverride) card.status = deriveStatus(card);
+  }
   await putWord(card);
 }
 
@@ -577,7 +612,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         break;
       }
       case "grade": {
-        await recordGrade(msg.key, msg.result);
+        await recordGrade(msg.key, msg.result, msg.direction);
         currentCard = null;
         closeCardOnAllTabs();
         sendResponse({ ok: true });

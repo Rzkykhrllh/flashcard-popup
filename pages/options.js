@@ -330,7 +330,7 @@ syncAllBtn.addEventListener("click", async () => {
   syncAllBtn.textContent = "Syncing…";
   const { results }      = await send({ type: "syncAll" });
   syncAllBtn.disabled    = false;
-  syncAllBtn.textContent = "Sync all";
+  syncAllBtn.textContent = "↻ Sync all";
   const failed  = (results || []).filter((r) => !r.ok);
   const added   = (results || []).reduce((s, r) => s + (r.added   || 0), 0);
   const updated = (results || []).reduce((s, r) => s + (r.updated || 0), 0);
@@ -401,7 +401,6 @@ const tabPanes = document.querySelectorAll(".tab-pane");
 function switchTab(tab) {
   tabBtns.forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
   tabPanes.forEach((p) => p.classList.toggle("active", p.id === `tab-${tab}`));
-  if (tab === "stats") renderStats();
   if (tab === "study") renderStudy();
   if (tab === "list" && typeof reloadData === "function") reloadData(); // refresh in case Study just recorded grades
   if (tab === "kanji" && typeof renderKanjiTab === "function") renderKanjiTab();
@@ -413,9 +412,19 @@ tabBtns.forEach((btn) => {
   btn.addEventListener("click", () => switchTab(btn.dataset.tab));
 });
 
-// Open to a specific tab via URL hash (e.g. options.html#study)
+// Open to a specific tab via URL hash (e.g. options.html#study), falling
+// back to "study" — the tab already marked active in options.html's static
+// markup — when there's no hash (the normal case: the popup's "Open bank"
+// button links to a bare options.html, no hash at all). Without this call,
+// nothing ever actually invoked switchTab("study") on a fresh load: the
+// pane just LOOKED active from its CSS class, but studyContent stayed
+// genuinely empty until you switched to another tab and back (whichever
+// tab you landed on next was the first one to ever get its render*()
+// called). Every other tab already has this same "only renders once
+// switchTab() runs" property — study just happens to be the one that's
+// also the default, so it's the one that needs this explicit kick.
 const hashTab = window.location.hash.replace("#", "");
-if (hashTab) switchTab(hashTab);
+switchTab(hashTab || "study");
 
 // Red (barely known) -> green (well known), scaled straight off the same
 // "know" ratio the bar's width already encodes — so the color is never a
@@ -433,115 +442,12 @@ function ratioColor(pct) {
   return `hsl(${hue}, 70%, ${dark ? 60 : 38}%)`;
 }
 
-/* ---------------------------------- stats --------------------------------- */
-
-let statsState = { categoryId: "__all__" };
-
-async function renderStats() {
-  const container = el("statsContent");
-  const state     = await send({ type: "getState" });
-
-  if (!state.categories.length) {
-    container.innerHTML = '<p class="empty" style="margin-top:12px">No decks yet.</p>';
-    return;
-  }
-
-  const selectedId = statsState.categoryId || "__all__";
-  statsState.categoryId = selectedId;
-  const shownCategories = selectedId === "__all__"
-    ? state.categories
-    : state.categories.filter((c) => c.id === selectedId);
-
-  let html = '<div class="study-toolbar"><label>Category</label><select id="statsCategorySelect" class="tab-select">';
-  html += `<option value="__all__"${selectedId === "__all__" ? " selected" : ""}>All categories</option>`;
-  for (const cat of state.categories) {
-    const sel = selectedId === cat.id ? " selected" : "";
-    html += `<option value="${cat.id}"${sel}>${cat.name}</option>`;
-  }
-  html += '</select></div>';
-  container.innerHTML = html;
-
-  document.getElementById("statsCategorySelect").addEventListener("change", (e) => {
-    statsState.categoryId = e.target.value;
-    renderStats();
-  });
-
-  const sectionsWrap = document.createElement("div");
-  container.appendChild(sectionsWrap);
-
-  for (const deck of shownCategories) {
-    const cards   = state.cards[deck.id] || {};
-    const entries = Object.entries(cards);
-
-    const section = document.createElement("div");
-    section.className = "stats-deck";
-
-    const hdr = document.createElement("div");
-    hdr.className = "stats-deck-header";
-    hdr.innerHTML = `<span class="stats-deck-name"></span><span class="stats-deck-count">${entries.length} cards</span>`;
-    hdr.querySelector(".stats-deck-name").textContent = deck.name;
-    section.appendChild(hdr);
-
-    if (!entries.length) {
-      const p = document.createElement("p");
-      p.className = "empty";
-      p.textContent = "This deck is empty.";
-      section.appendChild(p);
-      sectionsWrap.appendChild(section);
-      continue;
-    }
-
-    // Seen cards first (desc), then unseen alphabetically.
-    entries.sort((a, b) => {
-      const sa = a[1].seen || 0, sb = b[1].seen || 0;
-      if (sb !== sa) return sb - sa;
-      return a[1].kanji.localeCompare(b[1].kanji);
-    });
-
-    const table = document.createElement("table");
-    table.className = "stats-table";
-    table.innerHTML = `
-      <thead><tr>
-        <th>Kanji</th><th>Reading</th><th>Meaning</th><th>Shown</th><th>Last seen</th><th>Know</th><th>Hint</th><th>Forgot</th><th>Ratio</th>
-      </tr></thead>
-      <tbody></tbody>
-    `;
-    const tbody = table.querySelector("tbody");
-
-    for (const [, card] of entries) {
-      const seen  = card.seen   || 0;
-      const known = card.known  || 0;
-      const hintC = card.hint   || 0;
-      const lupa  = card.forgot || 0;
-      const total = known + hintC + lupa;
-      const pct   = total > 0 ? Math.round((known / total) * 100) : 0;
-
-      const tr = document.createElement("tr");
-      if (!seen) tr.className = "cell-muted";
-
-      tr.innerHTML = `
-        <td class="kanji-cell"></td>
-        <td class="reading-cell"></td>
-        <td class="arti-cell"></td>
-        <td>${seen || "—"}</td>
-        <td>${card.lastSeen ? timeAgo(card.lastSeen) : "—"}</td>
-        <td class="${known ? "cell-know"  : "cell-muted"}">${seen ? known : "—"}</td>
-        <td class="${hintC ? "cell-hint"  : "cell-muted"}">${seen ? hintC : "—"}</td>
-        <td class="${lupa  ? "cell-lupa"  : "cell-muted"}">${seen ? lupa  : "—"}</td>
-        <td>${seen
-          ? `<span class="ratio-bar"><span class="ratio-fill" style="width:${pct}%;background:${ratioColor(pct)}"></span></span><span style="color:${ratioColor(pct)};font-weight:500">${pct}%</span>`
-          : '<span class="cell-muted">—</span>'}</td>
-      `;
-      tr.querySelector(".kanji-cell").textContent   = card.kanji;
-      tr.querySelector(".reading-cell").textContent = card.hiragana || "—";
-      tr.querySelector(".arti-cell").textContent    = card.arti || "—";
-      tbody.appendChild(tr);
-    }
-
-    section.appendChild(table);
-    sectionsWrap.appendChild(section);
-  }
-}
+// The Stats tab used to live here as its own pane (per-category tables,
+// Kanji/Reading/Meaning/Shown/Last seen/Know/Hint/Forgot/Ratio) — merged
+// into the Study tab's word-list table below instead (renderStudyBrowse),
+// so review stats sit right next to the same "In popup" toggle rather than
+// being a second, separately-filtered table you had to flip tabs to reach.
+// ratioColor() above is now called from renderStudyBrowse().
 
 /* -------------------------------- study tab ------------------------------- */
 
@@ -558,8 +464,20 @@ async function renderStats() {
 // browseSectionHtml() below. It's what makes the browse panel read-only the
 // rest of the time: locking is derived from "there's an active queue and
 // you're not paused/done", not tracked as its own flag.
+// `direction` ("forward" | "reverse") picks which side of a word is the
+// prompt — "forward" (default) shows kanji, asking you to recall the
+// meaning (recognition — matches content.js's on-page popup); "reverse"
+// shows the meaning, asking you to recall the kanji/reading (production —
+// useful for kaiwa, where you start from what you mean to say, not from
+// the kanji). Set via the direction toggle in renderStudy() below. Grades
+// in each direction go to their own seen/known/hint/forgot/n/easeFactor
+// fields (plain vs "...Rev" — see wordToCard() in background.js) since
+// they're genuinely different skills; the on-page popup only ever reads
+// the plain fields; see recordGrade() for the direction-branch. Changing
+// direction always starts a fresh session — see wireDirectionToggle().
 let studyState = {
   cards: [], index: 0, revealed: false, browseOpen: false, done: false, paused: false,
+  direction: "forward",
   _eligibilityChanged: false,
   tally: { known: 0, hint: 0, forgot: 0 },
   forgottenKeys: new Set(),
@@ -580,6 +498,7 @@ function saveStudySession() {
       revealed: studyState.revealed,
       done: studyState.done,
       paused: studyState.paused,
+      direction: studyState.direction,
       tally: studyState.tally,
       forgottenKeys: [...studyState.forgottenKeys],
     },
@@ -607,6 +526,7 @@ async function restoreStudySession(entries) {
   studyState.revealed = !!studySession.revealed;
   studyState.done = !!studySession.done;
   studyState.paused = !!studySession.paused;
+  studyState.direction = studySession.direction === "reverse" ? "reverse" : "forward";
   studyState.tally = studySession.tally || { known: 0, hint: 0, forgot: 0 };
   studyState.forgottenKeys = new Set(studySession.forgottenKeys || []);
 }
@@ -748,6 +668,17 @@ async function renderStudy() {
 
   let html = "";
 
+  // Direction toggle — prepended before every branch below (done/empty/
+  // paused/active all render it, via wireDirectionToggle() called after
+  // each one's own container.innerHTML assignment) so it's reachable no
+  // matter what state the session is in, not just from the done screen.
+  const isReverse = studyState.direction === "reverse";
+  html += `
+    <div class="direction-row" role="group" aria-label="Study direction">
+      <button type="button" class="direction-btn ${!isReverse ? "active" : ""}" id="dirForwardBtn">Kanji &rarr; Arti</button>
+      <button type="button" class="direction-btn ${isReverse ? "active" : ""}" id="dirReverseBtn">Arti &rarr; Kanji</button>
+    </div>`;
+
   // Session complete screen
   if (studyState.done) {
     const { known, hint, forgot } = studyState.tally;
@@ -757,11 +688,23 @@ async function renderStudy() {
     // resets it), so it counts as a successful (if imperfect) recall.
     const accuracy = gradedTotal > 0 ? Math.round(((known + hint) / gradedTotal) * 100) : 0;
     const forgottenCount = studyState.forgottenKeys.size;
+    // Whether to offer "Study whole deck" is now DERIVED straight from the
+    // current data — current queue size vs. the full eligible count — rather
+    // than trusted from a flag someone set earlier in the session (the first
+    // cut of this fix used a `subSession` boolean set only inside
+    // reviewForgotBtn's own handler below; a queue that was ALREADY mid-
+    // session/restored from a previous browser session, e.g. right after
+    // reloading the extension, never ran that handler in the current page
+    // load and so never got the flag, even though it was genuinely a
+    // forgotten-only round — this recomputes fresh every render instead, so
+    // it can't go stale or depend on how the queue got here).
+    const totalEligible = entries.filter((entry) => isWordEligible(state, entry)).length;
+    const isPartialQueue = studyState.cards.length < totalEligible;
     html += `
-      <div style="text-align:center;padding:60px 20px">
-        <div style="font-size:48px;margin-bottom:16px">&#10003;</div>
-        <div style="font-size:20px;font-weight:600;margin-bottom:8px">Session complete</div>
-        <div style="font-size:14px;color:var(--muted);margin-bottom:${gradedTotal ? "16" : "24"}px">All cards reviewed.</div>
+      <div class="study-done">
+        <div class="study-done-icon">&#10003;</div>
+        <div class="study-done-title">Session complete</div>
+        <div class="study-done-sub">お疲れさま — all cards reviewed.</div>
         ${gradedTotal ? `
         <div class="study-tally">
           <span class="tally-pill tally-know">Know ${known}</span>
@@ -769,15 +712,17 @@ async function renderStudy() {
           <span class="tally-pill tally-forgot">Forgot ${forgot}</span>
           <span class="tally-accuracy">${accuracy}% recalled</span>
         </div>` : ""}
-        <div style="margin-top:24px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-          <button class="btn primary" id="restudyBtn" style="min-width:160px">Study again</button>
-          ${forgottenCount ? `<button class="btn" id="reviewForgotBtn" style="min-width:160px">Review forgotten (${forgottenCount})</button>` : ""}
+        <div class="study-done-actions">
+          <button class="btn primary" id="restudyBtn">Study again</button>
+          ${forgottenCount ? `<button class="btn" id="reviewForgotBtn">Review forgotten (${forgottenCount})</button>` : ""}
+          ${isPartialQueue ? `<button class="btn" id="studyWholeDeckBtn">Study whole deck (${totalEligible})</button>` : ""}
         </div>
       </div>`;
     html += browseSectionHtml(state, false);
     container.innerHTML = html;
     renderStudyBrowse(container, entries, state, false);
     wireBrowseToolbar(container, entries, state);
+    wireDirectionToggle();
     document.getElementById("restudyBtn").addEventListener("click", () => {
       studyState.done = false;
       shuffle(studyState.cards);
@@ -804,6 +749,18 @@ async function renderStudy() {
       studyState.lastGrade = null;
       renderStudy();
     });
+    // Only rendered when isPartialQueue is true (see above) — the way back
+    // to the FULL deck, since restudyBtn above deliberately stays within
+    // whatever subset you were just reviewing. Clearing studyState.cards and
+    // re-rendering reuses the exact same "fresh session" rebuild at the top
+    // of this function (isFreshSession — see the comment there) instead of
+    // duplicating its eligible-entries logic here.
+    const studyWholeDeckBtn = document.getElementById("studyWholeDeckBtn");
+    if (studyWholeDeckBtn) studyWholeDeckBtn.addEventListener("click", () => {
+      studyState.cards = [];
+      studyState.done = false;
+      renderStudy();
+    });
     saveStudySession();
     return;
   }
@@ -814,6 +771,7 @@ async function renderStudy() {
     container.innerHTML = html;
     renderStudyBrowse(container, entries, state, false);
     wireBrowseToolbar(container, entries, state);
+    wireDirectionToggle();
     saveStudySession();
     return;
   }
@@ -834,6 +792,7 @@ async function renderStudy() {
     container.innerHTML = html;
     renderStudyBrowse(container, entries, state, false);
     wireBrowseToolbar(container, entries, state);
+    wireDirectionToggle();
     document.getElementById("resumeStudyBtn").addEventListener("click", () => {
       studyState.paused = false;
       renderStudy();
@@ -859,30 +818,32 @@ async function renderStudy() {
     <div class="study-card-top">${statusBadge(current.status || "new")}</div>
     <div class="study-card ${studyState.revealed ? 'revealed' : ''}" id="studyCard">
       <div class="front">
-        ${showFurigana && current.hiragana ? `<div class="front-furigana">${current.hiragana}</div>` : ""}
-        <div class="front-kanji" id="studyFrontKanji">${escapeHtml(current.kanji)}</div>
-        ${studyState.revealed ? "" : '<div class="front-hint">Click or Space to reveal</div>'}
+        ${isReverse
+          ? `<div class="front-arti">${current.arti ? current.arti : '<span style="color:var(--muted);font-weight:400">(no meaning saved)</span>'}</div>`
+          : `${showFurigana && current.hiragana ? `<div class="front-furigana">${current.hiragana}</div>` : ""}<div class="front-kanji" id="studyFrontKanji">${escapeHtml(current.kanji)}</div>`}
+        ${studyState.revealed ? "" : '<div class="front-hint">Click or press <b>Space</b> to reveal</div>'}
       </div>
       <div class="back ${studyState.revealed ? 'show' : ''}">
-        ${showReadingOnReveal ? `<div class="back-reading">${current.hiragana || ''}</div>` : ''}
-        <div class="back-arti">${current.arti || ''}</div>
+        ${isReverse
+          ? `<div class="back-kanji" id="studyBackKanji">${escapeHtml(current.kanji)}</div>${showReadingOnReveal ? `<div class="back-reading">${current.hiragana || ''}</div>` : ''}`
+          : `${showReadingOnReveal ? `<div class="back-reading">${current.hiragana || ''}</div>` : ''}<div class="back-arti">${current.arti || ''}</div>`}
         ${current.example ? `<div class="back-example">${escapeHtml(current.example)}</div>` : ''}
         ${current.notes ? `<div class="back-notes">${current.notes}</div>` : ''}
       </div>
     </div>
     <div class="study-actions" id="studyActions">
-      <button class="btn" id="studyForgot" ${studyState.revealed ? '' : 'disabled'}>Forgot</button>
-      <button class="btn" id="studyHint" ${studyState.revealed ? '' : 'disabled'}>Hint</button>
-      <button class="btn primary" id="studyKnow" ${studyState.revealed ? '' : 'disabled'}>Know</button>
+      <button class="btn grade-forgot" id="studyForgot" ${studyState.revealed ? '' : 'disabled'}>Forgot <kbd>1</kbd></button>
+      <button class="btn grade-hint" id="studyHint" ${studyState.revealed ? '' : 'disabled'}>Hint <kbd>2</kbd></button>
+      <button class="btn grade-know" id="studyKnow" ${studyState.revealed ? '' : 'disabled'}>Know <kbd>3</kbd></button>
     </div>
     ${lastGrade ? `<p class="study-undo"><button type="button" class="btn-link" id="undoGradeBtn">Undo last grade — "${escapeHtml(lastGrade.kanji)}" (${lastGrade.result})</button></p>` : ""}
     <div class="study-nav">
       <button class="btn" id="studyPrev" ${studyState.index > 0 ? '' : 'disabled'}>&larr; Prev</button>
       <span class="study-progress">${studyState.index + 1} / ${total}</span>
       <button class="btn ${studyState.revealed ? '' : 'ghost'}" id="studyNext">${studyState.revealed ? 'Next &rarr;' : 'Skip &rarr;'}</button>
-      <button class="btn" id="studyShuffle">Shuffle</button>
+      <button class="btn ghost" id="studyShuffle" title="Shuffle the queue">⇄ Shuffle</button>
     </div>
-    <p class="study-shortcuts"><kbd>Space</kbd> flip &middot; <kbd>&larr;</kbd><kbd>&rarr;</kbd> nav &middot; <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> grade</p>`;
+    <p class="study-shortcuts"><kbd>Space</kbd> flip &nbsp;&middot;&nbsp; <kbd>&larr;</kbd> <kbd>&rarr;</kbd> navigate &nbsp;&middot;&nbsp; <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> grade</p>`;
   // Locked while a card's actively up — editing eligibility mid-card would
   // shift the queue under you (see the isFreshSession/lastGrade comments
   // above); pausing first (see studyState.paused above) is the deliberate
@@ -894,6 +855,7 @@ async function renderStudy() {
 
   renderStudyBrowse(container, entries, state, true);
   wireBrowseToolbar(container, entries, state);
+  wireDirectionToggle();
 
   const pauseBtn = document.getElementById("pauseStudyBtn");
   if (pauseBtn) pauseBtn.addEventListener("click", () => {
@@ -901,15 +863,20 @@ async function renderStudy() {
     renderStudy();
   });
 
-  // Once revealed, each kanji character in the front becomes its own
-  // clickable span opening the same kanji detail modal the Words tab uses
+  // Once revealed, each kanji character becomes its own clickable span
+  // opening the same kanji detail modal the Words tab uses
   // (renderKanjiInline/openKanjiModal — both defined in word-editor.js,
   // reused as-is since options.html loads it into this same shared script
-  // scope). Only wired when revealed: before that, .front-kanji stays plain
-  // text so a click anywhere on the card still just reveals it (see the
-  // studyCard listener below, unaffected either way since it already no-ops
-  // once revealed).
-  if (studyState.revealed) renderKanjiInline(document.getElementById("studyFrontKanji"), current.kanji);
+  // scope). Only wired when revealed: before that, the kanji element stays
+  // plain text so a click anywhere on the card still just reveals it (see
+  // the studyCard listener below, unaffected either way since it already
+  // no-ops once revealed). Which element actually holds the kanji text
+  // flips with direction — front in normal mode, back (post-reveal) in
+  // reverse mode, see the front/back template above.
+  if (studyState.revealed) {
+    const kanjiEl = document.getElementById(isReverse ? "studyBackKanji" : "studyFrontKanji");
+    if (kanjiEl) renderKanjiInline(kanjiEl, current.kanji);
+  }
 
   document.getElementById("studyCard").addEventListener("click", () => {
     if (!studyState.revealed) {
@@ -923,19 +890,28 @@ async function renderStudy() {
   // session counters, and tracks "Forgot" keys for the done screen's
   // "Review forgotten" button — all before handing off to advanceStudy().
   async function gradeCurrent(result) {
+    // Which fields get snapshotted (for Undo) and graded flips with
+    // direction — reverse grades go to the seenRev/knownRev/etc. fields
+    // (see recordGrade() in background.js), never touching the plain ones
+    // the on-page popup relies on.
     studyState.lastGrade = {
       key: current.key,
       kanji: current.kanji,
       result,
       index: studyState.index,
-      fields: {
-        seen: current.seen, known: current.known, hint: current.hint, forgot: current.forgot,
-        n: current.n, easeFactor: current.easeFactor, status: current.status, lastSeen: current.lastSeen,
-      },
+      fields: isReverse
+        ? {
+            seenRev: current.seenRev, knownRev: current.knownRev, hintRev: current.hintRev, forgotRev: current.forgotRev,
+            nRev: current.nRev, easeFactorRev: current.easeFactorRev, lastSeenRev: current.lastSeenRev,
+          }
+        : {
+            seen: current.seen, known: current.known, hint: current.hint, forgot: current.forgot,
+            n: current.n, easeFactor: current.easeFactor, status: current.status, lastSeen: current.lastSeen,
+          },
     };
     studyState.tally[result]++;
     if (result === "forgot") studyState.forgottenKeys.add(current.key);
-    await send({ type: "grade", deckId: current.deckIds[0], key: current.key, result });
+    await send({ type: "grade", deckId: current.deckIds[0], key: current.key, result, direction: studyState.direction });
     advanceStudy();
   }
 
@@ -1008,13 +984,13 @@ function browseSectionHtml(state, locked) {
     <details class="study-browse" id="studyBrowse" ${studyState.browseOpen ? 'open' : ''}>
       <summary class="browse-summary" id="browseSummary">Word list</summary>
       ${lockedNotice}
-      <p class="hint">Controls which words are active in Study &amp; the popup.</p>
-      <div class="study-browse-toolbar" style="display:flex;gap:8px;margin:8px 0;flex-wrap:wrap">
+      <p class="hint">Switch words on or off for Study &amp; the on-page popup.</p>
+      <div class="study-browse-toolbar" style="display:flex;gap:8px;margin:14px 0 10px;flex-wrap:wrap">
         <input type="text" id="browseSearch" placeholder="Search words…" class="search-input" style="flex:1 1 160px" value="${escapeHtml(browseFilter.query)}" ${locked ? "disabled" : ""} />
         <select id="browseCategorySelect" class="tab-select" style="max-width:180px" ${locked ? "disabled" : ""}>${opts}</select>
         <select id="browseEligibleSelect" class="tab-select" style="max-width:150px" ${locked ? "disabled" : ""}>${eligOpts}</select>
       </div>
-      <div style="margin:8px 0;display:flex;gap:8px">
+      <div style="margin:0 0 12px;display:flex;gap:8px">
         <button class="btn" id="selectAllBtn" ${locked ? "disabled" : ""}>Select all</button>
         <button class="btn" id="clearSelBtn" ${locked ? "disabled" : ""}>Deselect all</button>
       </div>
@@ -1058,6 +1034,30 @@ function wireBrowseToolbar(container, entries, state) {
   });
 }
 
+// Wires the direction-row buttons rendered at the top of every renderStudy()
+// branch (see the html += right after `let html = "";`). Switching direction
+// starts a fully fresh session in the new direction — clearing cards to []
+// re-triggers the same "fresh session" rebuild renderStudy() already does
+// for a brand-new session (isFreshSession — see that comment), so this
+// doesn't duplicate the eligible-entries logic. A no-op if you click the
+// direction you're already in.
+function wireDirectionToggle() {
+  const fwdBtn = document.getElementById("dirForwardBtn");
+  const revBtn = document.getElementById("dirReverseBtn");
+  if (!fwdBtn || !revBtn) return;
+  const setDirection = (dir) => {
+    if (studyState.direction === dir) return;
+    studyState.direction = dir;
+    studyState.cards = [];
+    studyState.done = false;
+    studyState.paused = false;
+    studyState.revealed = false;
+    renderStudy();
+  };
+  fwdBtn.addEventListener("click", () => setDirection("forward"));
+  revBtn.addEventListener("click", () => setDirection("reverse"));
+}
+
 function advanceStudy() {
   studyState.revealed = false;
   if (studyState.index < studyState.cards.length - 1) {
@@ -1071,6 +1071,15 @@ function advanceStudy() {
 
 function studyKeyHandler(e) {
   if (!document.getElementById("studyContent") || !document.getElementById("studyContent").offsetParent) return;
+  // Any modal (word detail/edit, kanji detail, bulk-add — all share the
+  // .modal-overlay/.open pattern, see word-editor.js) sits on top of the
+  // Study tab's own DOM, not a separate document, so its keydowns still
+  // bubble to this same document-level listener. A focused-tag check alone
+  // (INPUT/SELECT below) missed plain buttons/labels/text inside the modal —
+  // e.g. Space on a modal button was both clicking it AND flipping the
+  // flashcard underneath. Bailing out whenever any modal is open is the
+  // general fix, rather than chasing every element type one at a time.
+  if (document.querySelector(".modal-overlay.open")) return;
   if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
   switch (e.key) {
     case " ":
@@ -1113,16 +1122,50 @@ function renderStudyBrowse(container, entries, state, locked) {
       : `Word list (${eligibleCount}/${visible.length} active in view)`;
   }
 
-  let html = '<table class="stats-table bank-table"><thead><tr><th>In popup</th><th>Kanji</th><th>Reading</th><th>Meaning</th><th>Notes</th></tr></thead><tbody>';
-  if (!visible.length) {
-    html += '<tr><td colspan="5" class="empty">No words match.</td></tr>';
+  // Most-reviewed first, then alphabetical among the unseen — same ordering
+  // the old standalone Stats tab used, kept now that its columns live here
+  // too (see the comment where renderStats() used to be, above buildStudyEntries).
+  const sorted = [...visible].sort((a, b) => {
+    const sa = a.card.seen || 0, sb = b.card.seen || 0;
+    if (sb !== sa) return sb - sa;
+    return (a.card.kanji || "").localeCompare(b.card.kanji || "");
+  });
+
+  // Wrapped in .table-scroll (overflow-x:auto) — the merged review-stat
+  // columns (Shown..Ratio, folded in from the old Stats tab) make this
+  // table wider than the panel on anything but a large window, and letting
+  // it scroll beats squeezing Kanji/Reading or wrapping them (the app-wide
+  // "kanji/reading never wrap" rule — see vocab-bank.css/content.js).
+  let html = '<div class="table-scroll"><table class="stats-table bank-table"><thead><tr>' +
+    '<th>In popup</th><th>Kanji</th><th>Reading</th><th>Meaning</th><th>Notes</th>' +
+    '<th>Shown</th><th>Last seen</th><th>Know</th><th>Hint</th><th>Forgot</th><th>Ratio</th>' +
+    '</tr></thead><tbody>';
+  if (!sorted.length) {
+    html += '<tr><td colspan="11" class="empty">No words match.</td></tr>';
   }
-  for (const entry of visible) {
+  for (const entry of sorted) {
     const { key, card: c } = entry;
     const checked = isWordEligible(state, entry) ? 'checked' : '';
-    html += `<tr data-key="${key}"><td><label class="switch"><input type="checkbox" class="card-cb" ${checked}${locked ? " disabled" : ""} /><span class="slider"></span></label></td><td class="kanji-cell">${c.kanji}</td><td class="reading-cell">${c.hiragana || "—"}</td><td>${c.arti || "—"}</td><td class="cell-muted">${c.notes || ""}</td></tr>`;
+    const seen  = c.seen   || 0;
+    const known = c.known  || 0;
+    const hintC = c.hint   || 0;
+    const lupa  = c.forgot || 0;
+    const total = known + hintC + lupa;
+    const pct   = total > 0 ? Math.round((known / total) * 100) : 0;
+    html += `<tr data-key="${key}">` +
+      `<td><label class="switch"><input type="checkbox" class="card-cb" ${checked}${locked ? " disabled" : ""} /><span class="slider"></span></label></td>` +
+      `<td class="kanji-cell">${c.kanji}</td><td class="reading-cell">${c.hiragana || "—"}</td><td>${c.arti || "—"}</td><td class="cell-muted">${c.notes || ""}</td>` +
+      `<td>${seen || "—"}</td>` +
+      `<td>${c.lastSeen ? timeAgo(c.lastSeen) : "—"}</td>` +
+      `<td class="${known ? "cell-know" : "cell-muted"}">${seen ? known : "—"}</td>` +
+      `<td class="${hintC ? "cell-hint" : "cell-muted"}">${seen ? hintC : "—"}</td>` +
+      `<td class="${lupa  ? "cell-lupa" : "cell-muted"}">${seen ? lupa  : "—"}</td>` +
+      `<td>${seen
+        ? `<span class="ratio-bar"><span class="ratio-fill" style="width:${pct}%;background:${ratioColor(pct)}"></span></span><span style="color:${ratioColor(pct)};font-weight:500">${pct}%</span>`
+        : '<span class="cell-muted">—</span>'}</td>` +
+      `</tr>`;
   }
-  html += '</tbody></table>';
+  html += '</tbody></table></div>';
   wrap.innerHTML = html;
 
   wrap.querySelectorAll(".card-cb").forEach((cb) => {
