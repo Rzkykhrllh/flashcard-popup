@@ -81,15 +81,27 @@
     .loop span { font-weight: 650; padding: 10px 16px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); }
     .loop i { color: var(--muted); font-style: normal; }
 
-    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-top: 36px; }
-    .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 26px; }
-    .card .ico { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font: 700 20px var(--jp); margin-bottom: 16px; }
-    .card h3 { font-size: 18px; margin-bottom: 6px; }
-    .card p { color: var(--ink-2); font-size: 15px; }
-    .c1 .ico { background: var(--shu-soft); color: var(--shu); }
-    .c2 .ico { background: var(--know-soft); color: var(--know); }
-    .c3 .ico { background: var(--hint-soft); color: var(--hint); }
-    .c4 .ico { background: var(--new-soft); color: var(--new); }
+    .tour-row { display: grid; grid-template-columns: 1fr 1.35fr; gap: 56px; align-items: center; margin-top: 72px; }
+    .tour-row.rev { grid-template-columns: 1.35fr 1fr; }
+    .tour-row.rev .tour-text { order: 2; }
+    .tour-row img, .gallery img { width: 100%; height: auto; display: block; border-radius: 16px; border: 1px solid var(--line);
+      box-shadow: 0 30px 60px -36px rgba(31,29,43,.5); background: var(--surface); }
+    .tour-text h3 { font-size: 26px; letter-spacing: -0.015em; line-height: 1.2; margin: 14px 0 10px; }
+    .tour-text p { color: var(--ink-2); }
+    .tag-pill { display: inline-block; font: 700 13px var(--jp); padding: 5px 12px; border-radius: 999px; }
+    .tag-pill.c1 { background: var(--shu-soft); color: var(--shu); }
+    .tag-pill.c2 { background: var(--know-soft); color: var(--know); }
+    .tag-pill.c4 { background: var(--new-soft); color: var(--new); }
+    .ticks { list-style: none; padding: 0; margin-top: 16px; display: grid; gap: 10px; }
+    .ticks li { padding-left: 28px; position: relative; color: var(--ink-2); font-size: 15px; }
+    .ticks li::before { content: "✓"; position: absolute; left: 0; top: 2px; width: 18px; height: 18px; border-radius: 6px; display: grid; place-items: center;
+      font-size: 11px; font-weight: 700; color: var(--know); background: var(--know-soft); }
+    .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 80px; }
+    .gallery figure { margin: 0; }
+    .gallery img { aspect-ratio: 16 / 11; object-fit: cover; object-position: top left; }
+    .gallery .fig-popup img { object-fit: contain; object-position: center; background: var(--surface-2); padding: 14px; }
+    .gallery figcaption { margin-top: 14px; color: var(--ink-2); font-size: 15px; }
+    .gallery figcaption b { display: block; color: var(--ink); font-size: 17px; margin-bottom: 2px; }
 
     .split { display: grid; grid-template-columns: 1fr 1.15fr; gap: 40px; align-items: center; margin-top: 36px; }
     .split img { width: 100%; height: auto; border-radius: 16px; border: 1px solid var(--line); box-shadow: 0 30px 60px -36px rgba(31,29,43,.5); }
@@ -100,17 +112,6 @@
     .split li b { color: var(--ink); }
     .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 18px; font-size: 14px; color: var(--ink-2); }
     .legend span::before { content: ""; display: inline-block; width: 18px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; background: var(--c); }
-
-    .roadmap { display: grid; gap: 10px; margin-top: 32px; }
-    .rm { display: grid; grid-template-columns: 64px 1fr auto; gap: 16px; align-items: center; background: var(--surface);
-      border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; }
-    .rm .v { font: 700 15px var(--jp); color: var(--muted); }
-    .rm b { display: block; }
-    .rm small { color: var(--muted); font-size: 14px; }
-    .tag { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
-    .done { background: var(--know-soft); color: var(--know); }
-    .next { background: var(--hint-soft); color: var(--hint); }
-    .plan { background: var(--surface-2); color: var(--muted); }
 
     .steps { counter-reset: s; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 32px; }
     .step { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; counter-increment: s; }
@@ -132,8 +133,9 @@
       .split { grid-template-columns: 1fr; }
       nav .links a:not(.gh) { display: none; }
       .hero { padding-top: 32px; }
-      .rm { grid-template-columns: 1fr auto; }
-      .rm .v { display: none; }
+      .tour-row, .tour-row.rev { grid-template-columns: 1fr; gap: 24px; margin-top: 56px; }
+      .tour-row.rev .tour-text { order: 0; }
+      .gallery { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -144,7 +146,6 @@
       <div class="links">
         <a href="#features">Features</a>
         <a href="#install">Install</a>
-        <a href="#roadmap">Roadmap</a>
         <a class="gh" href="https://github.com/Rzkykhrllh/flashcard-popup">GitHub</a>
       </div>
     </nav>
@@ -167,17 +168,6 @@
       <p class="sub">Every feature shortens one loop — so the words you collect keep coming back until they stick.</p>
       <div class="loop">
         <span>Read</span><i>→</i><span>Collect</span><i>→</i><span>Review</span><i>→</i><span>Recognise it next time</span>
-      </div>
-    </section>
-
-    <section id="features">
-      <span class="kicker">Features</span>
-      <h2>Everything for your vocabulary, in one place</h2>
-      <div class="features">
-        <div class="card c1"><div class="ico">語</div><h3>Your word bank</h3><p>Kanji, reading, meaning, examples and notes. Organise words into collections; each one tracks its own progress from New to Mastered.</p></div>
-        <div class="card c2"><div class="ico">札</div><h3>Flashcards that find you</h3><p>Every few minutes a card appears on whatever page you're on. Recall, reveal, grade — then get back to what you were doing.</p></div>
-        <div class="card c3"><div class="ico">学</div><h3>A focused Study tab</h3><p>Both directions (kanji → meaning and back), keyboard-first, with undo, pause and session results.</p></div>
-        <div class="card c4"><div class="ico">漢</div><h3>Kanji &amp; graph</h3><p>Every kanji across your words with on'yomi / kun'yomi, your own notes, and a graph of how your words connect.</p></div>
       </div>
     </section>
 
@@ -214,6 +204,69 @@
       </div>
     </section>
 
+    <section id="features">
+      <span class="kicker">Inside Kotoba Bank</span>
+      <h2>Everything for your vocabulary, in one place</h2>
+      <p class="sub">The pop-ups and highlights are powered by a full word bank — with a proper place to study, browse and dig into kanji.</p>
+
+      <div class="tour-row">
+        <div class="tour-text">
+          <span class="tag-pill c1">学 Study</span>
+          <h3>Focused study sessions</h3>
+          <p>When you want a real session, the Study tab gives you one card at a time — big, calm, and fast to grade.</p>
+          <ul class="ticks">
+            <li>Kanji → Meaning <em>and</em> Meaning → Kanji, tracked separately</li>
+            <li>Keyboard-first: <code>Space</code> flip · <code>1</code> <code>2</code> <code>3</code> grade · <code>←</code> <code>→</code></li>
+            <li>Undo, pause, and a results screen with a "review forgotten" round</li>
+          </ul>
+        </div>
+        <img src="screenshots/study.png" alt="Study tab: 勉強 revealed as べんきょう / study, with Forgot, Hint and Know buttons" width="2400" height="1640" loading="lazy" />
+      </div>
+
+      <div class="tour-row rev">
+        <div class="tour-text">
+          <span class="tag-pill c4">語 Words</span>
+          <h3>Every word you've ever saved</h3>
+          <p>Search, filter by status or collection, edit, and choose which words are in rotation — one switch per word.</p>
+          <ul class="ticks">
+            <li>New · Learning · Mastered, at a glance</li>
+            <li>Collections — a word can live in several</li>
+            <li>Bulk-add to a collection, export / import backups</li>
+          </ul>
+        </div>
+        <img src="screenshots/words.png" alt="Words tab: a table of words with status badges, collections and in-study switches" width="2400" height="1640" loading="lazy" />
+      </div>
+
+      <div class="tour-row">
+        <div class="tour-text">
+          <span class="tag-pill c2">📈 Progress</span>
+          <h3>See how every word is going</h3>
+          <p>How often each word has come up, when you last saw it, and how often you got it right — so you know exactly what needs work.</p>
+          <ul class="ticks">
+            <li>Shown, last seen, Know / Hint / Forgot per word</li>
+            <li>A colour-coded recall ratio, red to green</li>
+            <li>Words you forget come back more often, automatically</li>
+          </ul>
+        </div>
+        <img src="screenshots/study-list.png" alt="Word list with per-word review stats and a recall ratio bar" width="2400" height="1640" loading="lazy" />
+      </div>
+
+      <div class="gallery">
+        <figure>
+          <img src="screenshots/kanji-crop.png" alt="Kanji tab: every kanji with on'yomi, kun'yomi and the words that use it" width="2400" height="1640" loading="lazy" />
+          <figcaption><b>Kanji</b>Every kanji across your words, with on'yomi / kun'yomi and your own notes.</figcaption>
+        </figure>
+        <figure>
+          <img src="screenshots/graph-crop.png" alt="Graph tab: the kanji 食 linked to 食べる and 食事" width="2400" height="1640" loading="lazy" />
+          <figcaption><b>Graph</b>See how your words connect through the kanji they share.</figcaption>
+        </figure>
+        <figure class="fig-popup">
+          <img src="screenshots/popup.png" alt="Toolbar popup: word count, words in rotation, Show card now, Add word" width="600" height="600" loading="lazy" />
+          <figcaption><b>Toolbar</b>Your totals, a card on demand, and quick-add for new words.</figcaption>
+        </figure>
+      </div>
+    </section>
+
     <section id="install">
       <span class="kicker">Install</span>
       <h2>Up and running in a minute</h2>
@@ -223,17 +276,6 @@
         <div class="step"><p>Open <code>chrome://extensions</code> and switch on <b>Developer mode</b>.</p></div>
         <div class="step"><p>Click <b>Load unpacked</b> and choose the unzipped folder.</p></div>
         <div class="step"><p>Pin it, click the icon → <b>Open bank</b>, and add your first words.</p></div>
-      </div>
-    </section>
-
-    <section id="roadmap">
-      <span class="kicker">Roadmap</span>
-      <h2>Built in steps</h2>
-      <div class="roadmap">
-        <div class="rm"><span class="v">v1</span><div><b>Kotoba Bank</b><small>Word bank, collections, pop-up flashcards, Study tab</small></div><span class="tag done">Released</span></div>
-        <div class="rm"><span class="v">v2</span><div><b>Reader</b><small>Highlight the words you know on any web page</small></div><span class="tag done">Released</span></div>
-        <div class="rm"><span class="v">v3</span><div><b>Furigana helper</b><small>Hover any word for its reading and meaning</small></div><span class="tag next">Next</span></div>
-        <div class="rm"><span class="v">v4</span><div><b>Sentence mining</b><small>Save a word and the sentence you found it in, in one click</small></div><span class="tag plan">Planned</span></div>
       </div>
     </section>
 
