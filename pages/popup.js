@@ -3,7 +3,12 @@ const send = (msg) => chrome.runtime.sendMessage(msg);
 const wordCountEl = document.getElementById("wordCount");
 const learningCountEl = document.getElementById("learningCount");
 const collectionStatusEl = document.getElementById("collectionStatus");
-const enabledStateEl = document.getElementById("enabledState");
+const countdownEl = document.getElementById("countdown");
+const nextLabelEl = document.getElementById("nextLabel");
+const cdFillEl = document.getElementById("cdFill");
+const controlsEl = document.querySelector(".controls");
+const popupToggle = document.getElementById("popupToggle");
+const highlightToggle = document.getElementById("highlightToggle");
 const quizBtn = document.getElementById("quizBtn");
 const addWordShortcut = document.getElementById("addWordShortcut");
 const openBankBtn = document.getElementById("openBankBtn");
@@ -73,18 +78,70 @@ async function refresh() {
   const pct = stats.totalWords ? Math.round((stats.eligibleWords / stats.totalWords) * 100) : 0;
   document.getElementById("rotationMeter").style.width = `${pct}%`;
 
-  // data-state drives the colored status dot in popup.css.
-  if (!state.settings.enabled) {
-    enabledStateEl.textContent = "Popup is off";
-    enabledStateEl.dataset.state = "off";
-  } else if (Date.now() < (state.settings.snoozeUntil || 0)) {
-    enabledStateEl.textContent = "Snoozed";
-    enabledStateEl.dataset.state = "snoozed";
-  } else {
-    enabledStateEl.textContent = `Every ~${state.settings.intervalMinutes} min`;
-    enabledStateEl.dataset.state = "on";
-  }
+  await loadSchedule();
 }
+
+/* ------------------------- live countdown + toggles ------------------------ */
+// Schedule comes from background.js ("getSchedule") — it owns the alarm and
+// knows about snooze and a card still waiting on the page. This file only
+// ticks the display once a second between fetches.
+let schedule = null;
+let refetchAt = 0;
+
+async function loadSchedule() {
+  schedule = await send({ type: "getSchedule" });
+  if (!schedule) return;
+  popupToggle.checked = schedule.enabled;
+  highlightToggle.checked = schedule.readerHighlight;
+  renderCountdown();
+}
+
+function fmt(ms) {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), sec = total % 60;
+  const pad = (n) => String(n).padStart(2, "0");
+  return h ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
+}
+
+function renderCountdown() {
+  if (!schedule) return;
+  const now = Date.now();
+  let state, label, text, progress = 0;
+  if (!schedule.enabled) {
+    state = "off"; label = "Pop-up cards"; text = "Off";
+  } else if (!schedule.nextAt) {
+    state = "on"; label = "Next card"; text = "—";
+  } else if (schedule.cardShowing) {
+    state = "waiting"; label = "A card is waiting"; text = "on your page";
+  } else {
+    const remaining = schedule.nextAt - now;
+    const snoozed = now < schedule.snoozeUntil;
+    state = snoozed ? "snoozed" : "on";
+    label = snoozed ? "Snoozed · next card in" : "Next card in";
+    text = remaining > 0 ? fmt(remaining) : "any second…";
+    progress = snoozed ? 0 : 1 - Math.min(1, Math.max(0, remaining / schedule.periodMs));
+    // Past the scheduled time: the alarm has fired (or is about to) and
+    // rolled forward — ask background for the new time, at most every 2s.
+    if (remaining <= 0 && now > refetchAt) { refetchAt = now + 2000; setTimeout(loadSchedule, 1500); }
+  }
+  controlsEl.dataset.state = state;
+  nextLabelEl.textContent = label;
+  countdownEl.textContent = text;
+  cdFillEl.style.width = `${Math.round(progress * 100)}%`;
+}
+
+setInterval(renderCountdown, 1000);
+
+popupToggle.addEventListener("change", async () => {
+  await send({ type: "updateSettings", patch: { enabled: popupToggle.checked } });
+  loadSchedule();
+});
+
+// reader.js on every open tab listens for settings changes, so this applies
+// to pages that are already open — no reload needed.
+highlightToggle.addEventListener("change", () =>
+  send({ type: "updateSettings", patch: { readerHighlight: highlightToggle.checked } })
+);
 
 quizBtn.addEventListener("click", async () => {
   await send({ type: "showNow" });

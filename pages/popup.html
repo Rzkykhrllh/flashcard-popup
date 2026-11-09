@@ -20,6 +20,27 @@
       <div class="meter" aria-hidden="true"><span class="meter-fill" id="rotationMeter"></span></div>
     </div>
 
+    <div class="controls">
+      <div class="ctl-row">
+        <div class="ctl-text">
+          <span class="ctl-label" id="nextLabel">Next card in</span>
+          <span class="countdown" id="countdown">—</span>
+        </div>
+        <label class="switch" title="Pop-up flashcards on/off">
+          <input id="popupToggle" type="checkbox" aria-label="Pop-up flashcards" />
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="cd-bar" aria-hidden="true"><span class="cd-fill" id="cdFill"></span></div>
+      <div class="ctl-row ctl-row-2">
+        <span class="ctl-label2"><span class="hl-sample">語</span>Highlight words on pages</span>
+        <label class="switch" title="Highlight your words on web pages">
+          <input id="highlightToggle" type="checkbox" aria-label="Highlight words on pages" />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
     <button class="btn primary" id="quizBtn"><span class="btn-ico" aria-hidden="true">▶</span>Show card now</button>
     <div class="btn-pair">
       <button class="btn" id="addWordShortcut"><span class="btn-ico" aria-hidden="true">＋</span>Add word</button>
@@ -52,7 +73,6 @@
     </div>
 
     <div class="foot">
-      <p class="state" id="enabledState"></p>
       <p class="credit"><a href="https://dev.byairu.com" target="_blank">dev.byairu.com</a></p>
     </div>
     <script src="../core/db.js"></script>
