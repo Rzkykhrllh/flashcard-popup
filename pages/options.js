@@ -704,8 +704,8 @@ async function renderStudy() {
   const isReverse = studyState.direction === "reverse";
   html += `
     <div class="direction-row" role="group" aria-label="Study direction">
-      <button type="button" class="direction-btn ${!isReverse ? "active" : ""}" id="dirForwardBtn">Kanji &rarr; Arti</button>
-      <button type="button" class="direction-btn ${isReverse ? "active" : ""}" id="dirReverseBtn">Arti &rarr; Kanji</button>
+      <button type="button" class="direction-btn ${!isReverse ? "active" : ""}" id="dirForwardBtn">Kanji &rarr; Meaning</button>
+      <button type="button" class="direction-btn ${isReverse ? "active" : ""}" id="dirReverseBtn">Meaning &rarr; Kanji</button>
     </div>`;
 
   // Session complete screen

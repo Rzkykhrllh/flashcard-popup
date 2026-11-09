@@ -61,7 +61,10 @@
         <p class="hint">Applies everywhere — Kotoba Bank and the flashcard popup on web pages.</p>
       </section>
 
-      <section class="panel">
+      <!-- Google Sheets import is hidden for now (not in use) — remove
+           `hidden` here and on #syncAllBtn below to bring it back. The
+           wiring in options.js / background.js is untouched. -->
+      <section class="panel" id="addDeckPanel" hidden>
         <h2>Add deck</h2>
         <p class="hint">
           Paste any Google Sheets URL — we'll load the available tabs for you.
@@ -82,14 +85,12 @@
       <section class="panel">
         <div class="row-between">
           <h2>Your collections</h2>
-          <button id="syncAllBtn" class="btn">↻ Sync all</button>
+          <button id="syncAllBtn" class="btn" hidden>↻ Sync all</button>
         </div>
         <p id="syncStatus" class="status"></p>
         <ul id="deckList" class="decks"></ul>
-        <p id="emptyDecks" class="empty">No collections yet. Add a synced deck above, or create one from the
-          Add word form in Words / the popup.</p>
-        <p class="hint">Synced decks and manual collections both live here. Drag to reorder, click the pencil
-          to rename. "Sync all" only touches decks with a Google Sheet attached — everything stays local to this browser.</p>
+        <p id="emptyDecks" class="empty">No collections yet — create one from the Add word form (Words tab or the toolbar popup).</p>
+        <p class="hint">Drag to reorder, click the pencil to rename. Everything stays local to this browser.</p>
       </section>
 
       <div class="settings-section-label">Reading on web pages</div>

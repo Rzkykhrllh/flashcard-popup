@@ -76,6 +76,9 @@ html[data-theme="dark"] {
 }
 
 * { box-sizing: border-box; margin: 0; }
+/* Author display rules (.btn is inline-flex) would otherwise beat the
+   UA stylesheet's [hidden] { display: none }. */
+[hidden] { display: none !important; }
 html { background: var(--paper); }
 body {
   min-height: 100vh;
