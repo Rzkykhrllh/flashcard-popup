@@ -56,7 +56,10 @@
 
   <h2>6 · Inside other markup</h2>
   <p class="jp"><b>電車</b>に<i>乗る</i>。<a href="#">約束</a>を守る。<ruby>雨<rt>あめ</rt></ruby>が好き。</p>
-  <p class="expect">Expect: bold/italic/link words still highlight. Known limit: words split across elements (e.g. <code>食&lt;b&gt;べる&lt;/b&gt;</code>) won't.</p>
+  <p class="jp" id="ruby-nhk"><ruby>電車<rt>でんしゃ</rt></ruby>に<ruby>乗<rt>の</rt></ruby>って、<ruby>時間<rt>じかん</rt></ruby>どおりに<ruby>行<rt>い</rt></ruby>きました。</p>
+  <p class="jp" id="split">毎朝パンを食<b>べる</b>。約<i>束</i>する。</p>
+  <p class="jp" id="br-split">電<br />車</p>
+  <p class="expect">Expect: bold/italic/link words highlight; NHK-style <code>&lt;ruby&gt;</code> works (<b>電車</b>, <b>乗って</b>, <b>時間</b>, <b>行きました</b> → similar to 行く) with the furigana itself NOT underlined; words split by tags (食<b>べる</b>, 約<i>束</i>) highlight as one word; 電 / 車 split by a line break do NOT match.</p>
 
   <h2>7 · Form fields are left alone</h2>
   <textarea rows="2">電車に乗る時間です</textarea>

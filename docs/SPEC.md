@@ -83,7 +83,7 @@ Each version builds on the previous one and ships on its own.
 - [x] Unit tests for the matcher pass (`node --test tests/*.test.js`).
 - [x] `tests/reader-test.html` behaves as each section describes.
 - [x] Hover card appears instantly and follows the cursor between words.
-- [ ] Words split by `<ruby>` (e.g. NHK News Easy) still match — readings in `<rt>` are ignored.
+- [x] Words split by `<ruby>` (e.g. NHK News Easy) or other inline tags still match — readings in `<rt>` are ignored and never underlined.
 - [ ] Verified on: NHK News Easy, Japanese Wikipedia, a news site, Twitter/X.
 
 ### Known limits
