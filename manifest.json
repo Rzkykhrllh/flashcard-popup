@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Nihongo Popup — Kotoba Bank",
-  "version": "0.1.0",
-  "description": "Japanese flashcards that pop up while you browse — plus a vocab bank, kanji graph, and dictionary to organize everything you learn.",
+  "version": "1.0.0",
+  "description": "Learn Japanese vocab while you browse: a personal word bank, pop-up flashcards, and highlights for words you know on any page.",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",

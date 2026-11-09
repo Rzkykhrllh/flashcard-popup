@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kotoba Bank — learn Japanese vocabulary while you browse</title>
+  <meta name="description" content="A Chrome extension with a personal Japanese word bank, flashcards that pop up while you browse, and highlights for the words you know on any page." />
+  <meta property="og:title" content="Kotoba Bank" />
+  <meta property="og:description" content="Learn Japanese vocabulary while you browse." />
+  <meta property="og:image" content="screenshots/reader.png" />
+  <link rel="icon" href="icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --paper: #f6f4f0; --surface: #fff; --surface-2: #f1eee8;
+      --ink: #1f1d2b; --ink-2: #4a4757; --muted: #696676; --line: rgba(31,29,43,.08);
+      --shu: #2563eb; --shu-d: #1d4ed8; --shu-soft: #e8eefc;
+      --know: #16a34a; --know-soft: #e6f6ec; --hint: #d97706; --hint-soft: #fdf1dc; --new: #6366f1; --new-soft: #ecebfe;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      --jp: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Kaku Gothic ProN", sans-serif;
+      color-scheme: light;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #121118; --surface: #1b1a23; --surface-2: #262531;
+        --ink: #eceaf3; --ink-2: #c5c2d1; --muted: #9d9aad; --line: rgba(255,255,255,.08);
+        --shu: #5b8cf5; --shu-d: #7aa2f7; --shu-soft: rgba(91,140,245,.16);
+        --know: #34d399; --know-soft: rgba(52,211,153,.14); --hint: #fbbf24; --hint-soft: rgba(251,191,36,.14); --new: #a5b4fc; --new-soft: rgba(129,140,248,.16);
+        color-scheme: dark;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      background:
+        radial-gradient(900px 480px at 10% -10%, color-mix(in srgb, var(--shu) 14%, transparent), transparent 70%),
+        radial-gradient(700px 420px at 100% 0%, color-mix(in srgb, var(--know) 9%, transparent), transparent 70%),
+        var(--paper);
+      color: var(--ink); font: 16px/1.6 var(--font); -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--shu); }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+    nav { display: flex; align-items: center; gap: 12px; padding: 20px 0; }
+    .seal { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: #fff;
+      font: 700 18px/1 var(--jp); background: linear-gradient(140deg, #6b98f5, var(--shu) 55%, var(--shu-d)); }
+    nav b { font-size: 16px; }
+    nav .links { margin-left: auto; display: flex; gap: 20px; font-size: 14px; }
+    nav .links a { color: var(--ink-2); text-decoration: none; }
+    nav .links a:hover { color: var(--ink); }
+
+    .hero { text-align: center; padding: 64px 0 40px; }
+    .eyebrow { display: inline-block; font: 700 13px var(--jp); color: var(--shu); background: var(--shu-soft);
+      padding: 5px 14px; border-radius: 999px; margin-bottom: 20px; letter-spacing: .04em; }
+    h1 { font-size: clamp(36px, 6vw, 60px); line-height: 1.08; letter-spacing: -0.03em; font-weight: 800; max-width: 820px; margin: 0 auto; }
+    h1 span { background: linear-gradient(90deg, var(--shu), var(--know)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .lead { font-size: 19px; color: var(--ink-2); max-width: 640px; margin: 20px auto 0; }
+    .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 32px; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 22px; border-radius: 12px; font-weight: 650;
+      text-decoration: none; font-size: 15px; transition: transform .1s, background .15s; }
+    .btn:active { transform: translateY(1px); }
+    .btn.primary { background: var(--shu); color: #fff; box-shadow: 0 10px 24px -12px var(--shu); }
+    .btn.primary:hover { background: var(--shu-d); }
+    .btn.ghost { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
+    .btn.ghost:hover { background: var(--surface-2); }
+    .note { font-size: 13px; color: var(--muted); margin-top: 14px; }
+
+    .shot { margin: 48px auto 0; max-width: 960px; border-radius: 20px; overflow: hidden; border: 1px solid var(--line);
+      box-shadow: 0 40px 80px -40px rgba(31,29,43,.45); background: var(--surface); }
+    .shot img { display: block; width: 100%; height: auto; }
+
+    section { padding: 88px 0 0; }
+    .kicker { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--shu); }
+    h2 { font-size: clamp(28px, 4vw, 38px); letter-spacing: -0.02em; line-height: 1.15; margin-top: 8px; }
+    .sub { color: var(--ink-2); max-width: 620px; margin-top: 12px; font-size: 17px; }
+
+    .loop { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; align-items: center; }
+    .loop span { font-weight: 650; padding: 10px 16px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); }
+    .loop i { color: var(--muted); font-style: normal; }
+
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-top: 36px; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 26px; }
+    .card .ico { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font: 700 20px var(--jp); margin-bottom: 16px; }
+    .card h3 { font-size: 18px; margin-bottom: 6px; }
+    .card p { color: var(--ink-2); font-size: 15px; }
+    .c1 .ico { background: var(--shu-soft); color: var(--shu); }
+    .c2 .ico { background: var(--know-soft); color: var(--know); }
+    .c3 .ico { background: var(--hint-soft); color: var(--hint); }
+    .c4 .ico { background: var(--new-soft); color: var(--new); }
+
+    .split { display: grid; grid-template-columns: 1fr 1.15fr; gap: 40px; align-items: center; margin-top: 36px; }
+    .split img { width: 100%; height: auto; border-radius: 16px; border: 1px solid var(--line); box-shadow: 0 30px 60px -36px rgba(31,29,43,.5); }
+    .split ul { list-style: none; padding: 0; display: grid; gap: 14px; }
+    .split li { padding-left: 30px; position: relative; color: var(--ink-2); }
+    .split li::before { content: "✓"; position: absolute; left: 0; top: 0; width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center;
+      font-size: 12px; font-weight: 700; color: var(--know); background: var(--know-soft); }
+    .split li b { color: var(--ink); }
+    .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 18px; font-size: 14px; color: var(--ink-2); }
+    .legend span::before { content: ""; display: inline-block; width: 18px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; background: var(--c); }
+
+    .roadmap { display: grid; gap: 10px; margin-top: 32px; }
+    .rm { display: grid; grid-template-columns: 64px 1fr auto; gap: 16px; align-items: center; background: var(--surface);
+      border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; }
+    .rm .v { font: 700 15px var(--jp); color: var(--muted); }
+    .rm b { display: block; }
+    .rm small { color: var(--muted); font-size: 14px; }
+    .tag { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+    .done { background: var(--know-soft); color: var(--know); }
+    .next { background: var(--hint-soft); color: var(--hint); }
+    .plan { background: var(--surface-2); color: var(--muted); }
+
+    .steps { counter-reset: s; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 32px; }
+    .step { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; counter-increment: s; }
+    .step::before { content: counter(s); display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px;
+      background: var(--shu); color: #fff; font-weight: 700; margin-bottom: 12px; }
+    .step p { color: var(--ink-2); font-size: 15px; }
+    code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--surface-2); padding: 2px 6px; border-radius: 6px; }
+
+    .privacy { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 28px; }
+    .privacy div { padding: 20px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); }
+    .privacy b { display: block; margin-bottom: 4px; }
+    .privacy p { color: var(--ink-2); font-size: 15px; }
+
+    footer { margin-top: 96px; padding: 32px 0 48px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px;
+      display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; }
+    footer a { color: var(--muted); }
+
+    @media (max-width: 760px) {
+      .split { grid-template-columns: 1fr; }
+      nav .links a:not(.gh) { display: none; }
+      .hero { padding-top: 32px; }
+      .rm { grid-template-columns: 1fr auto; }
+      .rm .v { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav>
+      <span class="seal" aria-hidden="true">言</span><b>Kotoba Bank</b>
+      <div class="links">
+        <a href="#features">Features</a>
+        <a href="#install">Install</a>
+        <a href="#roadmap">Roadmap</a>
+        <a class="gh" href="https://github.com/Rzkykhrllh/flashcard-popup">GitHub</a>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <span class="eyebrow">言葉バンク · Chrome extension</span>
+      <h1>Learn Japanese vocabulary <span>while you browse.</span></h1>
+      <p class="lead">A personal word bank, flashcards that pop up on the page you're reading, and highlights for every word you've already collected — on any Japanese website.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/Rzkykhrllh/flashcard-popup/releases/latest">↓ Download for Chrome</a>
+        <a class="btn ghost" href="https://github.com/Rzkykhrllh/flashcard-popup">View on GitHub</a>
+      </div>
+      <p class="note">Free &amp; open source · No account · Your data never leaves your browser</p>
+      <div class="shot"><img src="screenshots/reader.png" alt="A Japanese news article with known words underlined and a hover card showing 乗る" width="1800" height="1120" /></div>
+    </header>
+
+    <section>
+      <span class="kicker">How it works</span>
+      <h2>Read real Japanese. Keep what you meet.</h2>
+      <p class="sub">Every feature shortens one loop — so the words you collect keep coming back until they stick.</p>
+      <div class="loop">
+        <span>Read</span><i>→</i><span>Collect</span><i>→</i><span>Review</span><i>→</i><span>Recognise it next time</span>
+      </div>
+    </section>
+
+    <section id="features">
+      <span class="kicker">Features</span>
+      <h2>Everything for your vocabulary, in one place</h2>
+      <div class="features">
+        <div class="card c1"><div class="ico">語</div><h3>Your word bank</h3><p>Kanji, reading, meaning, examples and notes. Organise words into collections; each one tracks its own progress from New to Mastered.</p></div>
+        <div class="card c2"><div class="ico">札</div><h3>Flashcards that find you</h3><p>Every few minutes a card appears on whatever page you're on. Recall, reveal, grade — then get back to what you were doing.</p></div>
+        <div class="card c3"><div class="ico">学</div><h3>A focused Study tab</h3><p>Both directions (kanji → meaning and back), keyboard-first, with undo, pause and session results.</p></div>
+        <div class="card c4"><div class="ico">漢</div><h3>Kanji &amp; graph</h3><p>Every kanji across your words with on'yomi / kun'yomi, your own notes, and a graph of how your words connect.</p></div>
+      </div>
+    </section>
+
+    <section>
+      <span class="kicker">Reader</span>
+      <h2>See what you know — on any page</h2>
+      <div class="split">
+        <ul>
+          <li><b>Your words, underlined.</b> Open any Japanese site and every word from your bank lights up, coloured by how well you know it.</li>
+          <li><b>Conjugations too.</b> 食べた and 行った are recognised as forms of 食べる and 行く.</li>
+          <li><b>Hover for a reminder.</b> Reading and <em>your</em> meaning, instantly.</li>
+          <li><b>Furigana-friendly.</b> Works on sites like NHK News Easy, and never changes the page's HTML.</li>
+        </ul>
+        <img src="screenshots/reader-dark.png" alt="Dark Japanese page with known words underlined and a hover card for 時間" width="1800" height="1120" />
+      </div>
+      <div class="legend">
+        <span style="--c: var(--new)">New</span>
+        <span style="--c: var(--hint)">Learning</span>
+        <span style="--c: var(--know)">Mastered</span>
+      </div>
+    </section>
+
+    <section id="install">
+      <span class="kicker">Install</span>
+      <h2>Up and running in a minute</h2>
+      <p class="sub">Not on the Chrome Web Store yet — install it as an unpacked extension.</p>
+      <div class="steps">
+        <div class="step"><p>Download the <code>.zip</code> from the <a href="https://github.com/Rzkykhrllh/flashcard-popup/releases/latest">latest release</a> and unzip it somewhere permanent.</p></div>
+        <div class="step"><p>Open <code>chrome://extensions</code> and switch on <b>Developer mode</b>.</p></div>
+        <div class="step"><p>Click <b>Load unpacked</b> and choose the unzipped folder.</p></div>
+        <div class="step"><p>Pin it, click the icon → <b>Open bank</b>, and add your first words.</p></div>
+      </div>
+    </section>
+
+    <section id="roadmap">
+      <span class="kicker">Roadmap</span>
+      <h2>Built in steps</h2>
+      <div class="roadmap">
+        <div class="rm"><span class="v">v1</span><div><b>Kotoba Bank</b><small>Word bank, collections, pop-up flashcards, Study tab</small></div><span class="tag done">Released</span></div>
+        <div class="rm"><span class="v">v2</span><div><b>Reader</b><small>Highlight the words you know on any web page</small></div><span class="tag done">Released</span></div>
+        <div class="rm"><span class="v">v3</span><div><b>Furigana helper</b><small>Hover any word for its reading and meaning</small></div><span class="tag next">Next</span></div>
+        <div class="rm"><span class="v">v4</span><div><b>Sentence mining</b><small>Save a word and the sentence you found it in, in one click</small></div><span class="tag plan">Planned</span></div>
+      </div>
+    </section>
+
+    <section>
+      <span class="kicker">Privacy</span>
+      <h2>Your words stay yours</h2>
+      <div class="privacy">
+        <div><b>No account</b><p>Nothing to sign up for.</p></div>
+        <div><b>No server</b><p>Everything is stored in your browser. Back up with a JSON export.</p></div>
+        <div><b>No tracking</b><p>No analytics, no telemetry. Page text is read locally and never sent anywhere.</p></div>
+      </div>
+      <p class="sub" style="font-size:15px">Read the full <a href="privacy.html">privacy policy</a>.</p>
+    </section>
+
+    <footer>
+      <span>Kotoba Bank · MIT licensed · Kanji data: KANJIDIC2 (EDRDG, CC BY-SA 4.0)</span>
+      <span><a href="https://github.com/Rzkykhrllh/flashcard-popup">GitHub</a> · <a href="privacy.html">Privacy</a> · made by <a href="https://dev.byairu.com">dev.byairu.com</a></span>
+    </footer>
+  </div>
+</body>
+</html>
