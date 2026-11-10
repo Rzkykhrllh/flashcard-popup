@@ -50,7 +50,8 @@ learned, and every time you spot a word in the wild it sticks a little better.
 ## Everything else you need
 
 - **One bank for every word**: kanji, reading, meaning, example sentence, notes. Group words into
-  collections; each word tracks its own progress.
+  collections: search them or create a new one right from the Add word form, and the last one you
+  used stays selected. Each word tracks its own progress.
 - **A focused Study tab** for proper sessions: Kanji → Meaning *and* Meaning → Kanji, keyboard-first
   (`Space` · `1` `2` `3` · `←` `→`), undo, pause, session results.
 - **Quick-add from the toolbar**: save a word in seconds without leaving the page.

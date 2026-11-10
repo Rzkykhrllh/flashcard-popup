@@ -39,9 +39,6 @@ const wArti = document.getElementById("wArti");
 const wExample = document.getElementById("wExample");
 const wNotes = document.getElementById("wNotes");
 const wGroupField = document.getElementById("wGroupField");
-const wGroupChecklist = document.getElementById("wGroupChecklist");
-const wNewGroupName = document.getElementById("wNewGroupName");
-const wAddGroupBtn = document.getElementById("wAddGroupBtn");
 const wIncludeField = document.getElementById("wIncludeField");
 const wIncludeInStudy = document.getElementById("wIncludeInStudy");
 const wKanjiChips = document.getElementById("wKanjiChips");
@@ -115,62 +112,30 @@ function showWordForm() {
 }
 
 // A word can belong to any number of collections at once (groupIds is an
-// array) — this renders one checkbox per known collection, used identically
-// for Add (nothing pre-checked, at least one required on save) and Edit
-// (pre-checked to the word's current groupIds, re-checkable freely). Each
-// row also has a rename (pencil) button — the checkbox stays in the DOM even
-// while a row is mid-rename, so selectedGroupIds() never loses track of
-// what's checked partway through an edit.
-let wEditingGroupId = null;
+// array). The shared picker (core/collection-picker.js) handles search,
+// creating a collection from the search box, renaming, and the selected
+// state. Add mode pre-selects the collections used on the last save (same
+// memory as the toolbar quick-add); Edit mode shows the word's own.
+const LAST_COLLECTIONS_KEY = "lastCollectionIds";
 
-function renderGroupChecklist(selectedIds) {
-  wGroupChecklist.innerHTML = allGroups.length
-    ? allGroups.map((g) => {
-        const checked = selectedIds.includes(g.id) ? "checked" : "";
-        const nameCell = g.id === wEditingGroupId
-          ? `<input type="text" class="group-rename-input" value="${escapeHtml(g.name)}" />
-             <button type="button" class="group-rename-save" title="Save">&#10003;</button>
-             <button type="button" class="group-rename-cancel" title="Cancel">&#10005;</button>`
-          : `<label for="wgc-${escapeHtml(g.id)}" class="group-check-label">${escapeHtml(g.name)}</label>
-             <button type="button" class="group-rename-btn" title="Rename">&#9998;</button>`;
-        return `
-          <div class="group-check-row" data-id="${escapeHtml(g.id)}">
-            <input type="checkbox" class="group-check" id="wgc-${escapeHtml(g.id)}" value="${escapeHtml(g.id)}" ${checked} />
-            ${nameCell}
-          </div>`;
-      }).join("")
-    : '<p class="empty" style="margin:2px 0">No collections yet — add one below.</p>';
-
-  wGroupChecklist.querySelectorAll(".group-rename-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      wEditingGroupId = btn.closest(".group-check-row").dataset.id;
-      renderGroupChecklist(selectedGroupIds());
-    });
-  });
-  wGroupChecklist.querySelectorAll(".group-rename-cancel").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      wEditingGroupId = null;
-      renderGroupChecklist(selectedGroupIds());
-    });
-  });
-  wGroupChecklist.querySelectorAll(".group-rename-save").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const row = btn.closest(".group-check-row");
-      const id = row.dataset.id;
-      const name = row.querySelector(".group-rename-input").value.trim();
-      if (!name) return;
-      await send({ type: "renameGroup", groupId: id, name });
-      const g = allGroups.find((x) => x.id === id);
-      if (g) g.name = name;
-      wEditingGroupId = null;
-      renderGroupChecklist(selectedGroupIds());
-      reloadData(); // keep the Words tab's own group filter dropdown in sync too
-    });
-  });
-}
+const wPicker = createCollectionPicker(document.getElementById("wCollections"), {
+  onCreate: async (name) => {
+    const group = { id: `manual_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, name, type: "manual", sourceSheetUrl: null };
+    await putGroup(group);
+    allGroups.push(group);
+    reloadData();
+    return group;
+  },
+  onRename: async (groupId, name) => {
+    await send({ type: "renameGroup", groupId, name });
+    const g = allGroups.find((x) => x.id === groupId);
+    if (g) g.name = name;
+    reloadData(); // keep the Words tab's own group filter dropdown in sync too
+  },
+});
 
 function selectedGroupIds() {
-  return [...wGroupChecklist.querySelectorAll(".group-check:checked")].map((cb) => cb.value);
+  return wPicker.getSelected();
 }
 
 function openWordModal(word) {
@@ -182,10 +147,10 @@ function openWordModal(word) {
   wExample.value = word ? word.example || "" : "";
   wNotes.value = word ? word.notes || "" : "";
   wStatus.textContent = "";
-  wNewGroupName.value = "";
-  wEditingGroupId = null;
-
-  renderGroupChecklist(word ? (word.groupIds || []) : []);
+  wPicker.setGroups(allGroups);
+  wPicker.reset();
+  if (word) wPicker.setSelected(word.groupIds || []);
+  else chrome.storage.local.get(LAST_COLLECTIONS_KEY).then((r) => { if (!editingId) wPicker.setSelected(r[LAST_COLLECTIONS_KEY] || []); });
   wIncludeField.style.display = word ? "none" : "";
   wIncludeInStudy.checked = true;
 
@@ -203,17 +168,6 @@ function closeWordModal() {
 }
 
 wKanji.addEventListener("input", () => renderKanjiChips(extractKanjiList(wKanji.value)));
-
-wAddGroupBtn.addEventListener("click", async () => {
-  const name = wNewGroupName.value.trim();
-  if (!name) return;
-  const groupId = `manual_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-  const group = { id: groupId, name, type: "manual", sourceSheetUrl: null };
-  await putGroup(group);
-  allGroups.push(group);
-  wNewGroupName.value = "";
-  renderGroupChecklist([...selectedGroupIds(), groupId]);
-});
 
 addWordBtn.addEventListener("click", () => openWordModal(null));
 wEditBtn.addEventListener("click", showWordForm);
@@ -319,6 +273,7 @@ wSaveBtn.addEventListener("click", async () => {
     for (const groupId of groupIds) {
       await send({ type: "setCardSelection", deckId: groupId, key: newId, selected: wIncludeInStudy.checked });
     }
+    await chrome.storage.local.set({ [LAST_COLLECTIONS_KEY]: groupIds });
   }
 
   closeWordModal();
