@@ -1,5 +1,5 @@
 /*
- * reader.js — highlights Kotoba Bank words on any web page, and shows a small
+ * reader.js — highlights Kotoba words on any web page, and shows a small
  * card when you hover one.
  *
  * - Matching lives in core/reader-match.js (pure, unit-tested). This file is
@@ -64,7 +64,7 @@
   function ensureStyles() {
     if (ensureStyles.done) return;
     ensureStyles.done = true;
-    // Fixed status hues (same meaning as Kotoba Bank's badges). Kept mid-
+    // Fixed status hues (same meaning as Kotoba's badges). Kept mid-
     // saturation so they read on both light and dark sites.
     const C = { new: "99, 102, 241", learning: "245, 158, 11", mastered: "34, 197, 94" };
     let css = "";
@@ -411,7 +411,7 @@
       <div class="top">
         <span class="pill">${STATUS_LABEL[st] || st}</span>
         ${m.kind === "variant" ? '<span class="tag">similar form</span>' : ""}
-        <span class="brand">Kotoba Bank</span>
+        <span class="brand">Kotoba</span>
       </div>
       ${w.hiragana ? `<div class="reading">${esc(w.hiragana)}</div>` : ""}
       <div class="word">${esc(w.kanji)}</div>

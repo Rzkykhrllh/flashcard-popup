@@ -319,7 +319,7 @@ async function downloadBackup(filenamePrefix) {
 }
 
 exportBtn.addEventListener("click", async () => {
-  const { words, groups } = await downloadBackup("kotoba-bank-backup");
+  const { words, groups } = await downloadBackup("kotoba-backup");
   backupStatusEl.textContent = `Exported ${words.length} words, ${groups.length} groups.`;
 });
 
@@ -372,7 +372,7 @@ importFileEl.addEventListener("change", async () => {
   // about to be overwritten gets snapshotted to a file first. Only needed
   // when something would actually be clobbered; a purely-new import has
   // nothing to protect.
-  if (overwriteCount) await downloadBackup("kotoba-bank-pre-import-backup");
+  if (overwriteCount) await downloadBackup("kotoba-pre-import-backup");
 
   await putWords(words);
   await putGroups(groups);

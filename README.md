@@ -1,20 +1,20 @@
-# Kotoba Bank
+# Kotoba
 
 ### Learn Japanese while you browse.
 
 You study a word, close the app, and three days later it's gone. Then you're reading a Japanese
 site and can't tell which words you've already learned.
 
-**Kotoba Bank fixes both.** Your vocabulary follows you around the web: flashcards pop up while you
+**Kotoba fixes both.** Your vocabulary follows you around the web: flashcards pop up while you
 browse, and every word you've saved is highlighted on any Japanese page you open. No extra app to
 remember to open. Your reviews happen while you browse.
 
-![A Kotoba Bank flashcard popping up while reading an ordinary article](docs/screenshots/browsing.png)
+![A Kotoba flashcard popping up while reading an ordinary article](docs/screenshots/browsing.png)
 
 <p align="center">
-  <a href="https://github.com/Rzkykhrllh/flashcard-popup/releases/latest"><b>⬇ Download for Chrome</b></a>
+  <a href="https://github.com/Rzkykhrllh/kotoba/releases/latest"><b>⬇ Download for Chrome</b></a>
   &nbsp;·&nbsp;
-  <a href="https://rzkykhrllh.github.io/flashcard-popup/">Website</a>
+  <a href="https://rzkykhrllh.github.io/kotoba/">Website</a>
 </p>
 
 <p align="center"><sub>Free &amp; open source · No account · Your words never leave your browser</sub></p>
@@ -64,9 +64,9 @@ learned, and every time you spot a word in the wild it sticks a little better.
 
 ## Install in a minute
 
-Kotoba Bank isn't on the Chrome Web Store yet, so it installs as an unpacked extension:
+Kotoba isn't on the Chrome Web Store yet, so it installs as an unpacked extension:
 
-1. Download `kotoba-bank-vX.Y.Z.zip` from the [latest release](https://github.com/Rzkykhrllh/flashcard-popup/releases/latest) and unzip it somewhere permanent.
+1. Download `kotoba-vX.Y.Z.zip` from the [latest release](https://github.com/Rzkykhrllh/kotoba/releases/latest) and unzip it somewhere permanent.
 2. Open `chrome://extensions` and turn on **Developer mode** (top right).
 3. Click **Load unpacked** and choose the unzipped folder.
 4. Pin the extension, click it, choose **Open bank**, and add your first words.
@@ -78,7 +78,7 @@ kept, because they live in the browser, not in the folder. (Export a backup firs
 
 No account, no server, no analytics. Words, progress and settings are stored only in your browser.
 The extension reads page text **locally** to show flashcards and highlights; it never sends it
-anywhere. Back up any time with Export JSON. Full [privacy policy](https://rzkykhrllh.github.io/flashcard-popup/privacy.html).
+anywhere. Back up any time with Export JSON. Full [privacy policy](https://rzkykhrllh.github.io/kotoba/privacy.html).
 
 ## Credits & license
 

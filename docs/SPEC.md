@@ -1,4 +1,4 @@
-# Kotoba Bank — Product Spec & Roadmap
+# Kotoba — Product Spec & Roadmap
 
 A Chrome extension for learning Japanese vocabulary **while you browse**: a personal word bank,
 flashcards that pop up on the page you're reading, and (from v2) a reader that recognises your
@@ -9,7 +9,7 @@ Each version builds on the previous one and ships on its own.
 
 | Version | Theme | Status |
 |---|---|---|
-| **v1** | Kotoba Bank — word bank + popup flashcards | ✅ Done |
+| **v1** | Kotoba — word bank + popup flashcards | ✅ Done |
 | **v2** | Reader — highlight words you've collected on any web page | 🟡 Built, in testing (`feature/reader-highlight`) |
 | **v3** | Furigana helper — hover any word for reading + meaning | ⬜ Next |
 | **v4** | Sentence mining — add words from the web in one click | ⬜ Planned |
@@ -38,7 +38,7 @@ Each version builds on the previous one and ships on its own.
 
 ---
 
-## v1 — Kotoba Bank ✅
+## v1 — Kotoba ✅
 
 **Goal:** one place for every word you've met, with flashcards that interrupt you just enough.
 
@@ -124,7 +124,7 @@ read and what it means.
 **Goal:** turn "I didn't know that word" into a flashcard in one click.
 
 ### Requirements
-- R4.1 **+ Add to Kotoba Bank** on the hover card. Kanji, reading and meaning pre-filled from the
+- R4.1 **+ Add to Kotoba** on the hover card. Kanji, reading and meaning pre-filled from the
   dictionary (meaning editable before saving — e.g. translate to your own language).
 - R4.2 The **sentence** the word was found in is saved as the word's example, plus the page URL.
 - R4.3 Pick collection(s) and "in rotation" inline; last-used collection is remembered.

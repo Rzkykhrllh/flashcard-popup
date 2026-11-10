@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Nihongo Popup — Kotoba Bank",
-  "version": "1.2.0",
+  "name": "Kotoba",
+  "version": "1.3.0",
   "description": "Learn Japanese vocab while you browse: a personal word bank, pop-up flashcards, and highlights for words you know on any page.",
   "icons": {
     "16": "icons/icon16.png",
@@ -13,7 +13,7 @@
   },
   "action": {
     "default_popup": "pages/popup.html",
-    "default_title": "Nihongo Popup — Kotoba Bank",
+    "default_title": "Kotoba",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

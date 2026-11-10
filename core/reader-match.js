@@ -1,4 +1,4 @@
-// reader-match.js — find Kotoba Bank words inside arbitrary page text.
+// reader-match.js — find Kotoba words inside arbitrary page text.
 //
 // Pure functions, no DOM / chrome APIs: loaded as a content script before
 // reader.js, and required directly by tests/reader-match.test.js under node.
