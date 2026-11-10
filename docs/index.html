@@ -4,552 +4,713 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Kotoba Bank: learn Japanese vocabulary while you browse</title>
-  <meta name="description" content="A free Chrome extension with a personal Japanese word bank, flashcards that pop up while you browse, and highlights for the words you know on any page." />
+  <meta name="description" content="A free Chrome extension for your own Japanese word bank: add the words you meet, review them with flashcards that pop up while you browse, and see them highlighted on any page." />
   <meta property="og:title" content="Kotoba Bank" />
   <meta property="og:description" content="Learn Japanese vocabulary while you browse." />
   <meta property="og:image" content="screenshots/browsing.png" />
   <link rel="icon" href="icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet" />
   <script>document.documentElement.classList.add('js');</script>
   <style>
     :root {
-      --paper: #f6f4f0; --surface: #fff; --surface-2: #f1eee8;
-      --ink: #1f1d2b; --ink-2: #4a4757; --muted: #696676; --line: rgba(31,29,43,.08); --line-2: rgba(31,29,43,.14);
+      --bg: #f7f5f1; --bg-2: #efebe4; --surface: #ffffff; --glass: rgba(255,255,255,.62);
+      --ink: #14131a; --ink-2: #44424e; --muted: #75727f; --line: rgba(20,19,26,.07); --line-2: rgba(20,19,26,.13);
       --shu: #2563eb; --shu-d: #1d4ed8; --shu-soft: #e8eefc;
-      --know: #16a34a; --know-soft: #e6f6ec; --hint: #d97706; --hint-soft: #fdf1dc; --new: #6366f1; --new-soft: #ecebfe;
-      --forgot: #be123c; --forgot-soft: #fde7ec;
-      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      --know: #16a34a; --know-soft: #e3f4e9; --hint: #d97706; --hint-soft: #fbefd9; --new: #6366f1; --new-soft: #ebeafd;
+      --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
       --jp: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Kaku Gothic ProN", sans-serif;
-      --shadow: 0 30px 60px -36px rgba(31,29,43,.5);
+      --shadow-lg: 0 50px 100px -40px rgba(20,19,26,.35), 0 20px 40px -30px rgba(20,19,26,.25);
+      --shadow: 0 24px 50px -30px rgba(20,19,26,.4);
+      --ring: inset 0 1px 0 rgba(255,255,255,.7);
       color-scheme: light;
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --paper: #121118; --surface: #1b1a23; --surface-2: #262531;
-        --ink: #eceaf3; --ink-2: #c5c2d1; --muted: #9d9aad; --line: rgba(255,255,255,.08); --line-2: rgba(255,255,255,.14);
-        --shu: #5b8cf5; --shu-d: #7aa2f7; --shu-soft: rgba(91,140,245,.16);
-        --know: #34d399; --know-soft: rgba(52,211,153,.14); --hint: #fbbf24; --hint-soft: rgba(251,191,36,.14); --new: #a5b4fc; --new-soft: rgba(129,140,248,.16);
-        --forgot: #fb7185; --forgot-soft: rgba(251,113,133,.14);
-        --shadow: 0 30px 60px -30px rgba(0,0,0,.8);
+        --bg: #0b0a0f; --bg-2: #13121a; --surface: #16151d; --glass: rgba(28,27,36,.6);
+        --ink: #f2f0f7; --ink-2: #c3c0cf; --muted: #8d8a9c; --line: rgba(255,255,255,.07); --line-2: rgba(255,255,255,.13);
+        --shu: #6b97f7; --shu-d: #8aacf8; --shu-soft: rgba(107,151,247,.14);
+        --know: #34d399; --know-soft: rgba(52,211,153,.13); --hint: #fbbf24; --hint-soft: rgba(251,191,36,.13); --new: #a5b4fc; --new-soft: rgba(129,140,248,.15);
+        --shadow-lg: 0 50px 100px -40px rgba(0,0,0,.9); --shadow: 0 24px 50px -24px rgba(0,0,0,.8);
+        --ring: inset 0 1px 0 rgba(255,255,255,.06);
         color-scheme: dark;
       }
     }
     * { box-sizing: border-box; margin: 0; }
-    html { scroll-behavior: smooth; }
-    body {
-      background:
-        radial-gradient(900px 480px at 10% -10%, color-mix(in srgb, var(--shu) 14%, transparent), transparent 70%),
-        radial-gradient(700px 420px at 100% 0%, color-mix(in srgb, var(--know) 9%, transparent), transparent 70%),
-        var(--paper);
-      color: var(--ink); font: 16px/1.6 var(--font); -webkit-font-smoothing: antialiased; overflow-x: hidden;
-    }
-    a { color: var(--shu); }
-    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+    html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+    body { position: relative; background: var(--bg); color: var(--ink); font: 16px/1.65 var(--font); -webkit-font-smoothing: antialiased; overflow-x: hidden;
+      font-feature-settings: "ss01", "cv11"; }
+    a { color: inherit; }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
     .jp { font-family: var(--jp); }
+    em.s, .serif { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spacing: -0.01em; }
 
     /* ---------- nav ---------- */
-    nav { display: flex; align-items: center; gap: 12px; padding: 20px 0; }
-    .seal { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: #fff; flex: none;
-      font: 700 18px/1 var(--jp); background: linear-gradient(140deg, #6b98f5, var(--shu) 55%, var(--shu-d)); }
-    nav b { font-size: 16px; }
-    nav .links { margin-left: auto; display: flex; gap: 20px; font-size: 14px; align-items: center; }
-    nav .links a { color: var(--ink-2); text-decoration: none; }
-    nav .links a:hover { color: var(--ink); }
+    .nav { position: sticky; top: 0; z-index: 50; backdrop-filter: saturate(1.6) blur(16px); -webkit-backdrop-filter: saturate(1.6) blur(16px);
+      background: transparent; border-bottom: 1px solid transparent; transition: border-color .3s, background .3s; }
+    .nav.scrolled { border-bottom-color: var(--line); background: color-mix(in srgb, var(--bg) 75%, transparent); }
+    .nav .wrap { display: flex; align-items: center; gap: 12px; height: 64px; }
+    .seal { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; color: #fff; flex: none;
+      font: 700 16px/1 var(--jp); background: linear-gradient(140deg, #6b98f5, #2563eb 55%, #1d4ed8); box-shadow: 0 6px 14px -6px #2563eb, inset 0 1px 0 rgba(255,255,255,.35); }
+    .brand { font-weight: 600; letter-spacing: -0.01em; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+    .nav .links { margin-left: auto; display: flex; gap: 28px; font-size: 14px; align-items: center; }
+    .nav .links a { color: var(--ink-2); text-decoration: none; transition: color .2s; }
+    .nav .links a:hover { color: var(--ink); }
+    .nav .links .pill { color: var(--bg); background: var(--ink); padding: 7px 14px; border-radius: 999px; font-weight: 600; }
+    .nav .links .pill:hover { color: var(--bg); opacity: .88; }
 
     /* ---------- hero ---------- */
-    .hero { text-align: center; padding: 56px 0 40px; }
-    .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); text-decoration: none;
-      background: var(--surface); border: 1px solid var(--line-2); padding: 5px 14px 5px 6px; border-radius: 999px; margin-bottom: 22px; transition: border-color .2s; }
-    .eyebrow:hover { border-color: var(--shu); }
-    .eyebrow b { background: var(--shu); color: #fff; font-size: 11px; letter-spacing: .06em; padding: 2px 8px; border-radius: 999px; }
-    h1 { font-size: clamp(36px, 6vw, 62px); line-height: 1.06; letter-spacing: -0.035em; font-weight: 800; max-width: 840px; margin: 0 auto; }
-    h1 span { background: linear-gradient(90deg, var(--shu), var(--know), var(--shu)); background-size: 200% 100%;
-      -webkit-background-clip: text; background-clip: text; color: transparent; animation: sheen 8s ease-in-out infinite; }
+    .hero { position: relative; text-align: center; padding: 72px 0 0; isolation: isolate; }
+    .aurora { position: absolute; inset: 0 0 auto; height: 1000px; z-index: -1; pointer-events: none; overflow: hidden; }
+    .aurora::before, .aurora::after { content: ""; position: absolute; border-radius: 50%; filter: blur(90px); opacity: .55; }
+    .aurora::before { width: 640px; height: 440px; left: 12%; top: 60px; background: color-mix(in srgb, var(--shu) 55%, transparent); animation: drift 18s ease-in-out infinite alternate; }
+    .aurora::after { width: 540px; height: 400px; right: 10%; top: 160px; background: color-mix(in srgb, var(--know) 40%, transparent); animation: drift 22s ease-in-out infinite alternate-reverse; }
+    @media (prefers-color-scheme: dark) { .aurora::before, .aurora::after { opacity: .3; } }
+    @keyframes drift { to { transform: translate(60px, 40px) scale(1.1); } }
+    .grid-bg { position: absolute; inset: 0 0 auto; height: 820px; z-index: -1; pointer-events: none;
+      background-image: radial-gradient(circle at 1px 1px, var(--line-2) 1px, transparent 0); background-size: 28px 28px;
+      -webkit-mask-image: radial-gradient(ellipse 60% 70% at 50% 20%, #000 20%, transparent 75%); mask-image: radial-gradient(ellipse 60% 70% at 50% 20%, #000 20%, transparent 75%); }
+
+    .eyebrow { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; color: var(--ink-2); text-decoration: none;
+      background: var(--glass); backdrop-filter: blur(10px); border: 1px solid var(--line-2); padding: 5px 14px 5px 5px; border-radius: 999px; margin-bottom: 28px;
+      box-shadow: var(--ring); transition: border-color .2s, transform .2s; }
+    .eyebrow:hover { border-color: var(--shu); transform: translateY(-1px); }
+    .eyebrow b { background: linear-gradient(135deg, #2563eb, #16a34a); color: #fff; font-size: 10.5px; letter-spacing: .08em; padding: 3px 9px; border-radius: 999px; font-weight: 700; }
+    h1 { font-size: clamp(42px, 6.6vw, 82px); line-height: 1.02; letter-spacing: -0.045em; font-weight: 600; margin: 0 auto; }
+    h1 em.s { font-size: 1.08em; letter-spacing: -0.02em; background: linear-gradient(100deg, var(--shu), #0ea5a0 50%, var(--know), var(--shu)); background-size: 220% 100%;
+      -webkit-background-clip: text; background-clip: text; color: transparent; animation: sheen 9s ease-in-out infinite; padding-right: .06em; }
     @keyframes sheen { 50% { background-position: 100% 0; } }
-    .lead { font-size: 19px; color: var(--ink-2); max-width: 660px; margin: 20px auto 0; }
-    .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 32px; }
-    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 22px; border-radius: 12px; font-weight: 650;
-      text-decoration: none; font-size: 15px; transition: transform .15s, background .15s, box-shadow .2s; }
-    .btn:hover { transform: translateY(-1px); }
-    .btn:active { transform: translateY(1px); }
-    .btn.primary { background: var(--shu); color: #fff; box-shadow: 0 10px 24px -12px var(--shu); }
-    .btn.primary:hover { background: var(--shu-d); box-shadow: 0 14px 28px -12px var(--shu); }
-    .btn.ghost { background: var(--surface); color: var(--ink); border: 1px solid var(--line-2); }
-    .btn.ghost:hover { background: var(--surface-2); }
-    .note { font-size: 13px; color: var(--muted); margin-top: 14px; }
+    .lead { font-size: clamp(17px, 1.6vw, 20px); color: var(--ink-2); max-width: 620px; margin: 28px auto 0; line-height: 1.6; }
+    .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 36px; }
+    .btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; border-radius: 999px; font-weight: 600;
+      text-decoration: none; font-size: 15px; transition: transform .2s, box-shadow .25s, background .2s, opacity .2s; }
+    .btn:hover { transform: translateY(-2px); }
+    .btn:active { transform: translateY(0); }
+    .btn.primary { background: var(--ink); color: var(--bg); box-shadow: 0 16px 30px -14px rgba(20,19,26,.55), inset 0 1px 0 rgba(255,255,255,.18); }
+    .btn.primary:hover { box-shadow: 0 22px 40px -16px rgba(20,19,26,.6), 0 0 0 4px color-mix(in srgb, var(--shu) 22%, transparent); }
+    .btn.ghost { background: var(--glass); backdrop-filter: blur(10px); color: var(--ink); border: 1px solid var(--line-2); box-shadow: var(--ring); }
+    .btn .arr { transition: transform .2s; }
+    .btn:hover .arr { transform: translateX(3px); }
+    .note { font-size: 13px; color: var(--muted); margin-top: 18px; }
+    .note span { margin: 0 8px; opacity: .5; }
 
-    .shot { margin: 48px auto 0; max-width: 1040px; }
-    .shot img { display: block; width: 100%; height: auto; }
-    html.js .hero .shot { animation: rise 1s .15s cubic-bezier(.2,.7,.2,1) both; }
-    @keyframes rise { from { opacity: 0; transform: translateY(40px) scale(.98); } }
+    .frame { margin: 64px auto 0; max-width: 1080px; position: relative; }
+    .frame::before { content: ""; position: absolute; inset: 8% 6% -4%; background: linear-gradient(120deg, color-mix(in srgb, var(--shu) 50%, transparent), color-mix(in srgb, var(--know) 40%, transparent));
+      filter: blur(70px); opacity: .45; z-index: -1; border-radius: 40px; }
+    .frame img { display: block; width: 100%; height: auto; }
+    html.js .hero .frame { animation: rise 1.1s .2s cubic-bezier(.2,.7,.2,1) both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(48px) scale(.97); } }
 
-    .facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; max-width: 860px; margin: 36px auto 0; }
-    .facts div { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 12px; text-align: center; }
-    .facts b { display: block; font-size: 22px; letter-spacing: -0.02em; }
-    .facts span { font-size: 13px; color: var(--muted); }
+    .facts { display: grid; grid-template-columns: repeat(4, 1fr); margin: 56px auto 0; max-width: 940px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); }
+    .facts div { padding: 26px 16px; text-align: center; }
+    .facts div + div { border-left: 1px solid var(--line); }
+    .facts b { display: block; font: 400 44px/1 var(--serif); letter-spacing: -0.02em; }
+    .facts span { font-size: 13px; color: var(--muted); display: block; margin-top: 8px; }
 
-    /* ---------- sections ---------- */
-    section { padding: 104px 0 0; }
-    .kicker { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--shu); }
-    h2 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -0.025em; line-height: 1.12; margin-top: 8px; }
-    .sub { color: var(--ink-2); max-width: 640px; margin-top: 12px; font-size: 17px; }
+    /* ---------- section heads ---------- */
+    section { padding: 140px 0 0; }
+    .head { max-width: 720px; }
+    .head.center { margin: 0 auto; text-align: center; max-width: 880px; }
+    .kicker { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: var(--ink-2); letter-spacing: .02em;
+      padding: 5px 12px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line-2); box-shadow: var(--ring); }
+    .kicker::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--k, var(--shu)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--k, var(--shu)) 20%, transparent); }
+    h2 { font-size: clamp(34px, 4.8vw, 56px); letter-spacing: -0.04em; line-height: 1.04; margin-top: 18px; font-weight: 600; }
+    h2 em.s { font-size: 1.06em; }
+    .sub { color: var(--ink-2); margin-top: 18px; font-size: 18px; line-height: 1.6; }
+    .head.center .sub { margin-left: auto; margin-right: auto; max-width: 600px; }
 
     /* reveal on scroll */
-    html.js .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1); transition-delay: var(--d, 0s); }
-    html.js .reveal.in { opacity: 1; transform: none; }
+    html.js .reveal { opacity: 0; transform: translateY(28px); filter: blur(4px); transition: opacity .9s ease, transform .9s cubic-bezier(.2,.7,.2,1), filter .9s ease; transition-delay: var(--d, 0s); }
+    html.js .reveal.in { opacity: 1; transform: none; filter: none; }
 
     /* ---------- how it works ---------- */
-    .loop { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 36px; position: relative; }
-    .loop-step { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; position: relative; }
-    .loop-step .k { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font: 700 22px/1 var(--jp); margin-bottom: 14px;
-      background: var(--c-soft); color: var(--c); }
-    .loop-step h3 { font-size: 18px; margin-bottom: 4px; }
-    .loop-step p { color: var(--ink-2); font-size: 15px; }
-    .loop-step .n { position: absolute; top: 20px; right: 20px; font-size: 12px; font-weight: 700; color: var(--muted); }
-    .loop-step:not(:last-child)::after { content: "→"; position: absolute; right: -13px; top: 32px; width: 22px; height: 22px; border-radius: 50%;
-      display: grid; place-items: center; font-size: 12px; color: var(--muted); background: var(--paper); border: 1px solid var(--line-2); z-index: 1; }
+    .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; margin-top: 64px; position: relative; }
+    .flow::before { content: ""; position: absolute; left: 24px; right: 24px; top: 23px; height: 1px; background: linear-gradient(90deg, var(--shu), var(--new), var(--hint), var(--know));
+      transform-origin: left; transform: scaleX(0); transition: transform 1.6s cubic-bezier(.6,0,.2,1) .2s; opacity: .6; }
+    .flow.in::before { transform: none; }
+    html:not(.js) .flow::before { transform: none; }
+    .flow-step .k { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; font: 700 22px/1 var(--jp); position: relative;
+      background: var(--surface); color: var(--c); border: 1px solid var(--line-2); box-shadow: var(--shadow), var(--ring); }
+    .flow-step .n { font: 400 15px var(--serif); font-style: italic; color: var(--muted); margin: 22px 0 4px; display: block; }
+    .flow-step h3 { font-size: 19px; letter-spacing: -0.02em; font-weight: 600; }
+    .flow-step p { color: var(--ink-2); font-size: 15px; margin-top: 6px; }
 
-    /* ---------- feature split ---------- */
-    .split { display: grid; grid-template-columns: 1fr 1.15fr; gap: 48px; align-items: center; margin-top: 40px; }
-    .split ul { list-style: none; padding: 0; display: grid; gap: 16px; }
-    .split li { padding-left: 30px; position: relative; color: var(--ink-2); }
-    .split li::before { content: "✓"; position: absolute; left: 0; top: 2px; width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center;
-      font-size: 12px; font-weight: 700; color: var(--know); background: var(--know-soft); }
-    .split li b { color: var(--ink); }
-    .demo-note { font-size: 12px; color: var(--muted); text-align: center; margin-top: 10px; }
+    /* ---------- feature rows ---------- */
+    .feature { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 72px; align-items: center; margin-top: 64px; }
+    .feature.flip > :first-child { order: 2; }
+    .points { list-style: none; padding: 0; display: grid; gap: 22px; }
+    .points li { display: grid; grid-template-columns: 26px 1fr; gap: 14px; color: var(--ink-2); font-size: 15.5px; }
+    .points li::before { content: ""; width: 26px; height: 26px; border-radius: 8px; margin-top: 1px;
+      background: color-mix(in srgb, var(--pc, var(--shu)) 14%, transparent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2316a34a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 14px no-repeat; }
+    .points b { display: block; color: var(--ink); font-weight: 600; font-size: 16px; letter-spacing: -0.01em; margin-bottom: 2px; }
 
-    /* ---------- demo: browser + popup flashcard ---------- */
-    .browser { position: relative; border-radius: 16px; overflow: hidden; background: #fbfaf7; border: 1px solid var(--line-2); box-shadow: var(--shadow);
-      aspect-ratio: 4 / 3; color: #1f1d2b; font-size: 14px; }
-    .b-bar { height: 40px; display: flex; align-items: center; gap: 7px; padding: 0 12px; background: #eceae4; border-bottom: 1px solid rgba(0,0,0,.06); }
-    .b-bar i { width: 10px; height: 10px; border-radius: 50%; background: #d6d2ca; }
-    .b-url { flex: 1; margin: 0 10px; height: 24px; border-radius: 8px; background: #fff; font-size: 12px; color: #8a8795; display: flex; align-items: center; padding: 0 10px; overflow: hidden; white-space: nowrap; }
+    .stage { position: relative; border-radius: 32px; padding: clamp(18px, 3.4vw, 40px); border: 1px solid var(--line);
+      background: radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--sc, var(--shu)) 16%, transparent), transparent 60%),
+                  radial-gradient(90% 80% at 100% 100%, color-mix(in srgb, var(--sc2, var(--know)) 12%, transparent), transparent 60%), var(--bg-2);
+      box-shadow: var(--ring); }
+    .demo-note { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: 16px; }
+
+    /* ---------- mock browser (shared) ---------- */
+    .browser { position: relative; border-radius: 14px; overflow: hidden; background: #fbfaf7; border: 1px solid rgba(20,19,26,.1); box-shadow: var(--shadow-lg);
+      color: #1f1d2b; font: 14px/1.6 var(--font); }
+    .browser.fixed { aspect-ratio: 4 / 3.15; }
+    .b-bar { height: 38px; display: flex; align-items: center; gap: 7px; padding: 0 12px; background: #eeebe5; border-bottom: 1px solid rgba(0,0,0,.06); }
+    .b-bar i { width: 10px; height: 10px; border-radius: 50%; background: #d8d4cc; }
+    .b-bar i:nth-child(1) { background: #f0857d; } .b-bar i:nth-child(2) { background: #f4c25b; } .b-bar i:nth-child(3) { background: #79c46d; }
+    .b-url { flex: 1; margin: 0 10px; height: 24px; border-radius: 8px; background: #fff; font-size: 11.5px; color: #8a8795; display: flex; align-items: center; padding: 0 10px; overflow: hidden; white-space: nowrap; }
     .b-ext { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; color: #fff; font: 700 13px/1 var(--jp);
-      background: linear-gradient(140deg, #6b98f5, #2563eb); position: relative; transition: box-shadow .2s; }
+      background: linear-gradient(140deg, #6b98f5, #2563eb); position: relative; transition: box-shadow .2s, transform .15s; flex: none; }
     .b-ext.ping { box-shadow: 0 0 0 4px rgba(37,99,235,.25); }
+    .b-ext.tap { transform: scale(.9); }
     .b-page { padding: 22px 26px; }
     .b-hero { aspect-ratio: 16 / 5; border-radius: 10px; background: linear-gradient(135deg, #d99863, #a8552f); margin-bottom: 16px; }
     .b-line { height: 9px; border-radius: 5px; background: #e5e1d9; margin: 10px 0; }
     .b-line.t { height: 14px; width: 62%; background: #cfcac0; margin-bottom: 16px; }
+    .cursor { position: absolute; width: 18px; height: 18px; z-index: 6; pointer-events: none; opacity: 0; left: 40%; top: 60%;
+      transition: left .6s cubic-bezier(.4,0,.2,1), top .6s cubic-bezier(.4,0,.2,1), opacity .3s; }
+    .cursor svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
 
-    .tb { position: absolute; top: 46px; right: 8px; width: 190px; background: #fff; border-radius: 12px; border: 1px solid rgba(0,0,0,.08);
+    /* ---------- demo: add a word ---------- */
+    .jp-page { padding: 22px 24px 26px; font: 500 clamp(15px, 1.8vw, 17px)/2.1 var(--jp); color: #1f1d2b; min-height: 300px; }
+    .jp-page h4 { font: 700 clamp(18px, 2.2vw, 21px)/1.5 var(--jp); margin-bottom: 4px; }
+    .jp-page .date { font: 12px var(--font); color: #8a8795; margin-bottom: 26px; }
+    .jp-page p { margin: 0 0 6px; }
+    .tw { position: relative; border-radius: 3px; background-repeat: no-repeat; background-position: 0 100%, 0 0; background-size: 0 2px, 0 100%;
+      transition: background-size .6s ease; }
+    .tw.seen { background-image: linear-gradient(#000,#000), linear-gradient(rgba(250,204,21,.55), rgba(250,204,21,.55)); background-size: 0 2px, 100% 100%; }
+    .tw.saved { background-image: linear-gradient(#6366f1,#6366f1), linear-gradient(rgba(99,102,241,.14), rgba(99,102,241,.14)); background-size: 100% 2px, 100% 100%; }
+    .tw .q { position: absolute; left: 50%; bottom: calc(100% + 4px); transform: translate(-50%, 4px); white-space: nowrap; font: 600 10.5px/1 var(--font);
+      color: #fff; background: #1f1d2b; padding: 4px 7px; border-radius: 6px; opacity: 0; transition: opacity .25s, transform .25s; }
+    .tw.seen .q { opacity: 1; transform: translate(-50%, 0); }
+    .qa { position: absolute; top: 44px; right: 8px; width: min(232px, 66%); background: #fff; border-radius: 14px; border: 1px solid rgba(0,0,0,.08);
+      box-shadow: 0 24px 50px -18px rgba(0,0,0,.4); padding: 14px; z-index: 4; font-size: 12px;
+      opacity: 0; transform: translateY(-8px) scale(.97); transform-origin: top right; transition: opacity .25s, transform .3s cubic-bezier(.2,.8,.2,1.1); pointer-events: none; }
+    .qa.show { opacity: 1; transform: none; }
+    .qa-t { font-weight: 700; font-size: 12.5px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .qa-t small { font-weight: 500; color: #8a8795; font-size: 10.5px; }
+    .fld { border: 1px solid #e4e0d8; border-radius: 8px; padding: 6px 9px; margin-bottom: 6px; min-height: 30px; color: #1f1d2b; background: #fbfaf7;
+      display: flex; align-items: center; transition: border-color .2s, box-shadow .2s; }
+    .fld.big { font: 500 22px/1.2 var(--jp); justify-content: center; min-height: 44px; }
+    .fld.focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.15); background: #fff; }
+    .fld .ph { color: #b3afa7; }
+    .fld .ime { text-decoration: underline dotted #2563eb; text-underline-offset: 4px; }
+    .fld.focus::after { content: ""; width: 1.5px; height: 1.1em; background: #2563eb; margin-left: 1px; animation: blink 1s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    .chips { display: flex; gap: 5px; flex-wrap: wrap; margin: 4px 0 8px; }
+    .chips span { font-size: 10.5px; padding: 2px 8px; border-radius: 99px; border: 1px solid #e4e0d8; color: #696676; }
+    .chips span.on { background: #e8eefc; border-color: #c7d6fa; color: #1d4ed8; font-weight: 600; }
+    .qa-row { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #4a4757; margin-bottom: 10px; }
+    .qa-row .tog { width: 26px; height: 15px; border-radius: 99px; background: #2563eb; position: relative; }
+    .qa-row .tog::after { content: ""; position: absolute; right: 2px; top: 2px; width: 11px; height: 11px; border-radius: 50%; background: #fff; }
+    .qa-btns { display: grid; grid-template-columns: 1fr 1.4fr; gap: 6px; }
+    .qa-btns span { text-align: center; padding: 7px 0; border-radius: 8px; font-weight: 600; transition: transform .15s, box-shadow .15s; }
+    .qa-btns .c { background: #f1eee8; color: #4a4757; }
+    .qa-btns .sv { background: #2563eb; color: #fff; }
+    .qa-btns .press { transform: scale(.94); box-shadow: 0 0 0 4px rgba(37,99,235,.25); }
+    .toast { position: absolute; left: 50%; bottom: 16px; transform: translate(-50%, 16px); background: #1f1d2b; color: #fff; font-size: 12.5px; font-weight: 500;
+      padding: 9px 14px; border-radius: 999px; display: flex; gap: 8px; align-items: center; opacity: 0; transition: opacity .3s, transform .4s cubic-bezier(.2,.8,.2,1.1); white-space: nowrap; z-index: 5; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .toast i { width: 16px; height: 16px; border-radius: 50%; background: #16a34a; display: grid; place-items: center; font-style: normal; font-size: 10px; }
+
+    /* ---------- demo: flashcard ---------- */
+    .tb { position: absolute; top: 44px; right: 8px; width: 190px; background: #fff; border-radius: 12px; border: 1px solid rgba(0,0,0,.08);
       box-shadow: 0 18px 40px -16px rgba(0,0,0,.35); padding: 12px; opacity: 0; transform: translateY(-6px) scale(.97); transform-origin: top right;
       transition: opacity .25s, transform .25s; pointer-events: none; z-index: 3; }
     .tb.show { opacity: 1; transform: none; }
     .tb small { font-size: 11px; color: #696676; }
-    .tb .cd { font: 800 24px/1.1 var(--font); color: #2563eb; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    .tb .cd { font: 700 24px/1.1 var(--font); color: #2563eb; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
     .tb .bar { height: 4px; border-radius: 3px; background: #efece6; margin: 8px 0 10px; overflow: hidden; }
     .tb .bar b { display: block; height: 100%; width: 100%; background: #2563eb; border-radius: 3px; transition: width 1s linear; }
     .tb .row { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #4a4757; padding-top: 8px; border-top: 1px solid #efece6; }
     .tog { width: 26px; height: 15px; border-radius: 99px; background: #2563eb; position: relative; }
     .tog::after { content: ""; position: absolute; right: 2px; top: 2px; width: 11px; height: 11px; border-radius: 50%; background: #fff; }
-
-    .fc { position: absolute; right: 14px; bottom: 14px; width: min(250px, 62%); background: #fff; border-radius: 14px; border: 1px solid rgba(0,0,0,.08);
+    .fc { position: absolute; right: 14px; bottom: 14px; width: min(250px, 64%); background: #fff; border-radius: 14px; border: 1px solid rgba(0,0,0,.08);
       box-shadow: 0 24px 50px -20px rgba(0,0,0,.4); overflow: hidden; z-index: 2;
       transform: translateY(130%); opacity: 0; transition: transform .55s cubic-bezier(.2,.8,.2,1.05), opacity .3s; }
     .fc.show { transform: none; opacity: 1; }
     .fc::before { content: ""; display: block; height: 4px; background: linear-gradient(90deg, #2563eb, #16a34a); }
-    .fc-in { padding: 12px 14px 12px; text-align: center; }
+    .fc-in { padding: 12px 14px; text-align: center; }
     .fc-h { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #696676; font-weight: 600; text-align: left; }
     .fc-h i { width: 16px; height: 16px; border-radius: 5px; background: #2563eb; color: #fff; display: grid; place-items: center; font: 700 9px/1 var(--jp); font-style: normal; }
-    .fc-k { font: 500 clamp(30px, 5vw, 40px)/1.2 var(--font); margin: 8px 0 6px; }
+    .fc-k { font: 500 clamp(30px, 4.4vw, 40px)/1.2 var(--jp); margin: 8px 0 6px; }
     .fc-back { max-height: 0; overflow: hidden; opacity: 0; transition: max-height .45s ease, opacity .35s; border-top: 1px solid transparent; }
     .fc.rev .fc-back { max-height: 90px; opacity: 1; border-top-color: #ebe8e2; }
-    .fc-r { font-size: 14px; color: #4a4757; margin-top: 6px; }
+    .fc-r { font: 14px var(--jp); color: #4a4757; margin-top: 6px; }
     .fc-m { font-size: 15px; font-weight: 700; color: #2563eb; }
     .fc-e { font-size: 11px; color: #696676; margin-bottom: 2px; }
     .fc-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
     .fc-btns span { padding: 7px 0; border-radius: 8px; font-size: 12px; font-weight: 700; transition: transform .15s, box-shadow .15s; }
     .fc-btns .f { background: #fde7ec; color: #be123c; }
     .fc-btns .kn { background: #16a34a; color: #fff; }
-    .fc-btns .reveal-btn { grid-column: 1 / -1; background: #2563eb; color: #fff; }
+    .fc-btns .rv { grid-column: 1 / -1; background: #2563eb; color: #fff; }
     .fc-btns .press { transform: scale(.94); box-shadow: 0 0 0 4px rgba(22,163,74,.25); }
-    .fc .only-front { display: block; }
-    .fc.rev .only-front { display: none; }
     .fc .only-back { display: none; }
+    .fc.rev .only-front { display: none; }
     .fc.rev .only-back { display: contents; }
-    .cursor { position: absolute; width: 18px; height: 18px; z-index: 4; pointer-events: none; opacity: 0; transition: left .6s cubic-bezier(.4,0,.2,1), top .6s cubic-bezier(.4,0,.2,1), opacity .3s; }
-    .cursor svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
 
     /* ---------- demo: reader ---------- */
-    .reader { border-radius: 16px; background: var(--surface); border: 1px solid var(--line-2); box-shadow: var(--shadow); overflow: hidden; position: relative; }
+    .reader { border-radius: 14px; background: var(--surface); border: 1px solid var(--line-2); box-shadow: var(--shadow-lg); overflow: hidden; position: relative; }
     .reader-top { background: #0d6e4f; color: #fff; font: 700 15px var(--jp); padding: 12px 22px; }
-    .reader-body { padding: 26px 22px 34px; font: 500 clamp(16px, 2.1vw, 19px)/2.3 var(--jp); color: var(--ink); }
-    .reader-body h4 { font: 700 clamp(20px, 2.8vw, 26px)/1.6 var(--jp); margin-bottom: 8px; }
+    .reader-body { padding: 26px 22px 34px; font: 500 clamp(16px, 2vw, 19px)/2.3 var(--jp); color: var(--ink); }
+    .reader-body h4 { font: 700 clamp(20px, 2.6vw, 26px)/1.6 var(--jp); margin-bottom: 8px; }
     .reader rt { font-size: 10px; color: var(--muted); }
     .w { cursor: default; border-radius: 3px; background-repeat: no-repeat; background-position: 0 100%, 0 0;
       background-size: 0% 2px, 0% 100%; transition: background-size .5s ease; transition-delay: var(--wd, 0s); }
-    .w.v { background-size: 0% 2px; }
     .w.new { --c: var(--new); } .w.lrn { --c: var(--hint); } .w.mst { --c: var(--know); }
     .w { background-image: linear-gradient(var(--c), var(--c)), linear-gradient(color-mix(in srgb, var(--c) 14%, transparent), color-mix(in srgb, var(--c) 14%, transparent)); }
-    .w.v { background-image: repeating-linear-gradient(90deg, var(--c) 0 6px, transparent 6px 10px); }
+    .w.v { background-image: repeating-linear-gradient(90deg, var(--c) 0 6px, transparent 6px 10px); background-size: 0% 2px; }
     .reader.lit .w { background-size: 100% 2px, 100% 100%; }
     .reader.lit .w.v { background-size: 100% 2px; }
     .w.on { outline: 2px solid color-mix(in srgb, var(--c) 40%, transparent); outline-offset: 1px; }
     .hc { position: absolute; z-index: 2; width: 220px; background: var(--surface); border: 1px solid var(--line-2); border-radius: 14px; padding: 12px 14px 10px;
-      box-shadow: 0 20px 44px -18px rgba(0,0,0,.45); opacity: 0; transform: translateY(4px); transition: opacity .18s, transform .18s; pointer-events: none;
-      font: 14px/1.4 var(--font); }
+      box-shadow: 0 20px 44px -18px rgba(0,0,0,.45); opacity: 0; transform: translateY(4px); transition: opacity .18s, transform .18s; pointer-events: none; font: 14px/1.4 var(--font); }
     .hc.show { opacity: 1; transform: none; }
     .hc-top { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--muted); }
     .hc-st { font-weight: 700; font-size: 11px; padding: 2px 9px; border-radius: 99px; background: var(--hs-soft); color: var(--hs); }
-    .hc-r { font-size: 13px; color: var(--ink); margin-top: 8px; }
-    .hc-w { font: 500 26px/1.25 var(--font); }
+    .hc-r { font: 13px var(--jp); color: var(--ink); margin-top: 8px; }
+    .hc-w { font: 500 26px/1.25 var(--jp); }
     .hc-m { color: var(--shu); font-weight: 700; }
     .hc-v { font-size: 12px; color: var(--muted); margin-top: 4px; }
-    .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px; font-size: 13px; color: var(--ink-2); justify-content: center; }
-    .legend span::before { content: ""; display: inline-block; width: 18px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; background: var(--c); }
+    .legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 18px; font-size: 13px; color: var(--ink-2); justify-content: center; }
+    .legend span::before { content: ""; display: inline-block; width: 18px; height: 3px; border-radius: 2px; margin-right: 7px; vertical-align: middle; background: var(--c); }
     .legend span.dash::before { background: repeating-linear-gradient(90deg, var(--muted) 0 4px, transparent 4px 7px); }
 
     /* ---------- tour ---------- */
-    .tour-row { display: grid; grid-template-columns: 1fr 1.35fr; gap: 56px; align-items: center; margin-top: 72px; }
-    .tour-row.rev { grid-template-columns: 1.35fr 1fr; }
-    .tour-row.rev .tour-text { order: 2; }
-    .tour-row img, .gallery img { width: 100%; height: auto; display: block; border-radius: 16px; border: 1px solid var(--line);
-      box-shadow: var(--shadow); background: var(--surface); transition: transform .4s cubic-bezier(.2,.7,.2,1); }
-    .tour-row img:hover, .gallery img:hover { transform: translateY(-4px); }
-    .tour-text h3 { font-size: 26px; letter-spacing: -0.015em; line-height: 1.2; margin: 14px 0 10px; }
-    .tour-text p { color: var(--ink-2); }
-    .tag-pill { display: inline-block; font: 700 13px var(--jp); padding: 5px 12px; border-radius: 999px; }
-    .tag-pill.c1 { background: var(--shu-soft); color: var(--shu); }
-    .tag-pill.c2 { background: var(--know-soft); color: var(--know); }
-    .tag-pill.c4 { background: var(--new-soft); color: var(--new); }
-    .ticks { list-style: none; padding: 0; margin-top: 16px; display: grid; gap: 10px; }
-    .ticks li { padding-left: 28px; position: relative; color: var(--ink-2); font-size: 15px; }
-    .ticks li::before { content: "✓"; position: absolute; left: 0; top: 2px; width: 18px; height: 18px; border-radius: 6px; display: grid; place-items: center;
-      font-size: 11px; font-weight: 700; color: var(--know); background: var(--know-soft); }
-    .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 80px; }
+    .tour-row { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 72px; align-items: center; margin-top: 96px; }
+    .tour-row.flip > :first-child { order: 2; }
+    .shot { border-radius: 20px; padding: 8px; background: var(--glass); border: 1px solid var(--line-2); box-shadow: var(--shadow-lg), var(--ring); transition: transform .5s cubic-bezier(.2,.7,.2,1); }
+    .shot:hover { transform: translateY(-6px); }
+    .shot img { display: block; width: 100%; height: auto; border-radius: 13px; }
+    .tour-text h3 { font-size: clamp(26px, 3vw, 34px); letter-spacing: -0.035em; line-height: 1.1; margin: 18px 0 12px; font-weight: 600; }
+    .tour-text p { color: var(--ink-2); font-size: 16.5px; }
+    .ticks { list-style: none; padding: 0; margin-top: 22px; display: grid; gap: 12px; }
+    .ticks li { padding-left: 24px; position: relative; color: var(--ink-2); font-size: 15px; }
+    .ticks li::before { content: ""; position: absolute; left: 2px; top: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--tc, var(--shu)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--tc, var(--shu)) 16%, transparent); }
+    .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 96px; }
     .gallery figure { margin: 0; }
-    .gallery img { aspect-ratio: 16 / 11; object-fit: cover; object-position: top left; }
-    .gallery .fig-popup img { object-fit: contain; object-position: center; background: var(--surface-2); padding: 14px; }
-    .gallery figcaption { margin-top: 14px; color: var(--ink-2); font-size: 15px; }
-    .gallery figcaption b { display: block; color: var(--ink); font-size: 17px; margin-bottom: 2px; }
+    .gallery .shot img { aspect-ratio: 16 / 11; object-fit: cover; object-position: top left; }
+    .gallery .fig-popup .shot img { object-fit: contain; object-position: center; background: var(--bg-2); padding: 12px; }
+    .gallery figcaption { margin-top: 18px; color: var(--ink-2); font-size: 15px; }
+    .gallery figcaption b { display: block; color: var(--ink); font-size: 17px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 2px; }
 
-    /* ---------- details grid ---------- */
-    .specs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; }
-    .spec { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; transition: border-color .2s, transform .3s; }
-    .spec:hover { border-color: var(--line-2); transform: translateY(-2px); }
-    .spec .ic { font: 700 18px/1 var(--jp); color: var(--shu); margin-bottom: 10px; }
-    .spec b { display: block; margin-bottom: 4px; }
-    .spec p { color: var(--ink-2); font-size: 15px; }
+    /* ---------- details bento ---------- */
+    .bento { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 56px; }
+    .cell { position: relative; border-radius: 24px; padding: 28px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--ring); overflow: hidden;
+      transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .3s; }
+    .cell:hover { transform: translateY(-4px); border-color: var(--line-2); }
+    .cell .ic { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font: 700 18px/1 var(--jp); margin-bottom: 18px;
+      background: color-mix(in srgb, var(--c) 13%, transparent); color: var(--c); }
+    .cell b { display: block; font-size: 17px; font-weight: 600; letter-spacing: -0.015em; margin-bottom: 6px; }
+    .cell p { color: var(--ink-2); font-size: 15px; }
+    .cell.wide { grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: center; }
+    .slider-demo { background: var(--bg-2); border-radius: 16px; padding: 18px 20px; border: 1px solid var(--line); }
+    .slider-demo .lbl { display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2); }
+    .slider-demo .lbl b { display: inline; font: 400 30px/1 var(--serif); color: var(--ink); margin: 0; font-variant-numeric: tabular-nums; }
+    .track { height: 6px; border-radius: 4px; background: var(--line-2); margin-top: 16px; position: relative; }
+    .track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: linear-gradient(90deg, var(--shu), var(--know)); width: var(--p, 20%); transition: width .9s cubic-bezier(.4,0,.2,1); }
+    .track i::after { content: ""; position: absolute; right: -8px; top: 50%; width: 16px; height: 16px; margin-top: -8px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+    .ticks-s { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 10px; }
 
     /* ---------- install ---------- */
-    .steps { counter-reset: s; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 32px; }
-    .step { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; counter-increment: s; }
-    .step::before { content: counter(s); display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px;
-      background: var(--shu); color: #fff; font-weight: 700; margin-bottom: 12px; }
-    .step p { color: var(--ink-2); font-size: 15px; }
-    .callout { margin-top: 16px; padding: 14px 18px; border-radius: 14px; background: var(--shu-soft); color: var(--ink-2); font-size: 15px; }
+    .install { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 72px; align-items: start; }
+    .steps { list-style: none; padding: 0; counter-reset: s; display: grid; gap: 0; border-radius: 24px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--ring); overflow: hidden; }
+    .steps li { counter-increment: s; display: grid; grid-template-columns: 44px 1fr; gap: 16px; padding: 22px 26px; color: var(--ink-2); font-size: 15.5px; align-items: center; }
+    .steps li + li { border-top: 1px solid var(--line); }
+    .steps li::before { content: counter(s); width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font: 400 20px/1 var(--serif); font-style: italic;
+      color: var(--ink); border: 1px solid var(--line-2); background: var(--bg); }
+    .steps b { color: var(--ink); font-weight: 600; }
+    .steps a { color: var(--shu); }
+    code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bg-2); padding: 2px 7px; border-radius: 6px; border: 1px solid var(--line); }
+    .callout { margin-top: 28px; padding: 18px 20px; border-radius: 18px; background: var(--shu-soft); color: var(--ink-2); font-size: 15px; }
     .callout b { color: var(--ink); }
-    code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--surface-2); padding: 2px 6px; border-radius: 6px; }
-
-    /* ---------- faq ---------- */
-    .faq { margin-top: 28px; display: grid; gap: 10px; max-width: 820px; }
-    .faq details { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 0 20px; transition: border-color .2s; }
-    .faq details[open] { border-color: var(--line-2); }
-    .faq summary { cursor: pointer; list-style: none; padding: 16px 0; font-weight: 650; display: flex; justify-content: space-between; gap: 16px; }
-    .faq summary::-webkit-details-marker { display: none; }
-    .faq summary::after { content: "+"; font-size: 20px; line-height: 1; color: var(--muted); transition: transform .25s; }
-    .faq details[open] summary::after { transform: rotate(45deg); }
-    .faq details p { color: var(--ink-2); padding-bottom: 16px; font-size: 15px; }
-    html.js .faq details[open] p { animation: fade .3s ease; }
-    @keyframes fade { from { opacity: 0; transform: translateY(-4px); } }
 
     /* ---------- privacy ---------- */
-    .privacy { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 28px; }
-    .privacy div { padding: 20px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); }
-    .privacy b { display: block; margin-bottom: 4px; }
+    .privacy { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 48px; }
+    .privacy div { padding: 28px; border-radius: 24px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--ring); }
+    .privacy .z { font: 400 52px/1 var(--serif); display: block; margin-bottom: 14px; background: linear-gradient(135deg, var(--shu), var(--know)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .privacy b { display: block; font-weight: 600; margin-bottom: 4px; font-size: 17px; }
     .privacy p { color: var(--ink-2); font-size: 15px; }
+    .more { font-size: 15px; color: var(--ink-2); margin-top: 20px; text-align: center; }
+    .more a { color: var(--shu); }
 
     /* ---------- final cta ---------- */
-    .final { margin-top: 104px; text-align: center; border-radius: 24px; padding: 56px 24px; color: #fff; position: relative; overflow: hidden;
-      background: linear-gradient(135deg, #2563eb, #1d4ed8 45%, #15803d); }
-    .final::before { content: "言葉"; position: absolute; right: -10px; bottom: -40px; font: 700 180px/1 var(--jp); opacity: .1; }
-    .final h2 { color: #fff; }
-    .final p { color: rgba(255,255,255,.85); margin: 10px auto 0; max-width: 520px; }
-    .final .btn.primary { background: #fff; color: #1d4ed8; box-shadow: 0 14px 30px -14px rgba(0,0,0,.5); margin-top: 26px; }
-    .final .btn.primary:hover { background: #eef3ff; }
+    .final { margin-top: 140px; text-align: center; border-radius: 36px; padding: clamp(56px, 8vw, 96px) 24px; color: #fff; position: relative; overflow: hidden; isolation: isolate;
+      background: #0e0d14; border: 1px solid rgba(255,255,255,.08); }
+    .final::before, .final::after { content: ""; position: absolute; border-radius: 50%; filter: blur(80px); z-index: -1; }
+    .final::before { width: 520px; height: 360px; left: -80px; top: -120px; background: rgba(37,99,235,.55); animation: drift 16s ease-in-out infinite alternate; }
+    .final::after { width: 460px; height: 320px; right: -60px; bottom: -140px; background: rgba(22,163,74,.45); animation: drift 20s ease-in-out infinite alternate-reverse; }
+    .final .bigjp { position: absolute; inset: 0; display: grid; place-items: center; font: 700 clamp(160px, 26vw, 300px)/1 var(--jp); color: rgba(255,255,255,.035); z-index: -1; letter-spacing: -0.05em; }
+    .final h2 { color: #fff; margin-top: 0; font-size: clamp(36px, 5.4vw, 64px); }
+    .final p { color: rgba(255,255,255,.72); margin: 18px auto 0; max-width: 520px; font-size: 17px; }
+    .final .btn.primary { background: #fff; color: #0e0d14; margin-top: 34px; box-shadow: 0 20px 40px -16px rgba(0,0,0,.6); }
+    .final .note { color: rgba(255,255,255,.5); }
 
-    footer { margin-top: 64px; padding: 32px 0 48px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px;
-      display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; }
-    footer a { color: var(--muted); }
+    footer { margin-top: 56px; padding: 28px 0 44px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13.5px;
+      display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; align-items: center; }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--ink); }
+    footer .brand { color: var(--ink); }
 
-    @media (max-width: 900px) {
-      .loop, .steps { grid-template-columns: repeat(2, 1fr); }
-      .loop-step:nth-child(2)::after { display: none; }
-      .specs { grid-template-columns: repeat(2, 1fr); }
+    @media (max-width: 960px) {
+      .feature, .feature.flip, .tour-row, .install { grid-template-columns: 1fr; gap: 40px; }
+      .feature.flip > :first-child, .tour-row.flip > :first-child { order: 0; }
+      .flow { grid-template-columns: repeat(2, 1fr); row-gap: 40px; }
+      .flow::before { display: none; }
+      .bento { grid-template-columns: 1fr 1fr; }
+      .cell.wide { grid-template-columns: 1fr; }
     }
-    @media (max-width: 760px) {
+    @media (max-width: 680px) {
       .wrap { padding: 0 16px; }
-      .split { grid-template-columns: 1fr; gap: 32px; }
-      nav .links a:not(.gh) { display: none; }
-      .hero { padding-top: 28px; }
-      .facts { grid-template-columns: repeat(2, 1fr); }
-      .tour-row, .tour-row.rev { grid-template-columns: 1fr; gap: 24px; margin-top: 56px; }
-      .tour-row.rev .tour-text { order: 0; }
-      .gallery, .specs, .privacy, .loop, .steps { grid-template-columns: 1fr; }
-      .loop-step::after { display: none; }
-      section { padding-top: 80px; }
-      .browser { aspect-ratio: 3 / 3.2; }
+      .nav .links a:not(.pill) { display: none; }
+      h1 .br { display: none; }
+      .hero { padding-top: 44px; }
+      .facts { grid-template-columns: 1fr 1fr; }
+      .facts div:nth-child(3) { border-left: 0; }
+      .facts div:nth-child(n+3) { border-top: 1px solid var(--line); }
+      .facts b { font-size: 36px; }
+      section { padding-top: 104px; }
+      .flow, .bento, .privacy, .gallery { grid-template-columns: 1fr; }
+      .cell.wide { grid-column: auto; }
+      .stage { border-radius: 24px; padding: 12px; }
+      .browser.fixed { aspect-ratio: 3 / 3.3; }
+      .jp-page { min-height: 340px; }
+      .steps li { padding: 18px; grid-template-columns: 36px 1fr; gap: 12px; }
+      .final { border-radius: 28px; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
-      html.js .reveal { opacity: 1; transform: none; }
+      html.js .reveal { opacity: 1; transform: none; filter: none; }
+      .flow::before { transform: none; }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <nav>
-      <span class="seal" aria-hidden="true">言</span><b>Kotoba Bank</b>
+  <div class="aurora" aria-hidden="true"></div>
+  <div class="grid-bg" aria-hidden="true"></div>
+  <header class="nav" id="nav">
+    <div class="wrap">
+      <a class="brand" href="#"><span class="seal" aria-hidden="true">言</span>Kotoba Bank</a>
       <div class="links">
-        <a href="#flashcards">Features</a>
+        <a href="#bank">Your bank</a>
+        <a href="#flashcards">Flashcards</a>
+        <a href="#reader">Reader</a>
         <a href="#install">Install</a>
-        <a href="#faq">FAQ</a>
-        <a class="gh" href="https://github.com/Rzkykhrllh/flashcard-popup">GitHub</a>
+        <a class="pill" href="https://github.com/Rzkykhrllh/flashcard-popup/releases/latest">Download</a>
       </div>
-    </nav>
+    </div>
+  </header>
 
-    <header class="hero">
+  <div class="wrap">
+    <div class="hero">
       <a class="eyebrow" href="https://github.com/Rzkykhrllh/flashcard-popup/releases/latest"><b>NEW</b> v1.1: a live countdown to your next card</a>
-      <h1>Learn Japanese vocabulary <span>while you browse.</span></h1>
-      <p class="lead">Kotoba Bank is a free Chrome extension. Save the words you meet, get quick flashcards on the pages you already read, and see every word you've collected highlighted on any Japanese website.</p>
+      <h1>Learn Japanese vocabulary<br class="br" /> <em class="s">while you browse.</em></h1>
+      <p class="lead">Your own Japanese word bank, built from the words <i>you</i> meet. Kotoba Bank brings them back as quick flashcards on the pages you read, and highlights them on every Japanese website.</p>
       <div class="cta">
-        <a class="btn primary" href="https://github.com/Rzkykhrllh/flashcard-popup/releases/latest">↓ Download for Chrome</a>
-        <a class="btn ghost" href="#flashcards">See it in action</a>
+        <a class="btn primary" href="https://github.com/Rzkykhrllh/flashcard-popup/releases/latest">Download for Chrome <span class="arr">→</span></a>
+        <a class="btn ghost" href="#bank">See how it works</a>
       </div>
-      <p class="note">Free &amp; open source · No account · Your data never leaves your browser</p>
-      <div class="shot"><img src="screenshots/browsing.png" alt="A Kotoba Bank flashcard popping up in the corner of an ordinary article" width="1800" height="1244" /></div>
-      <div class="facts">
-        <div class="reveal"><b>5 sec</b><span>per pop-up review</span></div>
-        <div class="reveal" style="--d:.08s"><b>100%</b><span>stored in your browser</span></div>
-        <div class="reveal" style="--d:.16s"><b>0</b><span>accounts or servers</span></div>
-        <div class="reveal" style="--d:.24s"><b>~280 KB</b><span>download, MIT licensed</span></div>
-      </div>
-    </header>
+      <p class="note">Free &amp; open source<span>·</span>No account<span>·</span>Your words never leave your browser</p>
+      <div class="frame"><img src="screenshots/browsing.png" alt="A Kotoba Bank flashcard popping up in the corner of an ordinary article" width="1800" height="1244" /></div>
+    </div>
 
+    <div class="facts">
+      <div class="reveal"><b>5 sec</b><span>per pop-up review</span></div>
+      <div class="reveal" style="--d:.08s"><b>100%</b><span>stored in your browser</span></div>
+      <div class="reveal" style="--d:.16s"><b>0</b><span>accounts or servers</span></div>
+      <div class="reveal" style="--d:.24s"><b>280 KB</b><span>download, MIT licensed</span></div>
+    </div>
+
+    <!-- How it works -->
     <section>
-      <span class="kicker reveal">How it works</span>
-      <h2 class="reveal">Read real Japanese. Keep what you meet.</h2>
-      <p class="sub reveal">Most words are forgotten because you never see them again. Kotoba Bank closes that loop, so every word you save keeps coming back until it sticks.</p>
-      <div class="loop">
-        <div class="loop-step reveal" style="--c: var(--shu); --c-soft: var(--shu-soft)"><span class="n">01</span><div class="k">読</div><h3>Read</h3><p>Browse Japanese sites like you always do: news, blogs, social media.</p></div>
-        <div class="loop-step reveal" style="--d:.1s; --c: var(--new); --c-soft: var(--new-soft)"><span class="n">02</span><div class="k">集</div><h3>Collect</h3><p>Save a new word in seconds from the toolbar: kanji, reading, meaning, example.</p></div>
-        <div class="loop-step reveal" style="--d:.2s; --c: var(--hint); --c-soft: var(--hint-soft)"><span class="n">03</span><div class="k">復</div><h3>Review</h3><p>A flashcard pops up every few minutes on whatever page you're on.</p></div>
-        <div class="loop-step reveal" style="--d:.3s; --c: var(--know); --c-soft: var(--know-soft)"><span class="n">04</span><div class="k">覚</div><h3>Recognise</h3><p>Next time the word shows up on a page, it's highlighted. You know it.</p></div>
+      <div class="head center">
+        <span class="kicker reveal">How it works</span>
+        <h2 class="reveal">Read real Japanese. <em class="s">Keep</em> what you meet.</h2>
+        <p class="sub reveal">Most words are forgotten because you never see them again. Kotoba Bank closes the loop, so every word you save keeps coming back until it sticks.</p>
+      </div>
+      <div class="flow reveal" id="flow">
+        <div class="flow-step" style="--c: var(--shu)"><div class="k">読</div><span class="n">one</span><h3>Read</h3><p>Browse Japanese sites like you always do: news, blogs, social media.</p></div>
+        <div class="flow-step" style="--c: var(--new)"><div class="k">集</div><span class="n">two</span><h3>Collect</h3><p>Meet a new word? Add it to your bank in seconds, without leaving the page.</p></div>
+        <div class="flow-step" style="--c: var(--hint)"><div class="k">復</div><span class="n">three</span><h3>Review</h3><p>A flashcard pops up every few minutes on whatever page you're on.</p></div>
+        <div class="flow-step" style="--c: var(--know)"><div class="k">覚</div><span class="n">four</span><h3>Recognise</h3><p>Next time the word appears on a page, it's highlighted. You know it.</p></div>
       </div>
     </section>
 
-    <section id="flashcards">
-      <span class="kicker reveal">Pop-up flashcards</span>
-      <h2 class="reveal">Reviews that happen while you browse</h2>
-      <p class="sub reveal">No app to remember to open. A small card slides into the corner of the page, you answer, and it's gone.</p>
-      <div class="split">
-        <ul>
-          <li class="reveal"><b>A card finds you.</b> Every few minutes (you pick: 1 to 240) a word slides in on the page you're reading.</li>
-          <li class="reveal" style="--d:.06s"><b>Five seconds.</b> Recall, reveal, grade yourself, and you're back to what you were doing.</li>
-          <li class="reveal" style="--d:.12s"><b>Smart repetition.</b> Words you forget come back more often. Words you know come back less.</li>
-          <li class="reveal" style="--d:.18s"><b>Two modes.</b> Classic (reveal, then Known or Forgot) or Tiered, with a reading hint first.</li>
-          <li class="reveal" style="--d:.24s"><b>On your terms.</b> Snooze it, drag it anywhere, or tap a kanji to see its readings.</li>
-          <li class="reveal" style="--d:.3s"><b>Always in view.</b> The toolbar counts down to the next card and switches pop-ups or highlights off in one click.</li>
-        </ul>
+    <!-- Your bank -->
+    <section id="bank">
+      <div class="feature">
+        <div>
+          <div class="head">
+            <span class="kicker reveal" style="--k: var(--new)">Your bank</span>
+            <h2 class="reveal">Your words, <em class="s">not</em> a textbook list.</h2>
+            <p class="sub reveal">Kotoba Bank starts empty on purpose. When you meet a new word in an article, a show, a manga or a conversation, add it. Every flashcard and every highlight comes from what you saved.</p>
+          </div>
+          <ul class="points" style="margin-top: 36px">
+            <li class="reveal"><div><b>Add in seconds</b>Click the toolbar icon, type the word, reading and meaning, save. You never leave the page.</div></li>
+            <li class="reveal" style="--d:.06s"><div><b>In your own words</b>Write meanings in English, Indonesian, or any language you think in. Add notes and examples.</div></li>
+            <li class="reveal" style="--d:.12s"><div><b>Organised your way</b>Group words into collections (a book, a JLPT level, a show) and pick which ones go into rotation.</div></li>
+            <li class="reveal" style="--d:.18s"><div><b>It shows up right away</b>Saved words are highlighted on pages and join your pop-up flashcards.</div></li>
+          </ul>
+        </div>
         <div class="reveal" style="--d:.1s">
-          <div class="browser" id="fcDemo" aria-label="Animated demo: a flashcard pops up on a web page">
-            <div class="b-bar"><i></i><i></i><i></i><div class="b-url">news.example.com/morning-coffee</div><div class="b-ext" id="fcExt">言</div></div>
-            <div class="b-page">
-              <div class="b-hero"></div>
-              <div class="b-line t"></div>
-              <div class="b-line"></div><div class="b-line" style="width:92%"></div><div class="b-line" style="width:96%"></div>
-              <div class="b-line" style="width:70%"></div><div class="b-line"></div><div class="b-line" style="width:84%"></div>
+          <div class="stage" style="--sc: var(--new); --sc2: var(--shu)">
+            <div class="browser" id="adDemo" aria-label="Animated demo: adding a new word from the toolbar">
+              <div class="b-bar"><i></i><i></i><i></i><div class="b-url">news.example.jp/weekend</div><div class="b-ext" id="adExt">言</div></div>
+              <div class="jp-page">
+                <h4>週末の楽しみ</h4>
+                <div class="date">2026年11月8日</div>
+                <p><span class="tw" id="adT0"><span class="q">new word?</span>散歩</span>は毎朝の楽しみです。近くの公園まで歩きます。</p>
+                <p><span class="tw" id="adT1"><span class="q">new word?</span>景色</span>がとてもきれいで、写真をたくさん撮りました。</p>
+                <p>来週は友達と山に行く予定です。</p>
+              </div>
+              <div class="qa" id="adForm">
+                <div class="qa-t">New word <small id="adCount">12 words</small></div>
+                <div class="fld big" id="adK"><span class="ph">漢字</span></div>
+                <div class="fld" id="adR"><span class="ph">Reading (hiragana)</span></div>
+                <div class="fld" id="adM"><span class="ph">Meaning</span></div>
+                <div class="chips"><span>N4</span><span class="on">Weekend reading</span><span>＋</span></div>
+                <div class="qa-row"><span>Include in Study &amp; popup</span><span class="tog"></span></div>
+                <div class="qa-btns"><span class="c">Cancel</span><span class="sv" id="adSave">Save</span></div>
+              </div>
+              <div class="toast" id="adToast"><i>✓</i><span id="adToastText">Saved to your bank</span></div>
+              <div class="cursor" id="adCursor"><svg viewBox="0 0 24 24"><path d="M4 2l16 10-7 1.5L9.5 21z" fill="#1f1d2b" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
             </div>
-            <div class="tb" id="fcTb">
-              <small>Next card in</small>
-              <div class="cd" id="fcCd">0:05</div>
-              <div class="bar"><b id="fcBar"></b></div>
-              <div class="row"><span>語 Highlight words</span><span class="tog"></span></div>
-            </div>
-            <div class="fc" id="fcCard">
-              <div class="fc-in">
-                <div class="fc-h"><i>言</i><span class="jp">思い出して</span> · what does it mean?</div>
-                <div class="fc-k jp" id="fcK">約束</div>
-                <div class="fc-back">
-                  <div class="fc-r jp" id="fcR">やくそく</div>
-                  <div class="fc-m" id="fcM">promise, appointment</div>
-                  <div class="fc-e" id="fcE"><span class="jp">約束を守る</span>: to keep a promise</div>
-                </div>
-                <div class="fc-btns">
-                  <span class="reveal-btn only-front">Reveal</span>
-                  <span class="only-back"><span class="f">Forgot</span><span class="kn" id="fcKnown">Known!</span></span>
+          </div>
+          <p class="demo-note">Live demo. Meanings are yours: the second word is saved in Indonesian.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Flashcards -->
+    <section id="flashcards">
+      <div class="feature flip">
+        <div>
+          <div class="head">
+            <span class="kicker reveal" style="--k: var(--hint)">Pop-up flashcards</span>
+            <h2 class="reveal">Reviews that <em class="s">find you.</em></h2>
+            <p class="sub reveal">No app to remember to open. A small card slides into the corner of the page you're reading, you answer, and it's gone.</p>
+          </div>
+          <ul class="points" style="margin-top: 36px">
+            <li class="reveal"><div><b>Five seconds</b>Recall, reveal, grade yourself, back to what you were doing. Every 1 to 240 minutes, you choose.</div></li>
+            <li class="reveal" style="--d:.06s"><div><b>Smart repetition</b>Words you forget come back more often. Words you know come back less.</div></li>
+            <li class="reveal" style="--d:.12s"><div><b>Two modes</b>Classic (reveal, then Known or Forgot) or Tiered, with a reading hint first.</div></li>
+            <li class="reveal" style="--d:.18s"><div><b>Always in view</b>The toolbar counts down to the next card. Snooze, or switch pop-ups off in one click.</div></li>
+          </ul>
+        </div>
+        <div class="reveal" style="--d:.1s">
+          <div class="stage" style="--sc: var(--hint); --sc2: var(--shu)">
+            <div class="browser fixed" id="fcDemo" aria-label="Animated demo: a flashcard pops up on a web page">
+              <div class="b-bar"><i></i><i></i><i></i><div class="b-url">news.example.com/morning-coffee</div><div class="b-ext" id="fcExt">言</div></div>
+              <div class="b-page">
+                <div class="b-hero"></div>
+                <div class="b-line t"></div>
+                <div class="b-line"></div><div class="b-line" style="width:92%"></div><div class="b-line" style="width:96%"></div>
+                <div class="b-line" style="width:70%"></div><div class="b-line"></div><div class="b-line" style="width:84%"></div>
+              </div>
+              <div class="tb" id="fcTb">
+                <small>Next card in</small>
+                <div class="cd" id="fcCd">0:05</div>
+                <div class="bar"><b id="fcBar"></b></div>
+                <div class="row"><span>語 Highlight words</span><span class="tog"></span></div>
+              </div>
+              <div class="fc" id="fcCard">
+                <div class="fc-in">
+                  <div class="fc-h"><i>言</i><span class="jp">思い出して</span> · what does it mean?</div>
+                  <div class="fc-k" id="fcK">約束</div>
+                  <div class="fc-back">
+                    <div class="fc-r" id="fcR">やくそく</div>
+                    <div class="fc-m" id="fcM">promise, appointment</div>
+                    <div class="fc-e" id="fcE"><span class="jp">約束を守る</span>: to keep a promise</div>
+                  </div>
+                  <div class="fc-btns">
+                    <span class="rv only-front">Reveal</span>
+                    <span class="only-back"><span class="f">Forgot</span><span class="kn" id="fcKnown">Known!</span></span>
+                  </div>
                 </div>
               </div>
+              <div class="cursor" id="fcCursor"><svg viewBox="0 0 24 24"><path d="M4 2l16 10-7 1.5L9.5 21z" fill="#1f1d2b" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
             </div>
-            <div class="cursor" id="fcCursor"><svg viewBox="0 0 24 24"><path d="M4 2l16 10-7 1.5L9.5 21z" fill="#1f1d2b" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
           </div>
           <p class="demo-note">Live demo, sped up. The real card waits as long as you set.</p>
         </div>
       </div>
     </section>
 
+    <!-- Reader -->
     <section id="reader">
-      <span class="kicker reveal">Reader</span>
-      <h2 class="reveal">See what you know, on any page</h2>
-      <p class="sub reveal">Open a Japanese website and the words from your bank light up. Reading stops being a wall of text: you instantly see what you've learned.</p>
-      <div class="split">
-        <ul>
-          <li class="reveal"><b>Your words, underlined.</b> Colour shows how well you know each one: New, Learning or Mastered.</li>
-          <li class="reveal" style="--d:.06s"><b>Conjugations too.</b> 食べて and 行きました are recognised as forms of 食べる and 行く (dashed line).</li>
-          <li class="reveal" style="--d:.12s"><b>Hover for a reminder.</b> The reading and <em>your</em> meaning appear instantly. Try it on the demo.</li>
-          <li class="reveal" style="--d:.18s"><b>Furigana-friendly.</b> Works on sites like NHK News Easy, and never changes the page's HTML.</li>
-          <li class="reveal" style="--d:.24s"><b>Quiet.</b> Mute a single word, choose which statuses to show, or switch it off from the toolbar.</li>
-        </ul>
-        <div class="reveal" style="--d:.1s">
-          <div class="reader" id="rdDemo">
-            <div class="reader-top">やさしいニュース</div>
-            <div class="reader-body" id="rdBody">
-              <h4><span class="w new" data-i="0" style="--wd:.1s">雨</span>の日の小さな<span class="w mst" data-i="1" style="--wd:.3s">約束</span></h4>
-              今日は朝から<span class="w new" data-i="0" style="--wd:.5s">雨</span>でしたが、<span class="w mst" data-i="2" style="--wd:.7s"><ruby>電車<rt>でんしゃ</rt></ruby></span>に乗って友達との<span class="w mst" data-i="1" style="--wd:.9s">約束</span>の場所に<span class="w new v" data-i="3" style="--wd:1.1s">行きました</span>。<span class="w lrn" data-i="4" style="--wd:1.3s">時間</span>に少し遅れましたが、一緒にラーメンを<span class="w lrn v" data-i="5" style="--wd:1.5s">食べて</span>、カフェで日本語を<span class="w lrn" data-i="6" style="--wd:1.7s">勉強</span>しました。
-            </div>
-            <div class="hc" id="rdCard" role="tooltip">
-              <div class="hc-top"><span class="hc-st" id="hcSt">Learning</span><span>Kotoba Bank</span></div>
-              <div class="hc-r jp" id="hcR">じかん</div>
-              <div class="hc-w jp" id="hcW">時間</div>
-              <div class="hc-m" id="hcM">time</div>
-              <div class="hc-v" id="hcV"></div>
-            </div>
+      <div class="feature">
+        <div>
+          <div class="head">
+            <span class="kicker reveal" style="--k: var(--know)">Reader</span>
+            <h2 class="reveal">See what you know, <em class="s">on any page.</em></h2>
+            <p class="sub reveal">Open a Japanese website and the words from your bank light up. A wall of text turns into words you recognise.</p>
           </div>
-          <div class="legend">
-            <span style="--c: var(--new)">New</span>
-            <span style="--c: var(--hint)">Learning</span>
-            <span style="--c: var(--know)">Mastered</span>
-            <span class="dash">Similar form</span>
+          <ul class="points" style="margin-top: 36px">
+            <li class="reveal"><div><b>Coloured by progress</b>New, Learning or Mastered, so you see at a glance how well you know each word.</div></li>
+            <li class="reveal" style="--d:.06s"><div><b>Conjugations too</b>食べて and 行きました are recognised as forms of 食べる and 行く (dashed line).</div></li>
+            <li class="reveal" style="--d:.12s"><div><b>Hover for a reminder</b>The reading and <i>your</i> meaning appear instantly. Try it on the demo.</div></li>
+            <li class="reveal" style="--d:.18s"><div><b>Never touches the page</b>Works on furigana sites like NHK News Easy. Mute single words or switch it off from the toolbar.</div></li>
+          </ul>
+        </div>
+        <div class="reveal" style="--d:.1s">
+          <div class="stage" style="--sc: var(--know); --sc2: var(--new)">
+            <div class="reader" id="rdDemo">
+              <div class="reader-top">やさしいニュース</div>
+              <div class="reader-body">
+                <h4><span class="w new" data-i="0" style="--wd:.1s">雨</span>の日の小さな<span class="w mst" data-i="1" style="--wd:.3s">約束</span></h4>
+                今日は朝から<span class="w new" data-i="0" style="--wd:.5s">雨</span>でしたが、<span class="w mst" data-i="2" style="--wd:.7s"><ruby>電車<rt>でんしゃ</rt></ruby></span>に乗って友達との<span class="w mst" data-i="1" style="--wd:.9s">約束</span>の場所に<span class="w new v" data-i="3" style="--wd:1.1s">行きました</span>。<span class="w lrn" data-i="4" style="--wd:1.3s">時間</span>に少し遅れましたが、一緒にラーメンを<span class="w lrn v" data-i="5" style="--wd:1.5s">食べて</span>、カフェで日本語を<span class="w lrn" data-i="6" style="--wd:1.7s">勉強</span>しました。
+              </div>
+              <div class="hc" id="rdCard" role="tooltip">
+                <div class="hc-top"><span class="hc-st" id="hcSt">Learning</span><span>Kotoba Bank</span></div>
+                <div class="hc-r" id="hcR">じかん</div>
+                <div class="hc-w" id="hcW">時間</div>
+                <div class="hc-m" id="hcM">time</div>
+                <div class="hc-v" id="hcV"></div>
+              </div>
+            </div>
+            <div class="legend">
+              <span style="--c: var(--new)">New</span>
+              <span style="--c: var(--hint)">Learning</span>
+              <span style="--c: var(--know)">Mastered</span>
+              <span class="dash">Similar form</span>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
+    <!-- Tour -->
     <section id="features">
-      <span class="kicker reveal">Inside Kotoba Bank</span>
-      <h2 class="reveal">Everything for your vocabulary, in one place</h2>
-      <p class="sub reveal">The pop-ups and highlights are powered by a full word bank, with a proper place to study, browse and dig into kanji.</p>
+      <div class="head center">
+        <span class="kicker reveal">Inside Kotoba Bank</span>
+        <h2 class="reveal">A full word bank, <em class="s">beautifully</em> simple.</h2>
+        <p class="sub reveal">Behind the pop-ups and highlights is a proper home for your vocabulary: study, browse, and dig into kanji.</p>
+      </div>
 
       <div class="tour-row">
         <div class="tour-text reveal">
-          <span class="tag-pill c1">学 Study</span>
+          <span class="kicker" style="--k: var(--shu)">学 Study</span>
           <h3>Focused study sessions</h3>
           <p>When you want a real session, the Study tab gives you one card at a time: big, calm, and fast to grade.</p>
           <ul class="ticks">
-            <li>Kanji → Meaning <em>and</em> Meaning → Kanji, tracked separately</li>
-            <li>Keyboard-first: <code>Space</code> flip · <code>1</code> <code>2</code> <code>3</code> grade · <code>←</code> <code>→</code></li>
+            <li>Kanji → Meaning <i>and</i> Meaning → Kanji, tracked separately</li>
+            <li>Keyboard-first: <code>Space</code> flip, <code>1</code> <code>2</code> <code>3</code> grade, <code>←</code> <code>→</code></li>
             <li>Undo, pause, and a results screen with a "review forgotten" round</li>
           </ul>
         </div>
-        <img class="reveal" style="--d:.1s" src="screenshots/study.png" alt="Study tab: 勉強 revealed as べんきょう / study, with Forgot, Hint and Know buttons" width="2400" height="1640" loading="lazy" />
+        <div class="shot reveal" style="--d:.1s"><img src="screenshots/study.png" alt="Study tab: 勉強 revealed as べんきょう / study, with Forgot, Hint and Know buttons" width="2400" height="1640" loading="lazy" /></div>
       </div>
 
-      <div class="tour-row rev">
+      <div class="tour-row flip">
         <div class="tour-text reveal">
-          <span class="tag-pill c4">語 Words</span>
+          <span class="kicker" style="--k: var(--new)">語 Words</span>
           <h3>Every word you've ever saved</h3>
           <p>Search, filter by status or collection, edit, and choose which words are in rotation with one switch per word.</p>
-          <ul class="ticks">
-            <li>New · Learning · Mastered, at a glance</li>
+          <ul class="ticks" style="--tc: var(--new)">
+            <li>New, Learning, Mastered at a glance</li>
             <li>Collections, and a word can live in several</li>
             <li>Bulk-add to a collection, export and import backups</li>
           </ul>
         </div>
-        <img class="reveal" style="--d:.1s" src="screenshots/words.png" alt="Words tab: a table of words with status badges, collections and in-study switches" width="2400" height="1640" loading="lazy" />
+        <div class="shot reveal" style="--d:.1s"><img src="screenshots/words.png" alt="Words tab: a table of words with status badges, collections and in-study switches" width="2400" height="1640" loading="lazy" /></div>
       </div>
 
       <div class="tour-row">
         <div class="tour-text reveal">
-          <span class="tag-pill c2">📈 Progress</span>
+          <span class="kicker" style="--k: var(--know)">Progress</span>
           <h3>See how every word is going</h3>
           <p>How often each word has come up, when you last saw it, and how often you got it right, so you know exactly what needs work.</p>
-          <ul class="ticks">
+          <ul class="ticks" style="--tc: var(--know)">
             <li>Shown, last seen, Know / Hint / Forgot per word</li>
             <li>A colour-coded recall ratio, red to green</li>
             <li>Words you forget come back more often, automatically</li>
           </ul>
         </div>
-        <img class="reveal" style="--d:.1s" src="screenshots/study-list.png" alt="Word list with per-word review stats and a recall ratio bar" width="2400" height="1640" loading="lazy" />
+        <div class="shot reveal" style="--d:.1s"><img src="screenshots/study-list.png" alt="Word list with per-word review stats and a recall ratio bar" width="2400" height="1640" loading="lazy" /></div>
       </div>
 
       <div class="gallery">
         <figure class="reveal">
-          <img src="screenshots/kanji-crop.png" alt="Kanji tab: every kanji with on'yomi, kun'yomi and the words that use it" width="2400" height="1640" loading="lazy" />
+          <div class="shot"><img src="screenshots/kanji-crop.png" alt="Kanji tab: every kanji with on'yomi, kun'yomi and the words that use it" width="2400" height="1640" loading="lazy" /></div>
           <figcaption><b>Kanji</b>Every kanji across your words, with on'yomi, kun'yomi and your own notes.</figcaption>
         </figure>
         <figure class="reveal" style="--d:.1s">
-          <img src="screenshots/graph-crop.png" alt="Graph tab: the kanji 食 linked to 食べる and 食事" width="2400" height="1640" loading="lazy" />
+          <div class="shot"><img src="screenshots/graph-crop.png" alt="Graph tab: the kanji 食 linked to 食べる and 食事" width="2400" height="1640" loading="lazy" /></div>
           <figcaption><b>Graph</b>See how your words connect through the kanji they share.</figcaption>
         </figure>
         <figure class="fig-popup reveal" style="--d:.2s">
-          <img src="screenshots/popup.png" alt="Toolbar popup: word totals, live countdown to the next card, pop-up and highlight switches" width="600" height="914" loading="lazy" />
+          <div class="shot"><img src="screenshots/popup.png" alt="Toolbar popup: word totals, live countdown to the next card, pop-up and highlight switches" width="600" height="914" loading="lazy" /></div>
           <figcaption><b>Toolbar</b>A live countdown to the next card, quick on/off switches, and quick-add.</figcaption>
         </figure>
       </div>
     </section>
 
+    <!-- Details -->
     <section>
-      <span class="kicker reveal">The details</span>
-      <h2 class="reveal">Small touches that make it a habit</h2>
-      <div class="specs">
-        <div class="spec reveal"><div class="ic">⏱</div><b>You set the pace</b><p>A card every 1 to 240 minutes. Snooze for 30 minutes when you need to focus.</p></div>
-        <div class="spec reveal" style="--d:.06s"><div class="ic">ふ</div><b>Furigana your way</b><p>Show the reading on the front of the card, or only after you reveal it.</p></div>
-        <div class="spec reveal" style="--d:.12s"><div class="ic">漢</div><b>Kanji readings built in</b><p>On'yomi and kun'yomi for every kanji, from KANJIDIC2. Tap a kanji on a card to see them.</p></div>
-        <div class="spec reveal" style="--d:.18s"><div class="ic">◐</div><b>Light, dark or system</b><p>Four accent colours. The pop-up card matches your theme.</p></div>
-        <div class="spec reveal" style="--d:.24s"><div class="ic">⇅</div><b>Backups in one click</b><p>Export everything to a JSON file and import it on another computer.</p></div>
-        <div class="spec reveal" style="--d:.3s"><div class="ic">⚡</div><b>Light on pages</b><p>Highlights are painted in idle time with the CSS Highlight API. Long and dynamic pages stay smooth.</p></div>
+      <div class="head center">
+        <span class="kicker reveal">The details</span>
+        <h2 class="reveal">Small touches that make it <em class="s">a habit.</em></h2>
+      </div>
+      <div class="bento">
+        <div class="cell wide reveal" style="--c: var(--shu)">
+          <div><div class="ic">⏱</div><b>You set the pace</b><p>A card every 1 to 240 minutes. Busy? Snooze for 30 minutes, or pause pop-ups from the toolbar.</p></div>
+          <div class="slider-demo" id="pace">
+            <div class="lbl"><span>Show a card every</span><span><b id="paceVal">15</b> min</span></div>
+            <div class="track"><i id="paceBar"></i></div>
+            <div class="ticks-s"><span>1</span><span>60</span><span>120</span><span>240</span></div>
+          </div>
+        </div>
+        <div class="cell reveal" style="--d:.06s; --c: var(--new)"><div class="ic">ふ</div><b>Furigana your way</b><p>Show the reading on the front of the card, or only after you reveal it.</p></div>
+        <div class="cell reveal" style="--c: var(--hint)"><div class="ic">漢</div><b>Kanji readings built in</b><p>On'yomi and kun'yomi from KANJIDIC2. Tap a kanji on a card to see them.</p></div>
+        <div class="cell reveal" style="--d:.06s; --c: var(--know)"><div class="ic">◐</div><b>Light, dark or system</b><p>Four accent colours. The pop-up card matches your theme.</p></div>
+        <div class="cell reveal" style="--d:.12s; --c: var(--shu)"><div class="ic">⇅</div><b>Backups in one click</b><p>Export everything to a JSON file, import it on another computer.</p></div>
       </div>
     </section>
 
+    <!-- Install -->
     <section id="install">
-      <span class="kicker reveal">Install</span>
-      <h2 class="reveal">Up and running in a minute</h2>
-      <p class="sub reveal">Kotoba Bank isn't on the Chrome Web Store yet, so you install it as an unpacked extension. It takes four steps.</p>
-      <div class="steps">
-        <div class="step reveal"><p>Download the <code>.zip</code> from the <a href="https://github.com/Rzkykhrllh/flashcard-popup/releases/latest">latest release</a> and unzip it somewhere permanent.</p></div>
-        <div class="step reveal" style="--d:.08s"><p>Open <code>chrome://extensions</code> and switch on <b>Developer mode</b> (top right).</p></div>
-        <div class="step reveal" style="--d:.16s"><p>Click <b>Load unpacked</b> and choose the unzipped folder.</p></div>
-        <div class="step reveal" style="--d:.24s"><p>Pin it, click the icon, choose <b>Open bank</b>, and add your first words.</p></div>
-      </div>
-      <p class="callout reveal"><b>Updating?</b> Download the new zip, replace the old folder, and press ↻ on the extension card. Your words stay, because they live in the browser, not in the folder. (Export a backup first anyway.)</p>
-    </section>
-
-    <section id="faq">
-      <span class="kicker reveal">FAQ</span>
-      <h2 class="reveal">Questions, answered</h2>
-      <div class="faq">
-        <details class="reveal"><summary>Is it really free?</summary><p>Yes. Kotoba Bank is free and open source under the MIT license. No paid tier, no ads, no account.</p></details>
-        <details class="reveal"><summary>Which browsers does it work on?</summary><p>It's built and tested for desktop Chrome. Other Chromium browsers that allow "Load unpacked" (Edge, Brave, Arc) should work too. Firefox and mobile browsers aren't supported.</p></details>
-        <details class="reveal"><summary>Where are my words stored?</summary><p>Only in your browser (IndexedDB and Chrome's local storage). Nothing is uploaded. Use Export JSON to back up or move to another computer.</p></details>
-        <details class="reveal"><summary>Does it read the pages I visit?</summary><p>It reads the visible text locally, inside your browser, to find words from your bank and to show cards. Page text is never stored or sent anywhere. That's why it asks for access to all sites.</p></details>
-        <details class="reveal"><summary>Will it slow down websites?</summary><p>No. It never changes a page's HTML. Highlights are drawn by the browser's CSS Highlight API, in small batches while the page is idle.</p></details>
-        <details class="reveal"><summary>Does it highlight words I haven't saved?</summary><p>No, only words in your bank. That's the point: the highlights show your progress, not a dictionary.</p></details>
-        <details class="reveal"><summary>Can I turn the pop-ups off for a while?</summary><p>Yes. Snooze a card for 30 minutes, or switch pop-up flashcards and highlights on and off from the toolbar in one click.</p></details>
+      <div class="install">
+        <div class="head">
+          <span class="kicker reveal">Install</span>
+          <h2 class="reveal">Up and running <em class="s">in a minute.</em></h2>
+          <p class="sub reveal">Kotoba Bank isn't on the Chrome Web Store yet, so it installs as an unpacked extension. Four steps.</p>
+          <p class="callout reveal"><b>Updating?</b> Download the new zip, replace the old folder, and press ↻ on the extension card. Your words stay, because they live in the browser, not in the folder.</p>
+        </div>
+        <ol class="steps reveal" style="--d:.1s">
+          <li><span>Download the <code>.zip</code> from the <a href="https://github.com/Rzkykhrllh/flashcard-popup/releases/latest">latest release</a> and unzip it somewhere permanent.</span></li>
+          <li><span>Open <code>chrome://extensions</code> and switch on <b>Developer mode</b> (top right).</span></li>
+          <li><span>Click <b>Load unpacked</b> and choose the unzipped folder.</span></li>
+          <li><span>Pin it, click the icon, choose <b>Open bank</b>, and add your first words.</span></li>
+        </ol>
       </div>
     </section>
 
+    <!-- Privacy -->
     <section>
-      <span class="kicker reveal">Privacy</span>
-      <h2 class="reveal">Your words stay yours</h2>
-      <div class="privacy">
-        <div class="reveal"><b>No account</b><p>Nothing to sign up for.</p></div>
-        <div class="reveal" style="--d:.08s"><b>No server</b><p>Everything is stored in your browser. Back up with a JSON export.</p></div>
-        <div class="reveal" style="--d:.16s"><b>No tracking</b><p>No analytics, no telemetry. Page text is read locally and never sent anywhere.</p></div>
+      <div class="head center">
+        <span class="kicker reveal" style="--k: var(--know)">Privacy</span>
+        <h2 class="reveal">Your words <em class="s">stay yours.</em></h2>
       </div>
-      <p class="sub" style="font-size:15px">Read the full <a href="privacy.html">privacy policy</a>.</p>
+      <div class="privacy">
+        <div class="reveal"><span class="z">0</span><b>Accounts</b><p>Nothing to sign up for. Install it and start adding words.</p></div>
+        <div class="reveal" style="--d:.08s"><span class="z">0</span><b>Servers</b><p>Everything is stored in your browser. Back up with a JSON export.</p></div>
+        <div class="reveal" style="--d:.16s"><span class="z">0</span><b>Trackers</b><p>No analytics, no telemetry. Page text is read locally and never sent anywhere.</p></div>
+      </div>
+      <p class="more">Read the full <a href="privacy.html">privacy policy</a>.</p>
     </section>
 
     <div class="final reveal">
-      <h2>Start your word bank today</h2>
+      <div class="bigjp" aria-hidden="true">言葉</div>
+      <h2>Start your <em class="s">own</em> word bank.</h2>
       <p>Free, private, and ready in a minute. The next Japanese page you open will look a little more familiar.</p>
-      <a class="btn primary" href="https://github.com/Rzkykhrllh/flashcard-popup/releases/latest">↓ Download for Chrome</a>
+      <a class="btn primary" href="https://github.com/Rzkykhrllh/flashcard-popup/releases/latest">Download for Chrome <span class="arr">→</span></a>
+      <p class="note">Chrome on desktop · v1.1.0</p>
     </div>
 
     <footer>
-      <span>Kotoba Bank · MIT licensed · Kanji data: KANJIDIC2 (EDRDG, CC BY-SA 4.0)</span>
+      <a class="brand" href="#"><span class="seal" aria-hidden="true">言</span>Kotoba Bank</a>
+      <span>MIT licensed · Kanji data: KANJIDIC2 (EDRDG, CC BY-SA 4.0)</span>
       <span><a href="https://github.com/Rzkykhrllh/flashcard-popup">GitHub</a> · <a href="privacy.html">Privacy</a> · made by <a href="https://dev.byairu.com">dev.byairu.com</a></span>
     </footer>
   </div>
@@ -560,111 +721,190 @@
     const $ = (id) => document.getElementById(id);
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+    // Nav border once scrolled.
+    const nav = $('nav');
+    const onScroll = () => nav.classList.toggle('scrolled', scrollY > 8);
+    addEventListener('scroll', onScroll, { passive: true }); onScroll();
+
     // Reveal on scroll.
     const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
     document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
 
     // Run a demo loop only while it's on screen.
     const whenVisible = (el, onChange) => new IntersectionObserver(([e]) => onChange(e.isIntersecting), { threshold: 0.35 }).observe(el);
+    const cursorTo = (box, cur, el, dx = 0.5, dy = 0.5) => {
+      const b = box.getBoundingClientRect(), r = el.getBoundingClientRect();
+      cur.style.left = (r.left - b.left + r.width * dx) + 'px';
+      cur.style.top = (r.top - b.top + r.height * dy) + 'px';
+      cur.style.opacity = 1;
+    };
+
+    /* ---------- Add-a-word demo ---------- */
+    {
+      const box = $('adDemo'), cur = $('adCursor'), form = $('adForm'), ext = $('adExt'), toast = $('adToast');
+      const entries = [
+        { t: $('adT0'), kana: ['さ', 'さん', 'さんぽ'], k: '散歩', r: 'さんぽ', m: 'a walk, stroll' },
+        { t: $('adT1'), kana: ['け', 'けし', 'けしき'], k: '景色', r: 'けしき', m: 'pemandangan' },
+      ];
+      const fK = $('adK'), fR = $('adR'), fM = $('adM'), save = $('adSave'), count = $('adCount');
+      const ph = { adK: '漢字', adR: 'Reading (hiragana)', adM: 'Meaning' };
+      const clear = (f) => { f.innerHTML = `<span class="ph">${ph[f.id]}</span>`; f.classList.remove('focus'); };
+      const focus = (f) => { [fK, fR, fM].forEach((x) => x.classList.remove('focus')); f.classList.add('focus'); };
+      async function type(f, text, ms = 85) { focus(f); f.textContent = ''; for (let i = 1; i <= text.length; i++) { f.textContent = text.slice(0, i); await sleep(ms); } }
+      let visible = false, running = false, words = 12;
+      async function loop() {
+        if (running) return; running = true;
+        while (visible) {
+          words = 12; count.textContent = words + ' words';
+          entries.forEach((e) => e.t.classList.remove('seen', 'saved'));
+          await sleep(700);
+          for (const e of entries) {
+            if (!visible) break;
+            [fK, fR, fM].forEach(clear);
+            e.t.classList.add('seen'); cursorTo(box, cur, e.t, .6, .9); await sleep(1400);
+            cursorTo(box, cur, ext, .5, .7); await sleep(700);
+            ext.classList.add('tap', 'ping'); await sleep(160); ext.classList.remove('tap');
+            form.classList.add('show'); await sleep(450);
+            cur.style.opacity = 0;
+            // Type the reading with an IME, then convert to kanji.
+            focus(fK);
+            for (const s of e.kana) { fK.innerHTML = `<span class="ime">${s}</span>`; await sleep(220); }
+            await sleep(250); fK.textContent = e.k; await sleep(350);
+            await type(fR, e.r, 110);
+            await type(fM, e.m, 55);
+            await sleep(300);
+            cursorTo(box, cur, save); await sleep(650);
+            save.classList.add('press'); await sleep(220); save.classList.remove('press');
+            form.classList.remove('show'); ext.classList.remove('ping');
+            words++; count.textContent = words + ' words';
+            $('adToastText').textContent = `${e.k} saved · ${words} words in your bank`;
+            e.t.classList.remove('seen'); e.t.classList.add('saved');
+            toast.classList.add('show'); cur.style.opacity = 0;
+            await sleep(1900); toast.classList.remove('show');
+            await sleep(700);
+          }
+          await sleep(1600);
+        }
+        running = false;
+      }
+      if (still) { entries.forEach((e) => e.t.classList.add('saved')); }
+      else whenVisible(box, (v) => { visible = v; if (v) loop(); });
+    }
 
     /* ---------- Flashcard demo ---------- */
-    const words = [
-      { k: '約束', r: 'やくそく', m: 'promise, appointment', e: '<span class="jp">約束を守る</span>: to keep a promise' },
-      { k: '勉強', r: 'べんきょう', m: 'study', e: '<span class="jp">日本語を勉強する</span>: to study Japanese' },
-      { k: '電車', r: 'でんしゃ', m: 'train', e: '<span class="jp">電車に乗る</span>: to get on a train' },
-    ];
-    const fc = { box: $('fcDemo'), card: $('fcCard'), tb: $('fcTb'), cd: $('fcCd'), bar: $('fcBar'), ext: $('fcExt'), cur: $('fcCursor') };
-    let fcVisible = false, fcRunning = false;
-    const moveCursor = (el, dx = 0.5, dy = 0.5) => {
-      const b = fc.box.getBoundingClientRect(), r = el.getBoundingClientRect();
-      fc.cur.style.left = (r.left - b.left + r.width * dx) + 'px';
-      fc.cur.style.top = (r.top - b.top + r.height * dy) + 'px';
-      fc.cur.style.opacity = 1;
-    };
-    const setWord = (w) => { $('fcK').textContent = w.k; $('fcR').textContent = w.r; $('fcM').textContent = w.m; $('fcE').innerHTML = w.e; };
-
-    async function fcLoop() {
-      if (fcRunning) return; fcRunning = true;
-      let i = 0;
-      fc.cur.style.left = '40%'; fc.cur.style.top = '60%';
-      while (fcVisible) {
-        const w = words[i++ % words.length];
-        setWord(w); fc.card.classList.remove('rev');
-        // Peek at the toolbar countdown.
-        moveCursor(fc.ext, .5, .7); await sleep(650);
-        fc.ext.classList.add('ping'); fc.tb.classList.add('show');
-        fc.bar.style.transition = 'none'; fc.bar.style.width = '100%'; fc.bar.offsetWidth; fc.bar.style.transition = '';
-        for (let s = 5; s >= 1 && fcVisible; s--) { fc.cd.textContent = '0:0' + s; fc.bar.style.width = ((s - 1) / 5 * 100) + '%'; await sleep(1000); }
-        fc.cd.textContent = '0:00';
-        fc.tb.classList.remove('show'); fc.ext.classList.remove('ping');
-        fc.cur.style.opacity = 0;
-        await sleep(300);
-        // The card arrives.
-        fc.card.classList.add('show'); await sleep(1700);
-        moveCursor(fc.card.querySelector('.reveal-btn')); await sleep(700);
-        fc.card.classList.add('rev'); await sleep(1800);
-        const known = $('fcKnown'); moveCursor(known); await sleep(700);
-        known.classList.add('press'); await sleep(260); known.classList.remove('press');
-        await sleep(250);
-        fc.card.classList.remove('show'); fc.cur.style.opacity = 0;
-        await sleep(1100);
+    {
+      const words = [
+        { k: '約束', r: 'やくそく', m: 'promise, appointment', e: '<span class="jp">約束を守る</span>: to keep a promise' },
+        { k: '勉強', r: 'べんきょう', m: 'study', e: '<span class="jp">日本語を勉強する</span>: to study Japanese' },
+        { k: '電車', r: 'でんしゃ', m: 'train', e: '<span class="jp">電車に乗る</span>: to get on a train' },
+      ];
+      const box = $('fcDemo'), card = $('fcCard'), tb = $('fcTb'), cd = $('fcCd'), bar = $('fcBar'), ext = $('fcExt'), cur = $('fcCursor');
+      let visible = false, running = false;
+      const setWord = (w) => { $('fcK').textContent = w.k; $('fcR').textContent = w.r; $('fcM').textContent = w.m; $('fcE').innerHTML = w.e; };
+      async function loop() {
+        if (running) return; running = true;
+        let i = 0;
+        while (visible) {
+          setWord(words[i++ % words.length]); card.classList.remove('rev');
+          cursorTo(box, cur, ext, .5, .7); await sleep(650);
+          ext.classList.add('ping'); tb.classList.add('show');
+          bar.style.transition = 'none'; bar.style.width = '100%'; bar.offsetWidth; bar.style.transition = '';
+          for (let s = 5; s >= 1 && visible; s--) { cd.textContent = '0:0' + s; bar.style.width = ((s - 1) / 5 * 100) + '%'; await sleep(1000); }
+          cd.textContent = '0:00';
+          tb.classList.remove('show'); ext.classList.remove('ping'); cur.style.opacity = 0;
+          await sleep(300);
+          card.classList.add('show'); await sleep(1700);
+          cursorTo(box, cur, card.querySelector('.rv')); await sleep(700);
+          card.classList.add('rev'); await sleep(1800);
+          const known = $('fcKnown'); cursorTo(box, cur, known); await sleep(700);
+          known.classList.add('press'); await sleep(260); known.classList.remove('press');
+          await sleep(250);
+          card.classList.remove('show'); cur.style.opacity = 0;
+          await sleep(1100);
+        }
+        running = false;
       }
-      fcRunning = false;
+      if (still) card.classList.add('show', 'rev');
+      else whenVisible(box, (v) => { visible = v; if (v) loop(); });
     }
-    if (still) { fc.card.classList.add('show', 'rev'); }
-    else whenVisible(fc.box, (v) => { fcVisible = v; if (v) fcLoop(); });
 
     /* ---------- Reader demo ---------- */
-    const rd = $('rdDemo'), card = $('rdCard');
-    const info = [
-      { st: 'New', r: 'あめ', w: '雨', m: 'rain' },
-      { st: 'Mastered', r: 'やくそく', w: '約束', m: 'promise, appointment' },
-      { st: 'Mastered', r: 'でんしゃ', w: '電車', m: 'train' },
-      { st: 'New', r: 'いく', w: '行く', m: 'to go', v: 'Similar form of 行く' },
-      { st: 'Learning', r: 'じかん', w: '時間', m: 'time' },
-      { st: 'Learning', r: 'たべる', w: '食べる', m: 'to eat', v: 'Similar form of 食べる' },
-      { st: 'Learning', r: 'べんきょう', w: '勉強', m: 'study' },
-    ];
-    const tone = { New: ['--new', '--new-soft'], Learning: ['--hint', '--hint-soft'], Mastered: ['--know', '--know-soft'] };
-    const spans = [...rd.querySelectorAll('.w')];
-    let current = null;
-    function show(span) {
-      if (current) current.classList.remove('on');
-      current = span;
-      if (!span) { card.classList.remove('show'); return; }
-      const d = info[+span.dataset.i];
-      span.classList.add('on');
-      $('hcSt').textContent = d.st;
-      card.style.setProperty('--hs', `var(${tone[d.st][0]})`); card.style.setProperty('--hs-soft', `var(${tone[d.st][1]})`);
-      $('hcR').textContent = d.r; $('hcW').textContent = d.w; $('hcM').textContent = d.m; $('hcV').textContent = d.v || '';
-      const b = rd.getBoundingClientRect(), r = span.getClientRects()[0] || span.getBoundingClientRect();
-      const w = card.offsetWidth, h = card.offsetHeight;
-      let left = Math.min(Math.max(8, r.left - b.left), b.width - w - 8);
-      let top = r.bottom - b.top + 8;
-      if (top + h > b.height - 6) top = r.top - b.top - h - 8;
-      card.style.left = left + 'px'; card.style.top = top + 'px';
-      card.classList.add('show');
-    }
-    let userHover = false, rdVisible = false, rdRunning = false;
-    spans.forEach((s) => {
-      s.addEventListener('mouseenter', () => { userHover = true; show(s); });
-      s.addEventListener('mouseleave', () => { userHover = false; show(null); });
-    });
-    const tour = [4, 5, 1, 3, 6];
-    async function rdLoop() {
-      if (rdRunning) return; rdRunning = true;
-      await sleep(1500);
-      let i = 0;
-      while (rdVisible) {
-        if (!userHover) show(spans.find((s) => +s.dataset.i === tour[i++ % tour.length]));
-        await sleep(2200);
-        if (!userHover) show(null);
-        await sleep(500);
+    {
+      const rd = $('rdDemo'), card = $('rdCard');
+      const info = [
+        { st: 'New', r: 'あめ', w: '雨', m: 'rain' },
+        { st: 'Mastered', r: 'やくそく', w: '約束', m: 'promise, appointment' },
+        { st: 'Mastered', r: 'でんしゃ', w: '電車', m: 'train' },
+        { st: 'New', r: 'いく', w: '行く', m: 'to go', v: 'Similar form of 行く' },
+        { st: 'Learning', r: 'じかん', w: '時間', m: 'time' },
+        { st: 'Learning', r: 'たべる', w: '食べる', m: 'to eat', v: 'Similar form of 食べる' },
+        { st: 'Learning', r: 'べんきょう', w: '勉強', m: 'study' },
+      ];
+      const tone = { New: ['--new', '--new-soft'], Learning: ['--hint', '--hint-soft'], Mastered: ['--know', '--know-soft'] };
+      const spans = [...rd.querySelectorAll('.w')];
+      let current = null;
+      function show(span) {
+        if (current) current.classList.remove('on');
+        current = span;
+        if (!span) { card.classList.remove('show'); return; }
+        const d = info[+span.dataset.i];
+        span.classList.add('on');
+        $('hcSt').textContent = d.st;
+        card.style.setProperty('--hs', `var(${tone[d.st][0]})`); card.style.setProperty('--hs-soft', `var(${tone[d.st][1]})`);
+        $('hcR').textContent = d.r; $('hcW').textContent = d.w; $('hcM').textContent = d.m; $('hcV').textContent = d.v || '';
+        const b = rd.getBoundingClientRect(), r = span.getClientRects()[0] || span.getBoundingClientRect();
+        const w = card.offsetWidth, h = card.offsetHeight;
+        const left = Math.min(Math.max(8, r.left - b.left), b.width - w - 8);
+        let top = r.bottom - b.top + 8;
+        if (top + h > b.height - 6) top = r.top - b.top - h - 8;
+        card.style.left = left + 'px'; card.style.top = top + 'px';
+        card.classList.add('show');
       }
-      rdRunning = false;
+      let userHover = false, visible = false, running = false;
+      spans.forEach((s) => {
+        s.addEventListener('mouseenter', () => { userHover = true; show(s); });
+        s.addEventListener('mouseleave', () => { userHover = false; show(null); });
+      });
+      const tour = [4, 5, 1, 3, 6];
+      async function loop() {
+        if (running) return; running = true;
+        await sleep(1500);
+        let i = 0;
+        while (visible) {
+          if (!userHover) show(spans.find((s) => +s.dataset.i === tour[i++ % tour.length]));
+          await sleep(2200);
+          if (!userHover) show(null);
+          await sleep(500);
+        }
+        running = false;
+      }
+      whenVisible(rd, (v) => { visible = v; if (v) { rd.classList.add('lit'); if (!still) loop(); } });
+      if (still) rd.classList.add('lit');
     }
-    whenVisible(rd, (v) => { rdVisible = v; if (v) { rd.classList.add('lit'); if (!still) rdLoop(); } });
-    if (still) rd.classList.add('lit');
+
+    /* ---------- Pace slider ---------- */
+    {
+      const el = $('pace'), val = $('paceVal'), bar = $('paceBar');
+      const stops = [15, 5, 30, 60, 15];
+      const pct = (m) => Math.max(2, (m / 240) * 100);
+      bar.style.setProperty('--p', pct(15) + '%');
+      let visible = false, running = false;
+      async function loop() {
+        if (running) return; running = true;
+        let i = 0;
+        while (visible) {
+          const m = stops[i++ % stops.length];
+          bar.style.setProperty('--p', pct(m) + '%'); val.textContent = m;
+          await sleep(2200);
+        }
+        running = false;
+      }
+      if (!still) whenVisible(el, (v) => { visible = v; if (v) loop(); });
+    }
+
+    // How-it-works line draws in with its section.
+    const flow = $('flow');
+    new IntersectionObserver(([e], o) => { if (e.isIntersecting) { flow.classList.add('in'); o.disconnect(); } }, { threshold: .4 }).observe(flow);
   })();
   </script>
 </body>
