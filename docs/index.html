@@ -227,14 +227,31 @@
     .fld .ime { text-decoration: underline dotted #2563eb; text-underline-offset: 4px; }
     .fld.focus::after { content: ""; width: 1.5px; height: 1.1em; background: #2563eb; margin-left: 1px; animation: blink 1s steps(1) infinite; }
     @keyframes blink { 50% { opacity: 0; } }
-    .pp-list { border: 1px solid #e2ded6; border-radius: 8px; padding: 3px 6px; margin-bottom: 5px; background: #f3f1ec; }
-    .pp-list div { display: flex; align-items: center; gap: 6px; padding: 3px 0; font-size: 10.5px; }
-    .pp-list i { width: 11px; height: 11px; border-radius: 3px; border: 1.5px solid #8a8795; background: #fff; display: grid; place-items: center; font-style: normal; font-size: 8px; color: #fff; transition: background .15s, border-color .15s; }
-    .pp-list .on i { background: #2563eb; border-color: #2563eb; }
-    .pp-list .on i::after { content: "✓"; }
-    .pp-newc { display: grid; grid-template-columns: 1fr auto; gap: 5px; margin-bottom: 7px; }
-    .pp-newc .fld { margin: 0; }
-    .pp-newc > span { border: 1px solid #e2ded6; border-radius: 8px; padding: 0 9px; display: grid; place-items: center; font-weight: 600; font-size: 10.5px; background: #fff; }
+    .pp-lbl { font-size: 10px; font-weight: 650; color: #44424e; margin: 2px 0 4px; }
+    .pp-cp { border: 1px solid #e2ded6; border-radius: 9px; background: #f3f1ec; margin-bottom: 7px; overflow: hidden; transition: border-color .2s, box-shadow .2s; }
+    .pp-cp.focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
+    .pp-cp-s { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: #fff; border-bottom: 1px solid #ece9e3; }
+    .pp-cp-s svg { width: 11px; height: 11px; fill: none; stroke: #8a8795; stroke-width: 2.4; stroke-linecap: round; flex: none; }
+    .pp-cp-s .q { flex: 1; min-width: 0; font-size: 10.5px; white-space: nowrap; overflow: hidden; display: flex; align-items: center; }
+    .pp-cp.focus .q::after { content: ""; width: 1.5px; height: 1.1em; background: #2563eb; margin-left: 1px; animation: blink 1s steps(1) infinite; }
+    .pp-cp-s .ph { color: #a9a59d; }
+    .pp-cp-s small { font-size: 9px; font-weight: 700; color: #1d4ed8; white-space: nowrap; }
+    .pp-cp-chips { display: flex; flex-wrap: wrap; gap: 4px; padding: 5px 5px 0; }
+    .pp-cp-chips:empty { display: none; }
+    .pp-cp-chips span { background: #2563eb; color: #fff; font-size: 9.5px; font-weight: 600; padding: 2px 7px; border-radius: 99px; animation: pop .2s cubic-bezier(.3,.7,.4,1.4); }
+    @keyframes pop { from { transform: scale(.6); opacity: 0; } }
+    .pp-cp-list { padding: 4px; display: grid; gap: 2px; }
+    .pp-cp-list div { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 6px; font-size: 10.5px; border: 1px solid transparent; }
+    .pp-cp-list i { width: 11px; height: 11px; border-radius: 3px; border: 1.5px solid #b9b5ad; background: #fff; flex: none; font-style: normal; display: grid; place-items: center; font-size: 8px; color: #fff; }
+    .pp-cp-list .on { background: #e3eafc; border-color: rgba(37,99,235,.4); color: #1d4ed8; font-weight: 650; }
+    .pp-cp-list .on i { background: #2563eb; border-color: #2563eb; }
+    .pp-cp-list .on i::after { content: "✓"; }
+    .pp-cp-list .mk { background: rgba(217,119,6,.25); border-radius: 2px; }
+    .pp-cp-list .cr { color: #1d4ed8; border: 1px dashed rgba(37,99,235,.45); background: #eef2fd; }
+    .pp-cp-list .cr b { font-weight: 700; }
+    .pp-cp-list .cr kbd { margin-left: auto; font: 600 8.5px var(--font); border: 1px solid #d6d2ca; border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; background: #fff; color: #75727f; transition: transform .1s; }
+    .pp-cp-list .cr kbd.hit { transform: translateY(1px); border-bottom-width: 1px; }
+    .pp-cp-list .empty { color: #8a8795; justify-content: center; }
     .pp-inc { display: flex; gap: 7px; align-items: center; font-size: 10.5px; color: #44424e; margin-bottom: 8px; }
     .pp-act { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
     .pp-act .pp-btn { border: 1px solid rgba(0,0,0,.1); background: #fff; }
@@ -480,7 +497,7 @@
           <ul class="points" style="margin-top: 36px">
             <li class="reveal"><div><b>Add in seconds</b>Click the toolbar icon, choose Add word, type the word, reading and meaning, save. You never leave the page.</div></li>
             <li class="reveal" style="--d:.06s"><div><b>In your own words</b>Write meanings in English, Indonesian, or any language you think in. Add notes and examples.</div></li>
-            <li class="reveal" style="--d:.12s"><div><b>Organised your way</b>Group words into collections (a book, a JLPT level, a show) and pick which ones go into rotation.</div></li>
+            <li class="reveal" style="--d:.12s"><div><b>Organised your way</b>Group words into collections (a book, a JLPT level, a show). Search them, or create a new one right from the form. The last one you used stays selected.</div></li>
             <li class="reveal" style="--d:.18s"><div><b>It shows up right away</b>Saved words are highlighted on pages and join your pop-up flashcards.</div></li>
           </ul>
         </div>
@@ -513,8 +530,12 @@
                     <div class="fld" id="adR"><span class="ph">Reading (hiragana)</span></div>
                     <div class="fld" id="adM"><span class="ph">Meaning</span></div>
                     <div class="fld area"><span class="ph">Notes (optional)</span></div>
-                    <div class="pp-list"><div><i></i>Job Words</div><div><i></i>N3</div><div id="adColl"><i></i>Weekend reading</div></div>
-                    <div class="pp-newc"><div class="fld"><span class="ph">New collection name</span></div><span>Add</span></div>
+                    <div class="pp-lbl">Collections</div>
+                    <div class="pp-cp" id="adCp">
+                      <div class="pp-cp-s"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="q" id="adCpQ"></span><small id="adCpN"></small></div>
+                      <div class="pp-cp-chips" id="adCpChips"></div>
+                      <div class="pp-cp-list" id="adCpList"></div>
+                    </div>
                     <div class="pp-inc"><span class="tog"></span>Include in Study &amp; popup</div>
                     <div class="pp-act"><span class="pp-btn">Cancel</span><span class="pp-btn blue" id="adSave">Save</span></div>
                   </div>
@@ -524,7 +545,7 @@
               <div class="cursor" id="adCursor"><svg viewBox="0 0 24 24"><path d="M4 2l16 10-7 1.5L9.5 21z" fill="#1f1d2b" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
             </div>
           </div>
-          <p class="demo-note">Live demo. Meanings are yours: the second word is saved in Indonesian.</p>
+          <p class="demo-note">Live demo. Meanings are yours: the second word is saved in Indonesian, into the collection created a moment before.</p>
         </div>
       </div>
     </section>
@@ -752,7 +773,7 @@
       <h2>Start your <em class="s">own</em> word bank.</h2>
       <p>Free, private, and ready in a minute. The next Japanese page you open will look a little more familiar.</p>
       <a class="btn primary" href="https://github.com/Rzkykhrllh/flashcard-popup/releases/latest">Download for Chrome <span class="arr">→</span></a>
-      <p class="note">Chrome on desktop · v1.1.0</p>
+      <p class="note">Chrome on desktop · v1.2.0</p>
     </div>
 
     <footer>
@@ -789,7 +810,24 @@
     /* ---------- Add-a-word demo ---------- */
     {
       const box = $('adDemo'), cur = $('adCursor'), pop = $('adPop'), popIn = $('adPopIn'), ext = $('adExt'), toast = $('adToast');
-      const addBtn = $('adAddBtn'), formBox = $('adFormBox'), coll = $('adColl');
+      const addBtn = $('adAddBtn'), cp = $('adCp'), cpQ = $('adCpQ'), cpN = $('adCpN'), cpChips = $('adCpChips'), cpList = $('adCpList');
+      // A tiny stand-in for the real collection picker: search, create from the search box, selected = blue.
+      const cpState = { groups: [], sel: new Set(), q: '', hit: false };
+      const esc = (t) => t.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+      function cpRender() {
+        const { groups, sel, q } = cpState, lq = q.toLowerCase();
+        cpQ.innerHTML = q ? esc(q) : '<span class="ph">Search or create a collection</span>';
+        cpN.textContent = sel.size ? `${sel.size} selected` : '';
+        cpChips.innerHTML = groups.filter((g) => sel.has(g)).map((g) => `<span>${esc(g)} ×</span>`).join('');
+        const list = groups.filter((g) => g.toLowerCase().includes(lq));
+        let html = list.map((g) => {
+          const i = g.toLowerCase().indexOf(lq), name = lq ? esc(g.slice(0, i)) + `<span class="mk">${esc(g.slice(i, i + q.length))}</span>` + esc(g.slice(i + q.length)) : esc(g);
+          return `<div class="${sel.has(g) ? 'on' : ''}"><i></i>${name}</div>`;
+        }).join('');
+        if (q && !groups.some((g) => g.toLowerCase() === lq)) html += `<div class="cr"><span>＋ Create “<b>${esc(q)}</b>”</span><kbd class="${cpState.hit ? 'hit' : ''}">Enter</kbd></div>`;
+        cpList.innerHTML = html || '<div class="empty">No matches</div>';
+        if (pop.classList.contains('add')) popIn.style.transform = `translateY(-${Math.max(0, popIn.offsetHeight - pop.clientHeight)}px)`;
+      }
       const entries = [
         { t: $('adT0'), kana: ['さ', 'さん', 'さんぽ'], k: '散歩', r: 'さんぽ', m: 'a walk, stroll' },
         { t: $('adT1'), kana: ['け', 'けし', 'けしき'], k: '景色', r: 'けしき', m: 'pemandangan' },
@@ -805,11 +843,12 @@
         if (running) return; running = true;
         while (visible) {
           words = 12; count.textContent = words;
+          cpState.groups = ['Job Words', 'N3']; cpState.sel = new Set(); cpState.q = '';
           entries.forEach((e) => e.t.classList.remove('seen', 'saved'));
           await sleep(700);
           for (const e of entries) {
             if (!visible) break;
-            [fK, fR, fM].forEach(clear); coll.classList.remove('on');
+            [fK, fR, fM].forEach(clear); cpState.q = ''; cpRender();
             pop.classList.remove('add'); popIn.style.transform = '';
             // 1. Spot a new word.
             e.t.classList.add('seen'); cursorTo(box, cur, e.t, .6, .9); await sleep(1400);
@@ -831,11 +870,23 @@
             await type(fR, e.r, 110);
             await type(fM, e.m, 55);
             focus(null);
-            // 5. Scroll down, pick a collection, save.
+            // 5. Scroll down. First word: search and create a collection.
+            //    Next word: the last-used collection is already selected.
             popIn.style.transform = `translateY(-${Math.max(0, popIn.offsetHeight - pop.clientHeight)}px)`;
             await sleep(750);
-            cursorTo(box, cur, coll.querySelector('i')); await sleep(650);
-            coll.classList.add('on'); await sleep(400);
+            if (!cpState.sel.size) {
+              cursorTo(box, cur, cpQ, .3, .6); await sleep(650);
+              cp.classList.add('focus'); cur.style.opacity = 0;
+              for (const ch of 'Weekend') { cpState.q += ch; cpRender(); await sleep(140); }
+              await sleep(500);
+              cpState.hit = true; cpRender(); await sleep(160); cpState.hit = false;
+              cpState.groups.push(cpState.q); cpState.sel.add(cpState.q); cpState.q = ''; cpRender();
+              await sleep(900); cp.classList.remove('focus');
+            } else {
+              cursorTo(box, cur, cpChips, .2, .5); await sleep(1200);
+            }
+            popIn.style.transform = `translateY(-${Math.max(0, popIn.offsetHeight - pop.clientHeight)}px)`;
+            await sleep(300);
             cursorTo(box, cur, save); await sleep(650);
             await press(save);
             words++; count.textContent = words;
