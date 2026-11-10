@@ -33,6 +33,7 @@ doing.
 - Words you keep forgetting come back more often. Words you know come back less.
 - Classic (reveal → Know / Forgot) or Tiered mode (with a reading hint first).
 - Snooze it, drag it anywhere, tap a kanji to see its readings without leaving the page.
+- The toolbar shows a live countdown to the next card, with one-click switches for pop-ups and highlights.
 
 ### 2. Your vocabulary, highlighted on every Japanese page
 Open any Japanese website and the words already in your bank are underlined, coloured by how well
