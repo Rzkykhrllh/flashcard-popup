@@ -28,9 +28,7 @@ const bulkClearBtn = document.getElementById("bulkClearBtn");
 const bulkAddModalOverlay = document.getElementById("bulkAddModalOverlay");
 const bulkAddModalClose = document.getElementById("bulkAddModalClose");
 const bulkAddCountEl = document.getElementById("bulkAddCount");
-const bulkAddGroupListEl = document.getElementById("bulkAddGroupList");
-const bulkAddNewGroupName = document.getElementById("bulkAddNewGroupName");
-const bulkAddNewGroupBtn = document.getElementById("bulkAddNewGroupBtn");
+const bulkAddApplyBtn = document.getElementById("bulkAddApply");
 const bulkAddStatusEl = document.getElementById("bulkAddStatus");
 
 let allWords = [];
@@ -78,7 +76,7 @@ function updateCounts() {
 
 // Bulk-select: word ids checked via the leading checkbox column, so several
 // words can be added to a collection in one action instead of opening each
-// one's edit form individually (see bulkAddGroupListEl's click handler
+// one's edit form individually (see the bulk-add modal's collection picker
 // below). Purely a UI selection, separate from — and with no effect on —
 // study eligibility (the existing "In Study" column/checkbox).
 let bulkSelectedIds = new Set();
@@ -174,12 +172,39 @@ bulkClearBtn.addEventListener("click", () => {
   renderList();
 });
 
+// Pick one or more collections with the shared picker (search, create from
+// the search box), then add the whole selection to all of them at once.
+const bulkPicker = createCollectionPicker(document.getElementById("bulkAddPicker"), {
+  onCreate: async (name) => {
+    const group = { id: `manual_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, name, type: "manual", sourceSheetUrl: null };
+    await putGroup(group);
+    allGroups.push(group);
+    return group;
+  },
+  onRename: async (groupId, name) => {
+    await send({ type: "renameGroup", groupId, name });
+    const g = allGroups.find((x) => x.id === groupId);
+    if (g) g.name = name;
+    reloadData();
+  },
+  onChange: updateBulkApply,
+});
+
+function updateBulkApply() {
+  const n = bulkPicker.getSelected().length;
+  bulkAddApplyBtn.disabled = !n || !bulkSelectedIds.size;
+  bulkAddApplyBtn.textContent = n ? `Add to ${n} collection${n > 1 ? "s" : ""}` : "Pick a collection";
+}
+
 function openBulkAddModal() {
   bulkAddCountEl.textContent = bulkSelectedIds.size;
   bulkAddStatusEl.textContent = "";
-  bulkAddNewGroupName.value = "";
-  renderBulkAddGroupList();
+  bulkPicker.setGroups(allGroups);
+  bulkPicker.setSelected([]);
+  bulkPicker.reset();
+  updateBulkApply();
   bulkAddModalOverlay.classList.add("open");
+  bulkPicker.focus();
 }
 
 function closeBulkAddModal() {
@@ -192,33 +217,17 @@ function closeBulkAddModal() {
   renderList();
 }
 
-function renderBulkAddGroupList() {
-  bulkAddGroupListEl.innerHTML = allGroups.length
-    ? allGroups.map((g) => `
-        <div class="group-check-row" data-id="${escapeHtml(g.id)}">
-          <span class="group-check-label">${escapeHtml(g.name)}</span>
-          <button type="button" class="btn" data-add-to="${escapeHtml(g.id)}">Add</button>
-        </div>`).join("")
-    : '<p class="empty" style="margin:2px 0">No collections yet — create one below.</p>';
-
-  bulkAddGroupListEl.querySelectorAll("[data-add-to]").forEach((btn) => {
-    btn.addEventListener("click", () => addSelectedWordsToGroup(btn.dataset.addTo));
-  });
-}
-
 bulkAddBtn.addEventListener("click", openBulkAddModal);
 bulkAddModalClose.addEventListener("click", closeBulkAddModal);
 
-bulkAddNewGroupBtn.addEventListener("click", async () => {
-  const name = bulkAddNewGroupName.value.trim();
-  if (!name) return;
-  const groupId = `manual_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-  const group = { id: groupId, name, type: "manual", sourceSheetUrl: null };
-  await putGroup(group);
-  allGroups.push(group);
-  bulkAddNewGroupName.value = "";
-  renderBulkAddGroupList();
-  await addSelectedWordsToGroup(groupId);
+bulkAddApplyBtn.addEventListener("click", async () => {
+  const ids = bulkPicker.getSelected();
+  if (!ids.length || !bulkSelectedIds.size) return;
+  bulkAddApplyBtn.disabled = true;
+  const lines = [];
+  for (const id of ids) lines.push(await addSelectedWordsToGroup(id));
+  bulkAddStatusEl.textContent = lines.filter(Boolean).join(" ");
+  updateBulkApply();
 });
 
 // Adds every currently bulk-selected word to `groupId` — a union onto each
@@ -230,7 +239,7 @@ bulkAddNewGroupBtn.addEventListener("click", async () => {
 // dropdown and Words table refresh right away either way.
 async function addSelectedWordsToGroup(groupId) {
   const group = allGroups.find((g) => g.id === groupId);
-  if (!group || !bulkSelectedIds.size) return;
+  if (!group || !bulkSelectedIds.size) return "";
 
   let added = 0;
   for (const id of bulkSelectedIds) {
@@ -242,12 +251,11 @@ async function addSelectedWordsToGroup(groupId) {
     added++;
   }
 
-  bulkAddStatusEl.textContent = added
-    ? `Added ${added} word(s) to "${group.name}".`
-    : `Selected word(s) were already in "${group.name}".`;
-
   await reloadData();
   bulkAddCountEl.textContent = bulkSelectedIds.size; // reloadData() doesn't touch the selection itself
+  return added
+    ? `Added ${added} word(s) to "${group.name}".`
+    : `Already in "${group.name}".`;
 }
 
 statusTabsEl.addEventListener("click", (e) => {
