@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="options.css" />
     <link rel="stylesheet" href="vocab-bank.css" />
     <link rel="stylesheet" href="graph.css" />
+    <link rel="stylesheet" href="collection-picker.css" />
   </head>
   <body>
       <header class="app-header">
@@ -319,11 +320,7 @@
                 <textarea id="wNotes" rows="3" placeholder="optional"></textarea>
               </label>
               <div class="field-label" id="wGroupField">Collections <span class="label-note">pick any number</span>
-                <div id="wGroupChecklist" class="group-checklist"></div>
-                <div class="group-new-row">
-                  <input id="wNewGroupName" type="text" placeholder="New collection name" />
-                  <button type="button" class="btn" id="wAddGroupBtn">Add</button>
-                </div>
+                <div id="wCollections"></div>
               </div>
               <label class="field-check" id="wIncludeField">
                 <span class="switch">
@@ -432,6 +429,7 @@
     <p class="credit">made by <a href="https://dev.byairu.com" target="_blank">dev.byairu.com</a></p>
     <script src="../core/db.js"></script>
     <script src="../core/kanji.js"></script>
+    <script src="../core/collection-picker.js"></script>
     <script src="vocab-bank.js"></script>
     <script src="word-editor.js"></script>
     <script src="kanji-tab.js"></script>

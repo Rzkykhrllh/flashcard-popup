@@ -182,6 +182,7 @@ html[data-theme="dark"] .btn.primary:hover { background: color-mix(in srgb, var(
   outline: none; border-color: var(--shu); box-shadow: 0 0 0 3px var(--ring);
 }
 .quick-add .qa-kanji { font: 500 20px var(--font-jp); padding: 8px 11px; }
+.qa-label { font-size: 11px; font-weight: 650; color: var(--ink-2); margin: 4px 0 5px; }
 .qa-status { font-size: 11px; color: var(--forgot); min-height: 0; margin: 0 0 6px; }
 .qa-status:empty { margin: 0; }
 

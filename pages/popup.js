@@ -18,9 +18,6 @@ const qaKanji = document.getElementById("qaKanji");
 const qaHiragana = document.getElementById("qaHiragana");
 const qaArti = document.getElementById("qaArti");
 const qaNotes = document.getElementById("qaNotes");
-const qaGroupChecklist = document.getElementById("qaGroupChecklist");
-const qaNewGroupName = document.getElementById("qaNewGroupName");
-const qaAddGroupBtn = document.getElementById("qaAddGroupBtn");
 const qaIncludeSwitchWrap = document.getElementById("qaIncludeSwitchWrap");
 const qaIncludeLabelText = document.getElementById("qaIncludeLabelText");
 const qaIncludeInStudy = document.getElementById("qaIncludeInStudy");
@@ -155,66 +152,32 @@ quizBtn.addEventListener("click", async () => {
 openBankBtn.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html") }));
 
 // Quick-add: capture a word straight from the popup, no navigating away.
-// Mirrors word-editor.js's Add-mode logic (same collision/merge rule, same
-// multi-collection checklist), kept as its own copy since popup.js and
-// word-editor.js never share a page.
-let qaGroups = [];
-let qaEditingGroupId = null;
+// Mirrors word-editor.js's Add-mode logic (same collision/merge rule), and
+// uses the shared collection picker (core/collection-picker.js): search,
+// create-from-search, clear selected state. The collections used on the
+// last save are pre-selected next time, since you often add several words
+// to the same one in a row.
+const LAST_COLLECTIONS_KEY = "lastCollectionIds";
 
-function renderQaGroupChecklist(selectedIds) {
-  qaGroupChecklist.innerHTML = qaGroups.length
-    ? qaGroups.map((g) => {
-        const checked = selectedIds.includes(g.id) ? "checked" : "";
-        const nameCell = g.id === qaEditingGroupId
-          ? `<input type="text" class="group-rename-input" value="${escapeHtml(g.name)}" />
-             <button type="button" class="group-rename-save" title="Save">&#10003;</button>
-             <button type="button" class="group-rename-cancel" title="Cancel">&#10005;</button>`
-          : `<label for="qagc-${escapeHtml(g.id)}" class="group-check-label">${escapeHtml(g.name)}</label>
-             <button type="button" class="group-rename-btn" title="Rename">&#9998;</button>`;
-        return `
-          <div class="group-check-row" data-id="${escapeHtml(g.id)}">
-            <input type="checkbox" class="group-check" id="qagc-${escapeHtml(g.id)}" value="${escapeHtml(g.id)}" ${checked} />
-            ${nameCell}
-          </div>`;
-      }).join("")
-    : '<p class="empty" style="margin:2px 0">No collections yet — add one below.</p>';
-
-  qaGroupChecklist.querySelectorAll(".group-rename-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      qaEditingGroupId = btn.closest(".group-check-row").dataset.id;
-      renderQaGroupChecklist(qaSelectedGroupIds());
-    });
-  });
-  qaGroupChecklist.querySelectorAll(".group-rename-cancel").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      qaEditingGroupId = null;
-      renderQaGroupChecklist(qaSelectedGroupIds());
-    });
-  });
-  qaGroupChecklist.querySelectorAll(".group-rename-save").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const row = btn.closest(".group-check-row");
-      const id = row.dataset.id;
-      const name = row.querySelector(".group-rename-input").value.trim();
-      if (!name) return;
-      await send({ type: "renameGroup", groupId: id, name });
-      const g = qaGroups.find((x) => x.id === id);
-      if (g) g.name = name;
-      qaEditingGroupId = null;
-      renderQaGroupChecklist(qaSelectedGroupIds());
-    });
-  });
+async function createCollection(name) {
+  const group = { id: `manual_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, name, type: "manual", sourceSheetUrl: null };
+  await putGroup(group);
+  return group;
 }
 
+const qaPicker = createCollectionPicker(document.getElementById("qaCollections"), {
+  onCreate: createCollection,
+  onRename: (groupId, name) => send({ type: "renameGroup", groupId, name }),
+});
+
 function qaSelectedGroupIds() {
-  return [...qaGroupChecklist.querySelectorAll(".group-check:checked")].map((cb) => cb.value);
+  return qaPicker.getSelected();
 }
 
 async function openQuickAdd() {
-  qaGroups = await getAllGroups();
-  qaEditingGroupId = null;
-  renderQaGroupChecklist([]);
-  qaNewGroupName.value = "";
+  qaPicker.setGroups(await getAllGroups());
+  qaPicker.setSelected((await chrome.storage.local.get(LAST_COLLECTIONS_KEY))[LAST_COLLECTIONS_KEY] || []);
+  qaPicker.reset();
   qaKanji.value = ""; qaHiragana.value = ""; qaArti.value = ""; qaNotes.value = "";
   qaIncludeInStudy.checked = true;
   qaStatus.textContent = "";
@@ -244,17 +207,6 @@ document.addEventListener("keydown", (e) => {
   e.preventDefault();
   e.stopPropagation();
 }, true);
-
-qaAddGroupBtn.addEventListener("click", async () => {
-  const name = qaNewGroupName.value.trim();
-  if (!name) return;
-  const groupId = `manual_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-  const group = { id: groupId, name, type: "manual", sourceSheetUrl: null };
-  await putGroup(group);
-  qaGroups.push(group);
-  qaNewGroupName.value = "";
-  renderQaGroupChecklist([...qaSelectedGroupIds(), groupId]);
-});
 
 qaSaveBtn.addEventListener("click", async () => {
   const kanji = qaKanji.value.trim();
@@ -288,6 +240,7 @@ qaSaveBtn.addEventListener("click", async () => {
     await send({ type: "setCardSelection", deckId: groupId, key: id, selected: qaIncludeInStudy.checked });
   }
 
+  await chrome.storage.local.set({ [LAST_COLLECTIONS_KEY]: groupIds });
   qaStatus.textContent = "Saved!";
   setTimeout(closeQuickAdd, 700);
 });

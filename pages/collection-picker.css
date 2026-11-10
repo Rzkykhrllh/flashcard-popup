@@ -1,0 +1,83 @@
+/* collection-picker.css — styles for core/collection-picker.js. Uses the
+   host page's tokens (--shu, --surface, --paper, --ink, --line-2, …), which
+   popup.css and options.css both define. */
+.cp {
+  --cp-on: color-mix(in srgb, var(--shu) 13%, var(--surface));
+  --cp-on-line: color-mix(in srgb, var(--shu) 45%, transparent);
+  --cp-on-ink: color-mix(in srgb, var(--shu) 80%, var(--ink));
+  border: 1px solid var(--line-2); border-radius: 12px; background: var(--paper);
+  margin-bottom: 8px; overflow: hidden; transition: border-color .15s, box-shadow .15s;
+}
+.cp:focus-within { border-color: var(--shu); box-shadow: 0 0 0 3px color-mix(in srgb, var(--shu) 22%, transparent); }
+
+.cp-search { display: flex; align-items: center; gap: 8px; padding: 0 10px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.cp-ico { width: 15px; height: 15px; flex: none; fill: none; stroke: var(--muted); stroke-width: 2.2; stroke-linecap: round; }
+.cp .cp-input {
+  flex: 1; min-width: 0; border: 0 !important; background: transparent !important; box-shadow: none !important;
+  padding: 9px 0 !important; margin: 0 !important; font: 13px var(--font-ui, inherit); color: var(--ink); outline: none; width: auto;
+}
+.cp-count { flex: none; font-size: 11px; font-weight: 600; color: var(--cp-on-ink); white-space: nowrap; }
+
+.cp-chips { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 8px 0; }
+.cp-chips[hidden] { display: none; }
+.cp-chip {
+  display: inline-flex; align-items: center; gap: 2px; max-width: 100%;
+  background: var(--shu); color: #fff; font-size: 11.5px; font-weight: 600;
+  padding: 3px 4px 3px 10px; border-radius: 999px; animation: cp-pop .18s cubic-bezier(.3,.7,.4,1.4);
+}
+.cp-chip-x {
+  border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 14px; line-height: 1;
+  width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; opacity: .8; padding: 0;
+}
+.cp-chip-x:hover { opacity: 1; background: rgba(255,255,255,.22); }
+@keyframes cp-pop { from { transform: scale(.7); opacity: 0; } }
+
+.cp-list { max-height: 152px; overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+.cp-row {
+  display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 8px; cursor: pointer;
+  font-size: 12.5px; font-weight: 500; color: var(--ink); border: 1px solid transparent;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.cp-row:hover, .cp-row.is-active { background: var(--surface); }
+.cp-row.is-active { border-color: var(--line-2); }
+.cp-row.is-on { background: var(--cp-on); color: var(--cp-on-ink); font-weight: 650; border-color: var(--cp-on-line); }
+.cp-row.is-on.is-active, .cp-row.is-on:hover { background: color-mix(in srgb, var(--shu) 18%, var(--surface)); }
+.cp-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-name mark { background: color-mix(in srgb, var(--hint, #d97706) 28%, transparent); color: inherit; border-radius: 3px; padding: 0 1px; }
+
+.cp-box {
+  width: 16px; height: 16px; flex: none; border-radius: 5px; border: 1.5px solid var(--line-2); background: var(--surface);
+  display: grid; place-items: center; transition: background .12s, border-color .12s, transform .12s;
+}
+.cp-row.is-on .cp-box { background: var(--shu); border-color: var(--shu); }
+.cp-row.is-on .cp-box::after {
+  content: ""; width: 8px; height: 4px; border: 2px solid #fff; border-top: 0; border-right: 0;
+  transform: translateY(-1px) rotate(-45deg);
+}
+.cp-row:active .cp-box { transform: scale(.88); }
+
+.cp-mini {
+  flex: none; border: 0; background: transparent; cursor: pointer; color: var(--muted);
+  font-size: 12px; line-height: 1; padding: 3px 5px; border-radius: 5px;
+}
+.cp-mini:hover { background: var(--surface-2); color: var(--ink); }
+.cp-row .cp-edit { opacity: 0; }
+.cp-row:hover .cp-edit { opacity: 1; }
+.cp .cp-rename {
+  flex: 1; min-width: 0; width: auto; margin: 0 !important; padding: 3px 7px !important; font-size: 12.5px;
+  border-radius: 6px; border: 1px solid var(--shu) !important; background: var(--surface); color: var(--ink);
+}
+
+.cp-create { color: var(--cp-on-ink); border: 1px dashed var(--cp-on-line); }
+.cp-create.is-active, .cp-create:hover { background: var(--cp-on); }
+.cp-plus { width: 16px; height: 16px; flex: none; display: grid; place-items: center; font-size: 13px; font-weight: 700; }
+.cp-create kbd {
+  font: 600 10px var(--font-ui, inherit); color: var(--muted); border: 1px solid var(--line-2); border-bottom-width: 2px;
+  border-radius: 5px; padding: 1px 5px; background: var(--surface);
+}
+.cp-empty { font-size: 12px; color: var(--muted); padding: 10px 8px; text-align: center; }
+
+/* Dark theme: the accent is light there, so text/ticks on it go dark (matches .btn.primary). */
+html[data-theme="dark"] .cp-chip { color: #14131a; }
+html[data-theme="dark"] .cp-chip-x:hover { background: rgba(0,0,0,.15); }
+html[data-theme="dark"] .cp-row.is-on .cp-box::after { border-color: #14131a; }
