@@ -141,7 +141,7 @@ read and what it means.
 
 - Keyboard shortcut to toggle the reader (`chrome.commands`).
 - Per-site rules: always off on chosen sites; on only for Japanese pages.
-- Quick toggle in the toolbar popup.
+- [x] Toolbar popup: live countdown to the next pop-up card (snooze- and pending-card-aware), quick on/off for pop-up cards and for the reader highlight.
 - Encounter stats: "seen on the web N times" per word, words met this week.
 - Optional: highlight style (underline / background / dot).
 

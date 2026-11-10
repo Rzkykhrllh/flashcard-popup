@@ -543,6 +543,26 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         sendResponse({ ok: true });
         break;
       }
+      case "getSchedule": {
+        // Toolbar popup's live countdown. The alarm keeps ticking while
+        // snoozed (showCardOnActiveTab just skips), so the next card that
+        // will actually SHOW is the first tick at/after snoozeUntil.
+        const { settings } = await getState();
+        const alarm = await chrome.alarms.get(ALARM_NAME);
+        const periodMs = (alarm?.periodInMinutes || Number(settings.intervalMinutes) || 15) * 60000;
+        const snoozeUntil = settings.snoozeUntil || 0;
+        let nextAt = alarm ? alarm.scheduledTime : null;
+        if (nextAt && snoozeUntil > nextAt) nextAt += Math.ceil((snoozeUntil - nextAt) / periodMs) * periodMs;
+        sendResponse({
+          enabled: settings.enabled !== false,
+          readerHighlight: settings.readerHighlight !== false,
+          nextAt,
+          periodMs,
+          snoozeUntil,
+          cardShowing: !!currentCard, // a new card won't show until this one is graded
+        });
+        break;
+      }
       case "getSheetTabs": {
         const parsed = parseSheetUrl(msg.url || "");
         if (!parsed) { sendResponse({ ok: false, error: "Invalid sheet URL." }); break; }
